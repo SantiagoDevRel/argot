@@ -52,7 +52,7 @@ async function dgxGenerate(target) {
     method: "POST",
     headers: { "content-type": "application/json", authorization: `Bearer ${bearer}` },
     body: JSON.stringify({ chainId: target.chainId, address: target.address, model: MODEL, eval: true }),
-    signal: AbortSignal.timeout(180000),
+    signal: AbortSignal.timeout(290000),
   });
   if (!res.ok) throw new Error(`dgx ${res.status}`);
   const data = await res.json();

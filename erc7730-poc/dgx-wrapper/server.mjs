@@ -25,6 +25,7 @@ import { join } from "node:path";
 const PORT = Number(process.env.PORT || 9010);
 const BEARER = process.env.WRAPPER_BEARER || "";
 const OLLAMA = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
+const MINIMAX = process.env.MINIMAX_URL || "http://127.0.0.1:8015/v1"; // llama-server OpenAI-compat
 const DEFAULT_MODEL = process.env.DGX_MODEL || "qwen3-coder-next:q4_K_M";
 const SOURCIFY = process.env.SOURCIFY_URL || "https://sourcify.dev/server/v2/contract";
 // Absolute paths (defense-in-depth: never resolve these via $PATH at runtime).
@@ -132,13 +133,18 @@ Output ONLY a JSON object: { "formats": { "<functionSignature>": { "intent": "<s
 Rules:
 - Key each format by the FULL function signature with parameter types, e.g. "transfer(address,uint256)".
 - Include ONLY user-facing STATE-CHANGING functions the wallet user signs (transfer, approve, swap, deposit, stake…). SKIP view/pure getters, and SKIP proxy-admin functions (upgradeTo, changeAdmin) unless the contract's sole purpose is administration.
-- Field "format" must be one of: tokenAmount, addressName, amount, date, duration, raw, nftName, unit, enum, calldata.
-- Use tokenAmount for token/ETH amounts, addressName for address params (recipients/spenders), duration for time spans, date for deadlines/timestamps.
+- Field "format" must be one of: tokenAmount, addressName, amount, date, duration, raw. (Prefer these; avoid unit/enum/nftName/calldata unless obvious.)
+- Use tokenAmount for token/ETH amounts, addressName for address params (recipients/spenders), duration for time spans, date for deadlines/timestamps, amount for plain numbers, raw for bytes/ids/misc.
+- PATHS use DOT notation. For a struct/tuple parameter "desc" with a member "amount", the path is "desc.amount". For an array element, use "arr.[]" (a dot before the bracket), e.g. "amounts.[]". NEVER write "arr[]" or "desc[amount]".
+- Focus on the few SECURITY-RELEVANT params (amounts, recipients, spenders, deadlines). It's fine to describe only 2–4 fields per function and skip opaque bytes/config params.
 - Derive "intent" and "label" from NatSpec @notice/@param when present; else infer from names/source.
 - Do NOT invent token decimals/tickers — leave tokenAmount fields as-is; decimals are filled on-chain afterward.
 - It is a candidate DRAFT for the dApp owner to review — be accurate, never authoritative.
-Example output:
-{ "formats": { "transfer(address,uint256)": { "intent": "Send tokens", "fields": [ { "path": "to", "label": "To", "format": "addressName" }, { "path": "amount", "label": "Amount", "format": "tokenAmount" } ] }, "approve(address,uint256)": { "intent": "Approve token spending", "fields": [ { "path": "spender", "label": "Spender", "format": "addressName" }, { "path": "amount", "label": "Amount", "format": "tokenAmount" } ] } } }`;
+Example output (note the struct-member dot path "desc.amount"):
+{ "formats": {
+  "transfer(address,uint256)": { "intent": "Send tokens", "fields": [ { "path": "to", "label": "To", "format": "addressName" }, { "path": "amount", "label": "Amount", "format": "tokenAmount" } ] },
+  "swap(address,(address srcToken,address dstToken,address dstReceiver,uint256 amount,uint256 minReturn),bytes)": { "intent": "Swap tokens", "fields": [ { "path": "desc.amount", "label": "Amount to swap", "format": "tokenAmount" }, { "path": "desc.minReturn", "label": "Minimum received", "format": "tokenAmount" }, { "path": "desc.dstReceiver", "label": "Recipient", "format": "addressName" } ] }
+} }`;
 
 // Ollama structured-output schema (well-formedness only; erc7730 lint is the real gate).
 const FORMAT_SCHEMA = {
@@ -166,13 +172,38 @@ const FORMAT_SCHEMA = {
   required: ["formats"],
 };
 
-async function ollamaGenerate(model, abi, userdoc, devdoc) {
-  const user = [
+function buildUserMsg(abi, userdoc, devdoc) {
+  return [
     `ABI (functions only): ${JSON.stringify((abi || []).filter((x) => x.type === "function")).slice(0, 14000)}`,
     `NatSpec userdoc (@notice): ${JSON.stringify(userdoc || {}).slice(0, 6000)}`,
     `NatSpec devdoc (@param/@dev): ${JSON.stringify(devdoc || {}).slice(0, 6000)}`,
     `Produce the "formats" JSON now.`,
   ].join("\n\n");
+}
+
+// Route to Ollama (qwen etc.) or the MiniMax llama-server (OpenAI-compatible) by model id.
+async function generateFormats(model, abi, userdoc, devdoc) {
+  const user = buildUserMsg(abi, userdoc, devdoc);
+
+  if (model === "minimax-m2.5") {
+    const res = await fetch(`${MINIMAX}/chat/completions`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer dummy" },
+      body: JSON.stringify({
+        model: "minimax-m2.5",
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: SYSTEM },
+          { role: "user", content: user },
+        ],
+      }),
+      signal: AbortSignal.timeout(280000),
+    });
+    if (!res.ok) throw new Error(`minimax ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const data = await res.json();
+    return JSON.parse(data.choices?.[0]?.message?.content ?? "{}");
+  }
 
   const res = await fetch(`${OLLAMA}/api/chat`, {
     method: "POST",
@@ -207,6 +238,10 @@ function normalizeFormats(formats) {
     // clear-signing value); keep only well-formed paths.
     spec.fields = (spec.fields || []).filter((f) => typeof f.path === "string" && f.path.trim().length > 0);
     for (const f of spec.fields) {
+      // ERC-7730 requires DOT notation for array/slice selectors: `arr.[]`, `arr.[0]`, not
+      // `arr[]` / `arr[0]`. Models routinely emit the bare-bracket form → deterministically
+      // insert the dot so the linter's path grammar accepts it.
+      f.path = f.path.replace(/(?<!\.)\[/g, ".[");
       if (f.format === "addressName") {
         if (!f.params || !f.params.types) f.params = { ...(f.params || {}), types: ["wallet", "eoa", "contract"] };
       } else if (f.format === "date") {
@@ -291,8 +326,18 @@ const server = createServer(async (req, res) => {
     const body = await readBody(req);
     const model = pickModel(body.model);
     try {
-      const freed = await freeGpu(); // stop other DGX procs so the model always fits
-      const ms = await ollamaWarm(model);
+      let freed, ms;
+      if (model === "minimax-m2.5") {
+        // MiniMax runs on llama-server (holds ~101GB, pauses ComfyUI). minimax-up.sh loads it.
+        const t0 = Date.now();
+        const up = await sh(join(homedir(), "minimax-up.sh"), [], 240000);
+        if (up.code !== 0) throw new Error("minimax-up failed: " + up.out.slice(0, 200));
+        freed = ["comfy paused + minimax server up"];
+        ms = Date.now() - t0;
+      } else {
+        freed = await freeGpu(); // stop other DGX procs so the Ollama model always fits
+        ms = await ollamaWarm(model);
+      }
       return json(res, 200, {
         model,
         ready: true,
@@ -345,7 +390,7 @@ const server = createServer(async (req, res) => {
 
       // 2. model → display.formats only
       const model = pickModel(body.model);
-      const gen = await ollamaGenerate(model, genAbi, genUser, genDev);
+      const gen = await generateFormats(model, genAbi, genUser, genDev);
 
       // 3. assemble the descriptor with a DETERMINISTIC context (never model-guessed)
       const ct = sourcify.metadata?.settings?.compilationTarget; // { "path/File.sol": "Name" }
