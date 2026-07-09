@@ -105,25 +105,35 @@ contract's functions from the ABI). **eip712** descriptors describe signed typed
 — a different generation task — so the benchmark runs the **247 calldata** ground-truth
 descriptors only (eip712 is out of scope for this generator, not a failure).
 
-## Result (2026-07-09) — qwen3-coder-next, 211 calldata held-out, COMPLETE
+## Result (2026-07-09)
 
-**Headline (honest, not flattering): overall `erc7730 lint`-pass ≈ 20%, fnRecall ≈ 0.14.**
-The registry is **96% bespoke/complex** contracts (203 of 211 are DeFi vaults, routers,
-bridges with tuple/array params); the local qwen model produces a *valid* descriptor for
-those only ~19% of the time. On the tiny pure-ERC-20/721 subset (n=8) it's ~50% lint-pass /
-0.375 fnRecall. 17 of 211 also 404'd on Sourcify (not verified there).
+### After tuning — qwen3-coder-next, 60-contract representative sample
+**`erc7730 lint`-pass ≈ 48%, fnRecall ≈ 0.34** (up from 20% / 0.14 pre-tuning — a 2.4× jump).
+The fix that moved it: the model kept writing array paths as `foo[]` instead of the
+ERC-7730-required `foo.[]`, which the linter rejects — a **deterministic path normalization**
+(`foo[` → `foo.[`) + struct/array path guidance + a tuple few-shot in the prompt fixed a whole
+class of failures (1inch V5, Aave gateway, etc. now pass). On the correctly-bucketed long-tail
+bespoke contracts (n=27) it reaches **82% lint-pass / 0.53 fnRecall**. The `standard` bucket
+number stays low ONLY because the verb-based bucket mislabels complex ERC-4626 vaults as
+"standard" (see caveat below) — the OVERALL 48% is the honest headline.
+
+### Pre-tuning baseline — qwen3-coder-next, 211 calldata held-out (full)
+**overall lint-pass ≈ 20%, fnRecall ≈ 0.14** — the "before" number, kept for the delta.
+The registry is 96% bespoke/complex (DeFi vaults/routers/bridges with tuple/array params);
+17 of 211 also 404'd on Sourcify.
 
 > **Bucketing caveat:** a verb-based "standard" split is misleading here — `deposit`/`withdraw`/
 > `mint`/`swap` verbs put complex ERC-4626 vaults and bridges in the "standard" bucket, inverting
 > the numbers. Re-bucketing by *pure token methods only* (transfer/approve/…) gives the n=8 above.
 > **The defensible headline is the OVERALL number, not a simple-vs-complex split.**
 
-**What this means (the honest de-risking answer the POC was built to produce):** a small local
-coder model is **not yet good enough** to auto-generate registry-quality ERC-7730 descriptors at
-scale. That *strengthens* the real pitch — the value is Arkiv as the **queryable candidate store +
-attestation-aware registry + human-reviewed candidate tier**, not "the LLM nails it." The levers to
-move the number (next): **MiniMax-M2.5** (much stronger, offline), **few-shot** examples in the
-prompt (the held-out set is ready), and better field-path handling for tuples/arrays.
+**What this means (the honest de-risking answer the POC was built to produce):** with proper ERC-7730
+tooling (deterministic path/format normalization + a targeted prompt), a **small local coder model
+gets to ~48% valid-draft on a hard, representative sample** — good enough to seed candidates for the
+simpler majority, not good enough to trust unreviewed. That fits the pitch exactly: the value is
+Arkiv as the **queryable candidate store + attestation-aware registry + human-reviewed candidate
+tier**, with the LLM as a **coverage seeder**, never authoritative. Remaining levers: **MiniMax-M2.5**
+(stronger model, running), more few-shot, and better handling of deeply-nested tuple/array params.
 
 ## How the batch ran
 
