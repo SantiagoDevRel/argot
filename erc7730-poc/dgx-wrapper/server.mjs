@@ -40,14 +40,14 @@ const MAX_BODY = 256 * 1024; // reject oversized request bodies (readBody DoS gu
 // Only vetted models may be loaded/run — never an arbitrary request-supplied model id.
 const MODEL_ALLOW = new Set([DEFAULT_MODEL, "qwen3-coder-next:q4_K_M", "minimax-m2.5"]);
 const pickModel = (m) => (typeof m === "string" && MODEL_ALLOW.has(m) ? m : DEFAULT_MODEL);
-// Per-chain public RPCs for the deterministic decimals()/symbol() eth_call enrichment.
+// Per-chain public RPCs (with fallbacks) for the deterministic decimals()/symbol() eth_call.
 const RPCS = {
-  1: process.env.RPC_1 || "https://eth.llamarpc.com",
-  10: process.env.RPC_10 || "https://mainnet.optimism.io",
-  56: process.env.RPC_56 || "https://bsc-dataseed.binance.org",
-  137: process.env.RPC_137 || "https://polygon-rpc.com",
-  8453: process.env.RPC_8453 || "https://mainnet.base.org",
-  42161: process.env.RPC_42161 || "https://arb1.arbitrum.io/rpc",
+  1: ["https://ethereum-rpc.publicnode.com", "https://rpc.ankr.com/eth", "https://eth.llamarpc.com"],
+  10: ["https://optimism-rpc.publicnode.com", "https://mainnet.optimism.io"],
+  56: ["https://bsc-rpc.publicnode.com", "https://bsc-dataseed.binance.org"],
+  137: ["https://polygon-bor-rpc.publicnode.com", "https://polygon-rpc.com"],
+  8453: ["https://base-rpc.publicnode.com", "https://mainnet.base.org"],
+  42161: ["https://arbitrum-one-rpc.publicnode.com", "https://arb1.arbitrum.io/rpc"],
 };
 
 if (!BEARER) {
@@ -181,10 +181,24 @@ function buildUserMsg(abi, userdoc, devdoc) {
   ].join("\n\n");
 }
 
-// Route to Ollama (qwen etc.) or the MiniMax llama-server (OpenAI-compatible) by model id.
 async function generateFormats(model, abi, userdoc, devdoc) {
-  const user = buildUserMsg(abi, userdoc, devdoc);
+  return chatFormats(model, buildUserMsg(abi, userdoc, devdoc));
+}
 
+// The AUDITOR loop: feed the exact linter errors back to the model so it fixes the
+// structural problems it can't see on its own. This is what lifts lint-pass toward ~100%.
+async function repairFormats(model, formats, lintOutput) {
+  const user = [
+    `Your ERC-7730 "formats" JSON FAILED the erc7730 linter. Fix ONLY what the errors point to; keep the valid parts.`,
+    `Current formats: ${JSON.stringify(formats).slice(0, 9000)}`,
+    `Linter errors (authoritative — obey them exactly):\n${lintOutput.slice(0, 1600)}`,
+    `Reminders: paths use DOT notation (struct member "desc.amount"; array element "arr.[]"). Allowed formats: tokenAmount, addressName, amount, date, duration, raw. Drop any field you can't map cleanly. Output ONLY the corrected { "formats": {...} } JSON.`,
+  ].join("\n\n");
+  return chatFormats(model, user);
+}
+
+// Route to Ollama (qwen etc.) or the MiniMax llama-server (OpenAI-compatible) by model id.
+async function chatFormats(model, user) {
   if (model === "minimax-m2.5") {
     const res = await fetch(`${MINIMAX}/chat/completions`, {
       method: "POST",
@@ -265,16 +279,33 @@ async function ethCall(rpc, to, selector) {
   const j = await res.json();
   return j.result;
 }
-async function tokenMeta(chainId, tokenAddr) {
-  const rpc = RPCS[chainId];
-  if (!rpc || !/^0x[0-9a-fA-F]{40}$/.test(tokenAddr)) return null;
+function hexToAscii(hex) {
   try {
-    const dec = await ethCall(rpc, tokenAddr, "0x313ce567"); // decimals()
-    const decimals = dec && dec !== "0x" ? parseInt(dec, 16) : null;
-    return { address: tokenAddr, decimals };
+    const h = (hex || "").replace(/^0x/, "");
+    // ABI-encoded string: [offset(32)][len(32)][data]; fall back to raw bytes for bytes32 symbols
+    let bytes = h;
+    if (h.length >= 128) bytes = h.slice(128, 128 + parseInt(h.slice(64, 128), 16) * 2);
+    const s = Buffer.from(bytes, "hex").toString("utf8").replace(/ +$/g, "").replace(/[^\x20-\x7e]/g, "");
+    return s || null;
   } catch {
     return null;
   }
+}
+async function tokenMeta(chainId, tokenAddr) {
+  const rpcs = RPCS[chainId];
+  if (!rpcs || !/^0x[0-9a-fA-F]{40}$/.test(tokenAddr)) return null;
+  for (const rpc of rpcs) {
+    try {
+      const decHex = await ethCall(rpc, tokenAddr, "0x313ce567"); // decimals()
+      const decimals = decHex && decHex !== "0x" ? parseInt(decHex, 16) : null;
+      if (decimals == null || Number.isNaN(decimals) || decimals > 255) continue; // not a token here → try next
+      const symHex = await ethCall(rpc, tokenAddr, "0x95d89b41").catch(() => null); // symbol()
+      return { address: tokenAddr, decimals, decHex, symHex, symbol: hexToAscii(symHex), rpc };
+    } catch {
+      /* try next rpc */
+    }
+  }
+  return null;
 }
 
 // --- erc7730 lint (the hard structural gate) ----------------------------------------
@@ -388,53 +419,109 @@ const server = createServer(async (req, res) => {
         } catch { /* fall back to the proxy's own ABI */ }
       }
 
-      // 2. model → display.formats only
+      // 2-4. model → display.formats, assembled into a full descriptor with a DETERMINISTIC
+      // context (never model-guessed), then gated by erc7730 lint — with an AUDITOR-repair
+      // retry that feeds the linter errors back to the model (lifts the pass rate a lot).
       const model = pickModel(body.model);
-      const gen = await generateFormats(model, genAbi, genUser, genDev);
-
-      // 3. assemble the descriptor with a DETERMINISTIC context (never model-guessed)
       const ct = sourcify.metadata?.settings?.compilationTarget; // { "path/File.sol": "Name" }
       const name = (ct && Object.values(ct)[0]) || sourcify.metadata?.output?.devdoc?.title || "Contract";
       const owner = sourcify.metadata?.output?.devdoc?.author || null;
       // erc7730 InputContract requires `abi` (inline list or URL) alongside deployments.
-      const descriptor = {
+      const buildDescriptor = (formats) => ({
         $schema: "https://eips.ethereum.org/assets/eip-7730/erc7730-v1.schema.json",
         context: {
           $id: name,
           contract: { deployments: [{ chainId: Number(chainId), address }], abi: Array.isArray(genAbi) ? genAbi : [] },
         },
         metadata: { owner: owner || name },
-        display: { formats: normalizeFormats(gen.formats || {}) },
-      };
+        display: { formats: normalizeFormats(formats || {}) },
+      });
+
+      const gen = await generateFormats(model, genAbi, genUser, genDev);
+      let descriptor = buildDescriptor(gen.formats || {});
+      let lintRes = await lint(descriptor);
+      let repaired = false;
+      const MAX_REPAIR = model === "minimax-m2.5" ? 1 : 2;
+      for (let attempt = 0; !lintRes.passed && attempt < MAX_REPAIR; attempt++) {
+        try {
+          const fix = await repairFormats(model, descriptor.display.formats, lintRes.output);
+          if (!fix?.formats || !Object.keys(fix.formats).length) break;
+          const cand = buildDescriptor(fix.formats);
+          const l2 = await lint(cand);
+          descriptor = cand;
+          lintRes = l2;
+          repaired = true;
+          if (l2.passed) break;
+        } catch {
+          break;
+        }
+      }
+      if (!lintRes.passed) console.error(`lint rejected ${chainId}:${address}:`, lintRes.output.replace(/\s+/g, " ").slice(0, 300));
 
       // 3b. deterministic decimals enrichment (best-effort; NEVER model-inferred). Surfaced
       // to the UI via the inputs chip below — NOT stored in metadata (not an ERC-7730 field).
       const meta = await tokenMeta(chainId, address);
-
-      // 4. HARD GATE — erc7730 lint (full linter output stays server-side only)
-      const lintRes = await lint(descriptor);
-      if (!lintRes.passed) console.error(`lint rejected ${chainId}:${address}:`, lintRes.output.replace(/\s+/g, " ").slice(0, 300));
-      // 5. confidence + inputs summary
+      // 5. confidence + RICH inputs (full data + a Sourcify provenance deep-link per chip,
+      // so the UI can show exactly where every input came from).
       const conf = confidence(descriptor, { userdoc: genUser });
-      const abiFns = Array.isArray(genAbi) ? genAbi.filter((x) => x.type === "function").length : 0;
+      const fns = (Array.isArray(genAbi) ? genAbi : []).filter((x) => x.type === "function");
+      const sig = (f) => `${f.name}(${(f.inputs || []).map((i) => i.type).join(",")})`;
+      const abiSigs = fns.map(sig);
+      const sourceFiles = Object.keys(sourcify.metadata?.sources || {});
+      const notice = genUser?.methods || {};
+      const params = genDev?.methods || {};
+      const sBase = `https://sourcify.dev/server/v2/contract/${chainId}/${address}`;
+      const inputs = [
+        {
+          id: "identity", title: "Identity", enrichment: false,
+          sub: `chainId ${chainId} · ${address.slice(0, 6)}…${address.slice(-4)}`,
+          link: `${sBase}?fields=match,metadata`,
+          full: { contract: name, chainId: Number(chainId), address, match: sourcify.match || sourcify.runtimeMatch || "match", verifiedAt: sourcify.verifiedAt || null, compiler: sourcify.metadata?.compiler?.version || null },
+        },
+        {
+          id: "abi", title: "ABI", enrichment: false,
+          sub: `${abiSigs.length} functions${boundImpl ? " · via impl" : ""}`,
+          link: `${sBase}?fields=abi`,
+          full: { functions: abiSigs },
+        },
+        {
+          id: "natspec", title: "NatSpec", enrichment: false,
+          sub: Object.keys(notice).length ? `@notice · ${Object.keys(notice).length} methods` : "absent — source-inferred",
+          link: `${sBase}?fields=userdoc,devdoc`,
+          full: { notice, params },
+        },
+        {
+          id: "source", title: "Source", enrichment: false,
+          sub: `${sourceFiles.length} files`,
+          link: `${sBase}?fields=sources`,
+          full: { files: sourceFiles },
+        },
+        {
+          id: "proxy", title: "Proxy", enrichment: false,
+          sub: boundImpl ? `proxy — bound to ${boundImpl.slice(0, 6)}…` : sourcify.proxyResolution?.isProxy ? "proxy" : "not a proxy",
+          link: `${sBase}?fields=proxyResolution`,
+          full: sourcify.proxyResolution || { isProxy: false },
+        },
+        {
+          id: "decimals", title: "Token decimals", enrichment: true,
+          sub: meta?.decimals != null ? `${meta.decimals}${meta.symbol ? " · " + meta.symbol : ""} · eth_call` : "not a token / n/a",
+          link: null,
+          full: meta ? { method: "eth_call (deterministic — never model-inferred)", rpc: meta.rpc, to: meta.address, calls: [{ fn: "decimals()", selector: "0x313ce567", rawResult: meta.decHex, decoded: meta.decimals }, { fn: "symbol()", selector: "0x95d89b41", rawResult: meta.symHex, decoded: meta.symbol }] } : { note: "no token detected at this address" },
+        },
+      ];
       return json(res, 200, {
         chainId: String(chainId),
         address,
         descriptor: JSON.stringify(descriptor, null, 2),
         confidence: conf,
         lintPassed: lintRes.passed,
+        repaired,
         // A short, path-free reason when lint rejects (full linter output stays in server logs).
         lintReason: lintRes.passed ? null : "descriptor failed structural validation",
         status: "candidate",
         attested: false,
         generatedBy: model,
-        inputs: [
-          { id: "identity", title: "Identity", sub: `chainId ${chainId} · ${address.slice(0, 6)}…${address.slice(-4)}`, enrichment: false },
-          { id: "abi", title: "ABI", sub: `${abiFns} functions`, enrichment: false },
-          { id: "natspec", title: "NatSpec", sub: genUser && Object.keys(genUser.methods || {}).length ? "@notice present" : "absent — source-inferred", enrichment: false },
-          { id: "proxy", title: "Proxy", sub: boundImpl ? `proxy — bound to ${boundImpl.slice(0, 6)}…` : sourcify.proxyResolution?.isProxy ? "proxy" : "not a proxy", enrichment: false },
-          { id: "decimals", title: "Token decimals", sub: meta?.decimals != null ? `${meta.decimals} · eth_call` : "n/a", enrichment: true },
-        ],
+        inputs,
       });
     } catch (e) {
       console.error("generate failed:", String(e));

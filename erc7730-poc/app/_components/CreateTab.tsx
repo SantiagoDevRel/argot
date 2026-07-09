@@ -1,8 +1,9 @@
 "use client";
 
-import { type Dispatch, type SetStateAction, type CSSProperties } from "react";
+import { useState, type Dispatch, type SetStateAction, type CSSProperties } from "react";
 import type { Chain, Pick, InputChip } from "@/lib/data";
 import type { LogLine } from "./Studio";
+import InputModal, { type ModalChip } from "./InputModal";
 
 type Model = "idle" | "loading" | "ready";
 type Gen = "idle" | "flowing" | "revealing" | "done";
@@ -19,8 +20,7 @@ type Props = {
   address: string;
   setAddress: (s: string) => void;
   addrShort: string;
-  openChips: Record<string, boolean>;
-  setOpenChips: Dispatch<SetStateAction<Record<string, boolean>>>;
+  genInputs: ModalChip[] | null;
   model: Model;
   prog: number;
   log: LogLine[];
@@ -51,6 +51,15 @@ const PARTICLES = [
   { px: "-38px", py: "-6px", d: ".12s" },
 ];
 export default function CreateTab(p: Props) {
+  const [modalChip, setModalChip] = useState<ModalChip | null>(null);
+  // Merge the static input chips with the REAL per-contract data from /api/generate (full
+  // ABI, source files, NatSpec, proxy, decimals + a Sourcify provenance link) once available.
+  const realById = new Map((p.genInputs ?? []).map((i) => [i.id, i]));
+  const openChip = (c: InputChip) => {
+    const real = realById.get(c.id);
+    setModalChip({ id: c.id, title: c.title, enrichment: c.enrichment, detail: c.detail, sub: real?.sub ?? c.sub, link: real?.link ?? null, full: real?.full });
+  };
+
   const flowing = p.gen === "flowing";
   const revealing = p.gen === "revealing";
   const genDone = p.gen === "done";
@@ -78,13 +87,7 @@ export default function CreateTab(p: Props) {
     nodeAnim = "sparkPulse 1.2s ease-in-out infinite";
   }
 
-  const chip = (id: string, i: number) => ({
-    mh: p.openChips[id] ? 120 : 0,
-    op: p.openChips[id] ? 1 : 0,
-    chev: p.openChips[id] ? "rotate(180deg)" : "rotate(0deg)",
-    toggle: () => p.setOpenChips((s) => ({ ...s, [id]: !s[id] })),
-    anim: flowing ? `chipFlash .9s ${i * 0.11}s ease` : "none",
-  });
+  const chipAnim = (i: number) => (flowing ? `chipFlash .9s ${i * 0.11}s ease` : "none");
 
   return (
     <div style={{ animation: "fadeUp .45s ease both" }}>
@@ -186,21 +189,21 @@ export default function CreateTab(p: Props) {
           <div style={{ position: "relative", border: "1px solid rgba(74,82,224,.28)", borderRadius: 13, padding: "14px 10px 10px" }}>
             <div style={fieldset}>FROM SOURCIFY · 5 SOURCES</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
-              {p.chip.filter((c) => !c.enrichment).map((c, i) => {
-                const st = chip(c.id, i);
-                return <ChipRow key={c.id} c={c} st={st} />;
-              })}
+              {p.chip.filter((c) => !c.enrichment).map((c, i) => (
+                <ChipRow key={c.id} c={c} sub={realById.get(c.id)?.sub ?? c.sub} anim={chipAnim(i)} onOpen={() => openChip(c)} />
+              ))}
             </div>
           </div>
 
           <div style={{ position: "relative", border: "1px dashed rgba(239,237,230,.18)", borderRadius: 13, padding: "14px 10px 10px" }}>
             <div style={{ ...fieldset, color: "#B9B6A8" }}>ON-CHAIN ENRICHMENT · NOT FROM THE LLM</div>
-            {p.chip.filter((c) => c.enrichment).map((c) => {
-              const st = chip(c.id, 5);
-              return <ChipRow key={c.id} c={c} st={st} enrichment />;
-            })}
+            {p.chip.filter((c) => c.enrichment).map((c) => (
+              <ChipRow key={c.id} c={c} sub={realById.get(c.id)?.sub ?? c.sub} anim={chipAnim(5)} onOpen={() => openChip(c)} enrichment />
+            ))}
           </div>
         </section>
+
+        <InputModal chip={modalChip} onClose={() => setModalChip(null)} />
 
         {/* DGX column */}
         <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "30px 0", minHeight: 430 }}>
@@ -344,7 +347,7 @@ export default function CreateTab(p: Props) {
             </div>
           ) : (
             <>
-              <div style={{ background: "#080B14", border: "1px solid #1A2036", borderRadius: 12, padding: "13px 13px 13px 8px", overflow: "auto", minHeight: 300, flex: 1 }}>
+              <div style={{ background: "#080B14", border: "1px solid #1A2036", borderRadius: 12, padding: "13px 13px 13px 8px", overflow: "auto", minHeight: 300, maxHeight: "min(58vh, 520px)", flex: 1 }}>
                 {flowing && (
                   <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 12px", font: "500 11px var(--font-mono)", color: "#6B7290" }}>
                     <span style={{ width: 12, height: 12, border: "2px solid transparent", borderTopColor: "#FE7446", borderRadius: "50%", display: "inline-block", animation: "spin .8s linear infinite" }} />
@@ -397,40 +400,39 @@ export default function CreateTab(p: Props) {
   );
 }
 
-function ChipRow({ c, st, enrichment }: { c: InputChip; st: { mh: number; op: number; chev: string; toggle: () => void; anim: string }; enrichment?: boolean }) {
+function ChipRow({ c, sub, anim, onOpen, enrichment }: { c: InputChip; sub: string; anim: string; onOpen: () => void; enrichment?: boolean }) {
   return (
-    <div style={{ border: "1px solid #232A45", borderRadius: 10, background: "#0E1220", overflow: "hidden", animation: st.anim }}>
-      <button onClick={st.toggle} style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "9px 12px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
-        <span
-          style={{
-            width: 26,
-            height: 26,
-            flex: "none",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 7,
-            background: enrichment ? "rgba(239,237,230,.07)" : "rgba(24,30,169,.3)",
-            border: `1px solid ${enrichment ? "rgba(239,237,230,.22)" : "rgba(74,82,224,.42)"}`,
-            color: enrichment ? "#D9D6C8" : "#A6AAFF",
-            font: `600 ${c.icon.length > 1 ? 9.5 : 11}px var(--font-mono)`,
-          }}
-        >
-          {c.icon}
+    <button
+      onClick={onOpen}
+      className="u-hoverborder"
+      style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "9px 12px", background: "#0E1220", border: "1px solid #232A45", borderRadius: 10, cursor: "pointer", textAlign: "left", animation: anim, transition: "border-color .2s" }}
+    >
+      <span
+        style={{
+          width: 26,
+          height: 26,
+          flex: "none",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 7,
+          background: enrichment ? "rgba(239,237,230,.07)" : "rgba(24,30,169,.3)",
+          border: `1px solid ${enrichment ? "rgba(239,237,230,.22)" : "rgba(74,82,224,.42)"}`,
+          color: enrichment ? "#D9D6C8" : "#A6AAFF",
+          font: `600 ${c.icon.length > 1 ? 9.5 : 11}px var(--font-mono)`,
+        }}
+      >
+        {c.icon}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7, font: "600 12px var(--font-mono)", color: "#EFEDE6" }}>
+          {c.title}
+          {enrichment && <span style={{ font: "500 8.5px var(--font-mono)", letterSpacing: ".08em", color: "#B9B6A8", border: "1px solid rgba(239,237,230,.2)", borderRadius: 4, padding: "1.5px 5px" }}>eth_call</span>}
         </span>
-        <span style={{ flex: 1, minWidth: 0 }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 7, font: "600 12px var(--font-mono)", color: "#EFEDE6" }}>
-            {c.title}
-            {enrichment && <span style={{ font: "500 8.5px var(--font-mono)", letterSpacing: ".08em", color: "#B9B6A8", border: "1px solid rgba(239,237,230,.2)", borderRadius: 4, padding: "1.5px 5px" }}>eth_call</span>}
-          </span>
-          <span style={{ display: "block", font: "400 10.5px var(--font-mono)", color: "#8A91A8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.sub}</span>
-        </span>
-        <span style={{ color: "#6B7290", fontSize: 8, display: "inline-block", transform: st.chev, transition: "transform .3s" }}>▼</span>
-      </button>
-      <div style={{ maxHeight: st.mh, opacity: st.op, overflow: "hidden", transition: "max-height .35s ease, opacity .3s ease" }}>
-        <div style={{ padding: "0 12px 11px 48px", font: "400 11.5px/1.55 var(--font-sans)", color: "#9BA2B8" }}>{c.detail}</div>
-      </div>
-    </div>
+        <span style={{ display: "block", font: "400 10.5px var(--font-mono)", color: "#8A91A8", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{sub}</span>
+      </span>
+      <span style={{ flex: "none", font: "500 9px var(--font-mono)", letterSpacing: ".08em", color: "#6B7290", border: "1px solid #232A45", borderRadius: 6, padding: "3px 8px" }}>view →</span>
+    </button>
   );
 }
 

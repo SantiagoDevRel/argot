@@ -15,6 +15,7 @@ import {
 import CreateTab from "./CreateTab";
 import DatabaseTab from "./DatabaseTab";
 import HowTab from "./HowTab";
+import type { ModalChip } from "./InputModal";
 
 type Tab = "create" | "database" | "how";
 type Model = "idle" | "loading" | "ready";
@@ -36,7 +37,6 @@ export default function Studio() {
   const [chain, setChain] = useState("Ethereum");
   const [chainOpen, setChainOpen] = useState(false);
   const [address, setAddress] = useState(PICKS[0].addr);
-  const [openChips, setOpenChips] = useState<Record<string, boolean>>({ identity: true });
 
   // ---- model ----
   const [model, setModel] = useState<Model>("idle");
@@ -54,6 +54,7 @@ export default function Studio() {
   const [genLines, setGenLines] = useState(MOCK_LINES);
   const [genConf, setGenConf] = useState(CONFIDENCE);
   const [genLint, setGenLint] = useState(true);
+  const [genInputs, setGenInputs] = useState<ModalChip[] | null>(null);
 
   // ---- database (live Arkiv entities; seed as fallback) ----
   const [dbRows, setDbRows] = useState(DB);
@@ -156,6 +157,7 @@ export default function Studio() {
     setGenLines(revLines);
     setGenConf(Array.isArray(data?.confidence) && data.confidence.length ? data.confidence : CONFIDENCE);
     setGenLint(data ? !!data.lintPassed : true);
+    setGenInputs(Array.isArray(data?.inputs) ? (data.inputs as ModalChip[]) : null);
 
     setGen("revealing");
     iv.current = setInterval(() => {
@@ -312,8 +314,7 @@ export default function Studio() {
                 address={address}
                 setAddress={setAddress}
                 addrShort={shortAddr(address)}
-                openChips={openChips}
-                setOpenChips={setOpenChips}
+                genInputs={genInputs}
                 model={model}
                 prog={prog}
                 log={log}
