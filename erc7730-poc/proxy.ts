@@ -18,8 +18,11 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = process.env.GATE_TOKEN || FALLBACK_TOKEN;
-  const authed = request.cookies.get(COOKIE)?.value === token;
+  // In production GATE_TOKEN MUST be set; the public repo fallback is dev-only. If prod is
+  // ever misconfigured, `token` is null and every request fails CLOSED (nobody gets in),
+  // never open to a known constant cookie.
+  const token = process.env.GATE_TOKEN || (process.env.NODE_ENV === "production" ? null : FALLBACK_TOKEN);
+  const authed = !!token && request.cookies.get(COOKIE)?.value === token;
   if (authed) return NextResponse.next();
 
   // Locked: API → 401 JSON; pages → redirect to the gate.

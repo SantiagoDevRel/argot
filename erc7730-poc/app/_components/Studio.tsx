@@ -6,7 +6,9 @@ import {
   PICKS,
   INPUT_CHIPS,
   DB,
-  tokenizedLines,
+  JSON_TEXT,
+  CONFIDENCE,
+  tokenize,
   shortAddr,
   type LoadStep,
 } from "@/lib/data";
@@ -20,7 +22,8 @@ type Gen = "idle" | "flowing" | "revealing" | "done";
 export type LogLine = { t: string; c: string };
 
 const CODE = "123";
-const JSON_LINES = tokenizedLines();
+const linesOf = (text: string) => text.split("\n").map((l, i) => ({ n: String(i + 1), toks: tokenize(l) }));
+const MOCK_LINES = linesOf(JSON_TEXT);
 
 export default function Studio() {
   // The gate is enforced server-side (proxy.ts + /api/gate cookie), so by the time
@@ -43,11 +46,14 @@ export default function Studio() {
   const [authCode, setAuthCode] = useState("");
   const [authErr, setAuthErr] = useState(false);
 
-  // ---- generate ----
+  // ---- generate (real DGX descriptor in live mode; mock seed otherwise) ----
   const [gen, setGen] = useState<Gen>("idle");
   const [lines, setLines] = useState(0);
   const [badges, setBadges] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [genLines, setGenLines] = useState(MOCK_LINES);
+  const [genConf, setGenConf] = useState(CONFIDENCE);
+  const [genLint, setGenLint] = useState(true);
 
   // ---- database (live Arkiv entities; seed as fallback) ----
   const [dbRows, setDbRows] = useState(DB);
@@ -128,38 +134,47 @@ export default function Studio() {
     else setAuthErr(true);
   };
 
-  // ---- generate (calls /api/generate, animates reveal) ----
+  // ---- generate (calls /api/generate, reveals the REAL descriptor) ----
   const onGenerate = async () => {
     if (gen === "flowing" || gen === "revealing") return;
     setGen("flowing");
     setLines(0);
     setBadges(false);
-    // fire the request (mock now, DGX later) — animation timing stays fixed
-    fetch("/api/generate", {
+    // Fire the real request; hold the "flowing" animation until it returns (live DGX can
+    // take ~30–60s), with a small floor so the animation always plays for the mock path.
+    const req = fetch("/api/generate", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ chainId: CHAINS.find((c) => c.name === chain)?.id ?? "1", address }),
-    }).catch(() => {});
-    after(1450, () => {
-      setGen("revealing");
-      iv.current = setInterval(() => {
-        setLines((n) => {
-          const total = JSON_LINES.length;
-          const next = Math.min(n + 1, total);
-          if (next >= total) {
-            if (iv.current) clearInterval(iv.current);
-            after(280, () => setGen("done"));
-            after(460, () => setBadges(true));
-          }
-          return next;
-        });
-      }, 85);
-    });
+    })
+      .then((r) => r.json())
+      .catch(() => null);
+    const [data] = await Promise.all([req, new Promise((r) => setTimeout(r, 1400))]);
+
+    const descriptor: string = data?.descriptor || JSON_TEXT;
+    const revLines = linesOf(descriptor);
+    setGenLines(revLines);
+    setGenConf(Array.isArray(data?.confidence) && data.confidence.length ? data.confidence : CONFIDENCE);
+    setGenLint(data ? !!data.lintPassed : true);
+
+    setGen("revealing");
+    iv.current = setInterval(() => {
+      setLines((n) => {
+        const total = revLines.length;
+        const next = Math.min(n + 1, total);
+        if (next >= total) {
+          if (iv.current) clearInterval(iv.current);
+          after(280, () => setGen("done"));
+          after(460, () => setBadges(true));
+        }
+        return next;
+      });
+    }, 60);
   };
 
   const onCopy = () => {
     try {
-      navigator.clipboard?.writeText(JSON_LINES.map((l) => l.toks.map((t) => t.t).join("")).join("\n"));
+      navigator.clipboard?.writeText(genLines.map((l) => l.toks.map((t) => t.t).join("")).join("\n"));
     } catch {}
     setCopied(true);
     after(1400, () => setCopied(false));
@@ -315,7 +330,9 @@ export default function Studio() {
                 copied={copied}
                 onGenerate={onGenerate}
                 onCopy={onCopy}
-                jsonLines={JSON_LINES}
+                jsonLines={genLines}
+                confidence={genConf}
+                lintPassed={genLint}
               />
             )}
             {tab === "database" && (

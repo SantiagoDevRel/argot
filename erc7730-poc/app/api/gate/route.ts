@@ -12,7 +12,9 @@ export async function POST(request: Request) {
   if (body?.code !== CODE) {
     return NextResponse.json({ error: "invalid access code" }, { status: 401 });
   }
-  const token = process.env.GATE_TOKEN || FALLBACK_TOKEN;
+  // Prod requires GATE_TOKEN (dev-only fallback); refuse rather than issue a known-constant cookie.
+  const token = process.env.GATE_TOKEN || (process.env.NODE_ENV === "production" ? null : FALLBACK_TOKEN);
+  if (!token) return NextResponse.json({ error: "gate misconfigured" }, { status: 503 });
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE, token, {
     httpOnly: true,

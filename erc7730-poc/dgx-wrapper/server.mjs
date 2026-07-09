@@ -18,7 +18,7 @@
 import { createServer } from "node:http";
 import { timingSafeEqual, createHash } from "node:crypto";
 import { spawn, execFile } from "node:child_process";
-import { writeFileSync, mkdtempSync } from "node:fs";
+import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
 
@@ -27,7 +27,18 @@ const BEARER = process.env.WRAPPER_BEARER || "";
 const OLLAMA = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
 const DEFAULT_MODEL = process.env.DGX_MODEL || "qwen3-coder-next:q4_K_M";
 const SOURCIFY = process.env.SOURCIFY_URL || "https://sourcify.dev/server/v2/contract";
-const ERC7730_BIN = process.env.ERC7730_BIN || "erc7730"; // python-erc7730 CLI on PATH
+// Absolute paths (defense-in-depth: never resolve these via $PATH at runtime).
+const ERC7730_BIN = process.env.ERC7730_BIN || "erc7730";
+const COMFY_PAUSE = process.env.COMFY_PAUSE_BIN || "/usr/local/bin/comfy-pause";
+
+// Single-GPU box → hard concurrency caps so one client can't wedge it (no rate-limiter
+// library; a counter is the right size for one process). Excess → 429.
+const inflight = { load: 0, generate: 0 };
+const CAP = { load: 1, generate: 2 };
+const MAX_BODY = 256 * 1024; // reject oversized request bodies (readBody DoS guard)
+// Only vetted models may be loaded/run — never an arbitrary request-supplied model id.
+const MODEL_ALLOW = new Set([DEFAULT_MODEL, "qwen3-coder-next:q4_K_M", "minimax-m2.5"]);
+const pickModel = (m) => (typeof m === "string" && MODEL_ALLOW.has(m) ? m : DEFAULT_MODEL);
 // Per-chain public RPCs for the deterministic decimals()/symbol() eth_call enrichment.
 const RPCS = {
   1: process.env.RPC_1 || "https://eth.llamarpc.com",
@@ -60,8 +71,17 @@ function json(res, code, obj) {
 function readBody(req) {
   return new Promise((resolve) => {
     let d = "";
-    req.on("data", (c) => (d += c));
+    let over = false;
+    req.on("data", (c) => {
+      d += c;
+      if (d.length > MAX_BODY && !over) {
+        over = true;
+        req.destroy();
+        resolve({});
+      }
+    });
     req.on("end", () => {
+      if (over) return;
       try {
         resolve(JSON.parse(d || "{}"));
       } catch {
@@ -82,7 +102,7 @@ function sh(cmd, args, timeout = 120000) {
 }
 async function freeGpu() {
   const steps = [];
-  const cp = await sh("comfy-pause", ["--all"]);
+  const cp = await sh(COMFY_PAUSE, ["--all"]);
   steps.push(`comfy-pause · ${cp.code === 0 ? "ok" : "n/a"}`);
   const mm = await sh(join(homedir(), "minimax-down.sh"), []);
   steps.push(`minimax-down · ${mm.code === 0 ? "ok" : "n/a"}`);
@@ -178,19 +198,23 @@ async function ollamaGenerate(model, abi, userdoc, devdoc) {
 // tends to omit. We fill sane defaults so the linter's semantic checks pass without
 // the model having to know every schema nuance.
 function normalizeFormats(formats) {
+  // Formats that are valid WITHOUT extra params. Anything else (unit, enum, nftName, …)
+  // needs params/definitions the model can't reliably synthesize → downgrade to `raw`
+  // rather than emit a field the linter rejects.
+  const SAFE = new Set(["raw", "addressName", "tokenAmount", "amount", "duration", "date"]);
   for (const spec of Object.values(formats || {})) {
-    for (const f of spec.fields || []) {
-      if (f.format === "addressName" && (!f.params || !f.params.types)) {
-        f.params = { ...(f.params || {}), types: ["wallet", "eoa", "contract"] };
+    // Drop fields with an empty/invalid path (the linter rejects them, and they carry no
+    // clear-signing value); keep only well-formed paths.
+    spec.fields = (spec.fields || []).filter((f) => typeof f.path === "string" && f.path.trim().length > 0);
+    for (const f of spec.fields) {
+      if (f.format === "addressName") {
+        if (!f.params || !f.params.types) f.params = { ...(f.params || {}), types: ["wallet", "eoa", "contract"] };
+      } else if (f.format === "date") {
+        if (!f.params || !f.params.encoding) f.params = { ...(f.params || {}), encoding: "timestamp" };
+      } else if (!SAFE.has(f.format)) {
+        f.format = "raw";
+        delete f.params;
       }
-      if (f.format === "date" && (!f.params || !f.params.encoding)) {
-        f.params = { ...(f.params || {}), encoding: "timestamp" };
-      }
-      // Formats that need params/definitions the model can't reliably synthesize
-      // (enum needs a $ref to a values map; nftName needs collectionPath) → safe fallback
-      // to `raw` rather than surface a malformed field.
-      if (f.format === "enum" && !f.$ref && !(f.params && f.params.$ref)) f.format = "raw";
-      if (f.format === "nftName" && (!f.params || !f.params.collectionPath)) f.format = "raw";
     }
   }
   return formats;
@@ -229,12 +253,13 @@ function lint(descriptor) {
     } catch (e) {
       return resolve({ passed: false, output: "tmp write failed: " + e.message });
     }
+    const cleanup = () => { try { rmSync(dir, { recursive: true, force: true }); } catch { /* best-effort */ } };
     const p = spawn(ERC7730_BIN, ["lint", file], { timeout: 30000 });
     let out = "";
     p.stdout.on("data", (d) => (out += d));
     p.stderr.on("data", (d) => (out += d));
-    p.on("error", (e) => resolve({ passed: false, output: "lint spawn error: " + e.message }));
-    p.on("close", (code) => resolve({ passed: code === 0, output: out.slice(0, 2000) }));
+    p.on("error", (e) => { cleanup(); resolve({ passed: false, output: "lint spawn error: " + e.message }); });
+    p.on("close", (code) => { cleanup(); resolve({ passed: code === 0, output: out.slice(0, 2000) }); });
   });
 }
 
@@ -261,8 +286,10 @@ const server = createServer(async (req, res) => {
   if (!authorized(req)) return json(res, 401, { error: "unauthorized" });
 
   if (req.method === "POST" && req.url === "/load") {
+    if (inflight.load >= CAP.load) return json(res, 429, { error: "busy — a load is already in progress" });
+    inflight.load++;
     const body = await readBody(req);
-    const model = body.model || DEFAULT_MODEL;
+    const model = pickModel(body.model);
     try {
       const freed = await freeGpu(); // stop other DGX procs so the model always fits
       const ms = await ollamaWarm(model);
@@ -278,15 +305,21 @@ const server = createServer(async (req, res) => {
         ],
       });
     } catch (e) {
-      return json(res, 502, { error: "warm failed", detail: String(e).slice(0, 300) });
+      console.error("load failed:", String(e));
+      return json(res, 502, { error: "warm failed" });
+    } finally {
+      inflight.load--;
     }
   }
 
   if (req.method === "POST" && req.url === "/generate") {
+    if (inflight.generate >= CAP.generate) return json(res, 429, { error: "busy — too many generations in flight" });
     const body = await readBody(req);
     const chainId = Number(body.chainId || 1);
     const address = String(body.address || "").toLowerCase();
     if (!/^0x[0-9a-fA-F]{40}$/.test(address)) return json(res, 400, { error: "bad address" });
+    if (!Number.isInteger(chainId) || chainId <= 0) return json(res, 400, { error: "bad chainId" });
+    inflight.generate++;
     try {
       // 1. Sourcify v2 inputs
       const sres = await fetch(`${SOURCIFY}/${chainId}/${address}?fields=abi,userdoc,devdoc,metadata,proxyResolution`);
@@ -296,7 +329,8 @@ const server = createServer(async (req, res) => {
       // 1b. proxy → generate from the IMPLEMENTATION's logic (ABI/NatSpec), but bind the
       // descriptor to the proxy address the user actually calls.
       let genAbi = sourcify.abi, genUser = sourcify.userdoc, genDev = sourcify.devdoc, boundImpl = null;
-      const impl = sourcify.proxyResolution?.isProxy ? sourcify.proxyResolution.implementations?.[0]?.address : null;
+      const implRaw = sourcify.proxyResolution?.isProxy ? sourcify.proxyResolution.implementations?.[0]?.address : null;
+      const impl = /^0x[0-9a-fA-F]{40}$/.test(String(implRaw || "")) ? implRaw : null; // validate before re-fetch
       if (impl) {
         try {
           const ires = await fetch(`${SOURCIFY}/${chainId}/${impl}?fields=abi,userdoc,devdoc`);
@@ -310,7 +344,7 @@ const server = createServer(async (req, res) => {
       }
 
       // 2. model → display.formats only
-      const model = body.model || DEFAULT_MODEL;
+      const model = pickModel(body.model);
       const gen = await ollamaGenerate(model, genAbi, genUser, genDev);
 
       // 3. assemble the descriptor with a DETERMINISTIC context (never model-guessed)
@@ -328,12 +362,13 @@ const server = createServer(async (req, res) => {
         display: { formats: normalizeFormats(gen.formats || {}) },
       };
 
-      // 3b. deterministic decimals enrichment (best-effort; NEVER model-inferred)
+      // 3b. deterministic decimals enrichment (best-effort; NEVER model-inferred). Surfaced
+      // to the UI via the inputs chip below — NOT stored in metadata (not an ERC-7730 field).
       const meta = await tokenMeta(chainId, address);
-      if (meta?.decimals != null) descriptor.metadata.enrichment = { decimals: meta.decimals, resolvedVia: "eth_call" };
 
-      // 4. HARD GATE — erc7730 lint
+      // 4. HARD GATE — erc7730 lint (full linter output stays server-side only)
       const lintRes = await lint(descriptor);
+      if (!lintRes.passed) console.error(`lint rejected ${chainId}:${address}:`, lintRes.output.replace(/\s+/g, " ").slice(0, 300));
       // 5. confidence + inputs summary
       const conf = confidence(descriptor, { userdoc: genUser });
       const abiFns = Array.isArray(genAbi) ? genAbi.filter((x) => x.type === "function").length : 0;
@@ -343,7 +378,8 @@ const server = createServer(async (req, res) => {
         descriptor: JSON.stringify(descriptor, null, 2),
         confidence: conf,
         lintPassed: lintRes.passed,
-        lintOutput: lintRes.output,
+        // A short, path-free reason when lint rejects (full linter output stays in server logs).
+        lintReason: lintRes.passed ? null : "descriptor failed structural validation",
         status: "candidate",
         attested: false,
         generatedBy: model,
@@ -356,7 +392,10 @@ const server = createServer(async (req, res) => {
         ],
       });
     } catch (e) {
-      return json(res, 502, { error: "generate failed", detail: String(e).slice(0, 300) });
+      console.error("generate failed:", String(e));
+      return json(res, 502, { error: "generate failed" });
+    } finally {
+      inflight.generate--;
     }
   }
 

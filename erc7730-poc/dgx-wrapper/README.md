@@ -78,8 +78,18 @@ vercel deploy --prod --yes
 it unset the app stays in the safe demo/mock mode. **Bearer + URL live only in Vercel env,
 never in the repo or the client bundle.**
 
-## Status
+## Status — LIVE (2026-07-09)
 
-Written + syntax-checked (`node --check`). **NOT yet run against the DGX** — the GPU was busy
-with another job; the end-to-end run (warm qwen3-coder-next, smoke `/generate` on ~20
-contracts, then the Vercel swap) is the deferred step. Nothing here has touched the DGX yet.
+Running on the DGX as a **systemd user service** (`dgx-wrapper.service`, lingering enabled →
+survives reboot), exposed at **https://arkiv-dgx.santiagodevrel.dev** via the `dgx-mcp`
+Cloudflare tunnel. Verified end-to-end from production: `/health` ok, bearer enforced (401
+without), `/load` frees the GPU + warms qwen3-coder-next (~30s), `/generate` produces
+lint-passing candidate descriptors (WETH/USDC/DAI ✓, proxy resolution ✓). Vercel is wired
+live (`DGX_URL` + `DGX_BEARER` set) — the browser flow load→generate shows the real descriptor.
+
+**Hardening applied** (from the codex + llm-app-security audits): timing-safe bearer (was
+already), **concurrency caps** (1 load / 2 generate → 429), **model allowlist**, **256 KB body
+cap**, absolute binary paths, temp-dir cleanup, redacted error/lint output to the client,
+`chainId` validation, and a **fail-closed `GATE_TOKEN`** in prod. Residual (accepted for a
+gated demo): no Cloudflare Access layer, and the linter validates structure not semantic
+truth (hence descriptors are always `candidate`, owner-reviewed).

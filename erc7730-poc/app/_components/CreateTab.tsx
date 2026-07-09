@@ -38,6 +38,8 @@ type Props = {
   onGenerate: () => void;
   onCopy: () => void;
   jsonLines: JsonLine[];
+  confidence: { field: string; value: string; width: string }[];
+  lintPassed: boolean;
 };
 
 const PARTICLES = [
@@ -48,12 +50,6 @@ const PARTICLES = [
   { px: "40px", py: "4px", d: ".08s" },
   { px: "-38px", py: "-6px", d: ".12s" },
 ];
-const CONF = [
-  { f: "intent", v: "92%", w: "92%", d: "0s" },
-  { f: "amountIn", v: "98%", w: "98%", d: ".13s" },
-  { f: "recipient", v: "95%", w: "95%", d: ".26s" },
-];
-
 export default function CreateTab(p: Props) {
   const flowing = p.gen === "flowing";
   const revealing = p.gen === "revealing";
@@ -330,7 +326,11 @@ export default function CreateTab(p: Props) {
             <div style={{ font: "400 10px var(--font-mono)", color: "#454B66", flex: 1 }}>erc7730.json</div>
             {genDone && (
               <>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 999, background: "rgba(62,207,142,.1)", border: "1px solid rgba(62,207,142,.45)", color: "#3ECF8E", font: "600 10px var(--font-mono)", animation: "popIn .4s ease both" }}>erc7730 lint ✓</span>
+                {p.lintPassed ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 999, background: "rgba(62,207,142,.1)", border: "1px solid rgba(62,207,142,.45)", color: "#3ECF8E", font: "600 10px var(--font-mono)", animation: "popIn .4s ease both" }}>erc7730 lint ✓</span>
+                ) : (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 999, background: "rgba(240,90,90,.1)", border: "1px solid rgba(240,90,90,.5)", color: "#F05A5A", font: "600 10px var(--font-mono)", animation: "popIn .4s ease both" }}>erc7730 lint ✗ — draft rejected</span>
+                )}
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 999, background: "rgba(254,116,70,.07)", border: "1px dashed rgba(254,116,70,.55)", color: "#FE7446", font: "600 10px var(--font-mono)", animation: "popIn .4s .14s ease both" }}>candidate · unattested</span>
               </>
             )}
@@ -369,13 +369,13 @@ export default function CreateTab(p: Props) {
               {genDone && (
                 <>
                   <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                    {(p.badges ? CONF : []).map((b) => (
-                      <span key={b.f} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "linear-gradient(100deg, #0E1220 42%, rgba(159,168,255,.14) 50%, #0E1220 58%)", backgroundSize: "250% 100%", border: "1px solid #232A45", borderRadius: 8, animation: `popIn .45s ease ${b.d} both, sheen 3.4s linear infinite` }}>
-                        <span style={{ font: "500 10.5px var(--font-mono)", color: "#8A91A8" }}>{b.f}</span>
+                    {(p.badges ? p.confidence : []).slice(0, 6).map((b, i) => (
+                      <span key={b.field + i} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 10px", background: "linear-gradient(100deg, #0E1220 42%, rgba(159,168,255,.14) 50%, #0E1220 58%)", backgroundSize: "250% 100%", border: "1px solid #232A45", borderRadius: 8, animation: `popIn .45s ease ${i * 0.13}s both, sheen 3.4s linear infinite` }}>
+                        <span style={{ font: "500 10.5px var(--font-mono)", color: "#8A91A8" }}>{b.field}</span>
                         <span style={{ width: 42, height: 3, borderRadius: 99, background: "#1A2036", overflow: "hidden", display: "inline-block" }}>
-                          <span style={{ display: "block", height: "100%", width: b.w, background: "#4A52E0" }} />
+                          <span style={{ display: "block", height: "100%", width: b.width, background: "#4A52E0" }} />
                         </span>
-                        <span style={{ font: "600 10.5px var(--font-mono)", color: "#A6AAFF" }}>{b.v}</span>
+                        <span style={{ font: "600 10.5px var(--font-mono)", color: "#A6AAFF" }}>{b.value}</span>
                       </span>
                     ))}
                   </div>

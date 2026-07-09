@@ -98,9 +98,31 @@ accuracy is bounded by the *long-tail* prevalence, not the corpus's.
 | `run-eval.mjs` | orchestrator: `--gen mock\|dgx\|<baseline>` → bimodal report + deltas |
 | `natspec-prevalence.mjs` | Sourcify v2 @notice/@param prevalence sampler |
 
-## Status (2026-07-08)
+## Scope — calldata only
 
-Corpus + metrics + pipeline **built and verified locally** (mock generator end-to-end;
-metrics self-test PASS; NatSpec sample run). The **live DGX generation + baseline runs are
-DEFERRED** until the GPU is free — they are offline batch jobs (the right use of a 1-GPU box;
-never an SLA). Running them fills in the real numbers with zero code changes.
+The DGX wrapper is a **calldata** descriptor generator (it drafts `display.formats` for a
+contract's functions from the ABI). **eip712** descriptors describe signed typed-data messages
+— a different generation task — so the benchmark runs the **247 calldata** ground-truth
+descriptors only (eip712 is out of scope for this generator, not a failure).
+
+## Status (2026-07-09) — running live on the DGX
+
+Corpus + metrics + pipeline built and verified; the **live `--gen dgx` backtest is RUNNING**
+on the DGX (offline batch, checkpointing every 10 to `report-dgx.json`). Honest interim shape:
+- **Lint-pass is bimodal.** Simple/standard contracts (ERC-20s, single-token, plain functions)
+  lint-pass reliably; complex bespoke long-tail (routers with tuple/array params, `MarketAllocation[]`,
+  aggregation routers) frequently fail the structural gate — exactly the assessment's predicted
+  "strong on standard, weak on the bespoke long tail." A draft that fails `erc7730 lint` scores 0
+  (never surfaced), so the reported quality is over *adoptable* drafts.
+- **Coverage (fnRecall) is low on the long tail** — the local qwen3-coder-next often describes a
+  different subset of functions than the hand-written registry chose. This is the real gap a
+  bigger model (MiniMax-M2.5, run offline next) + few-shot tuning would move. **Do not oversell
+  the number; the honest story is "valid drafts for the simple majority, human review for the tail."**
+
+**Gotcha fixed (codex audit):** the wrapper returns `descriptor` as a JSON *string*; the eval must
+`JSON.parse` it before feature extraction, or every result scores empty (`fnRecall=0`). Fixed in
+`dgxGenerate`. Also: score by name (overloads can collide — a known limitation), and the test set is
+deterministically shuffled so a `--limit`/interrupted-run sample is representative, not alphabetical.
+
+**Still to run (offline, next):** MiniMax-M2.5 for the max-quality number, and the deterministic +
+LLM baselines (`erc7730 generate`, `clearsig`, `hardhat-descriptor`) for the delta story.

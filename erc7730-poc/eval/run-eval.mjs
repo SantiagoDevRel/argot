@@ -12,6 +12,7 @@
 // LLM incumbents (see eval/README.md). The DGX steps are DEFERRED until the GPU is free.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { createHash } from "node:crypto";
 import { scoreDescriptor } from "./metrics.mjs";
 import { featuresFromDescriptor } from "./extract.mjs";
 
@@ -55,7 +56,15 @@ async function dgxGenerate(target) {
   });
   if (!res.ok) throw new Error(`dgx ${res.status}`);
   const data = await res.json();
-  return { descriptorJson: data.descriptor, lintPassed: !!data.lintPassed };
+  // The wrapper returns `descriptor` as a JSON STRING — parse to an object so the same
+  // feature extractor used on the ground truth applies (else every result scores empty).
+  let descriptor = {};
+  try {
+    descriptor = typeof data.descriptor === "string" ? JSON.parse(data.descriptor) : data.descriptor || {};
+  } catch {
+    descriptor = {};
+  }
+  return { descriptor, lintPassed: !!data.lintPassed };
 }
 
 // --- aggregation ------------------------------------------------------------------
@@ -83,7 +92,13 @@ function aggregate(results) {
 async function main() {
   const corpus = JSON.parse(readFileSync(join(HERE, "corpus.json"), "utf8"));
   const fewshot = new Set(corpus.fewshotFiles);
-  let testSet = corpus.descriptors.filter((d) => !fewshot.has(d.file) && d.functions.length > 0);
+  // The wrapper is a CALLDATA descriptor generator (function display.formats from the ABI).
+  // eip712 descriptors describe signed messages, a different task → benchmark calldata only.
+  let testSet = corpus.descriptors.filter((d) => !fewshot.has(d.file) && d.functions.length > 0 && d.kind === "calldata");
+  // Deterministic shuffle so a --limit sample (or an interrupted run's checkpoint) is spread
+  // across the whole corpus, not front-loaded to the alphabetically-first projects.
+  const rank = (s) => parseInt(createHash("sha256").update(s).digest("hex").slice(0, 12), 16);
+  testSet.sort((a, b) => rank(a.file) - rank(b.file));
   if (LIMIT > 0) testSet = testSet.slice(0, LIMIT);
 
   console.log(`backtest: gen=${GEN} model=${GEN === "dgx" ? MODEL : "—"} · ${testSet.length} held-out descriptors`);
@@ -103,11 +118,18 @@ async function main() {
       } else {
         const target = { chainId: gt.deployments[0].chainId, address: gt.deployments[0].address };
         const out = await dgxGenerate(target);
-        genFeatures = featuresFromDescriptor(out.descriptorJson);
+        genFeatures = featuresFromDescriptor(out.descriptor);
         lintPassed = out.lintPassed;
       }
     } catch (e) {
-      results.push({ id: gt.id, bucket: gt.bucket, lintPassed: false, score: { fnRecall: 0, fieldExactMatch: 0, intentMatch: 0, formatExact: 0 }, error: String(e).slice(0, 80) });
+      results.push({ id: gt.id, bucket: gt.bucket, lintPassed: false, score: { fnRecall: 0, fieldExactMatch: 0, intentMatch: 0, formatExact: 0, fieldExactMatchOnHit: 0, intentMatchOnHit: 0 }, error: String(e).slice(0, 80) });
+      continue;
+    }
+    // A draft that fails the hard linter gate is never adoptable → it scores 0 on quality
+    // (matches "malformed drafts are never surfaced"). We still record its lint failure.
+    if (!lintPassed) {
+      results.push({ id: gt.id, bucket: gt.bucket, lintPassed: false, score: { fnRecall: 0, fieldExactMatch: 0, intentMatch: 0, formatExact: 0, fieldExactMatchOnHit: 0, intentMatchOnHit: 0 } });
+      if (++done % 10 === 0) { process.stdout.write(`  ${done}/${testSet.length}\n`); writeFileSync(join(HERE, `report-${GEN}.json`), JSON.stringify({ generator: GEN, model: GEN === "dgx" ? MODEL : null, corpusCommit: corpus.commit, nTest: results.length, partial: true, bimodal: aggregate(results), results }, null, 2)); }
       continue;
     }
     const score = scoreDescriptor(gt, genFeatures);
