@@ -105,10 +105,30 @@ contract's functions from the ABI). **eip712** descriptors describe signed typed
 — a different generation task — so the benchmark runs the **247 calldata** ground-truth
 descriptors only (eip712 is out of scope for this generator, not a failure).
 
-## Status (2026-07-09) — running live on the DGX
+## Result (2026-07-09) — qwen3-coder-next, 211 calldata held-out, COMPLETE
 
-Corpus + metrics + pipeline built and verified; the **live `--gen dgx` backtest is RUNNING**
-on the DGX (offline batch, checkpointing every 10 to `report-dgx.json`). Honest interim shape:
+**Headline (honest, not flattering): overall `erc7730 lint`-pass ≈ 20%, fnRecall ≈ 0.14.**
+The registry is **96% bespoke/complex** contracts (203 of 211 are DeFi vaults, routers,
+bridges with tuple/array params); the local qwen model produces a *valid* descriptor for
+those only ~19% of the time. On the tiny pure-ERC-20/721 subset (n=8) it's ~50% lint-pass /
+0.375 fnRecall. 17 of 211 also 404'd on Sourcify (not verified there).
+
+> **Bucketing caveat:** a verb-based "standard" split is misleading here — `deposit`/`withdraw`/
+> `mint`/`swap` verbs put complex ERC-4626 vaults and bridges in the "standard" bucket, inverting
+> the numbers. Re-bucketing by *pure token methods only* (transfer/approve/…) gives the n=8 above.
+> **The defensible headline is the OVERALL number, not a simple-vs-complex split.**
+
+**What this means (the honest de-risking answer the POC was built to produce):** a small local
+coder model is **not yet good enough** to auto-generate registry-quality ERC-7730 descriptors at
+scale. That *strengthens* the real pitch — the value is Arkiv as the **queryable candidate store +
+attestation-aware registry + human-reviewed candidate tier**, not "the LLM nails it." The levers to
+move the number (next): **MiniMax-M2.5** (much stronger, offline), **few-shot** examples in the
+prompt (the held-out set is ready), and better field-path handling for tuples/arrays.
+
+## How the batch ran
+
+Corpus + metrics + pipeline built and verified; ran as an offline batch on the DGX
+(checkpointing every 10 to `report-dgx.json`). Interim/shape notes:
 - **Lint-pass is bimodal.** Simple/standard contracts (ERC-20s, single-token, plain functions)
   lint-pass reliably; complex bespoke long-tail (routers with tuple/array params, `MarketAllocation[]`,
   aggregation routers) frequently fail the structural gate — exactly the assessment's predicted
