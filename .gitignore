@@ -1,0 +1,16 @@
+# Playwright scratch
+.playwright-mcp/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log
+
+# Secrets never live here (they're in claude-code-environment/.secrets/), but guard anyway
+.env
+.env.*
+*.pem
+*.key
+
+# Node app artifacts are ignored by erc7730-poc/.gitignore (node_modules, .next, .vercel);
+# eval generated data by erc7730-poc/eval/.gitignore.

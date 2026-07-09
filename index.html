@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ARGOT v1 — Sourcify × Arkiv</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0e1a;--panel:#0f1524;--card:#141b2e;--line:#242d45;--ink:#eef1fa;--muted:#8b95ac;--faint:#5c6684;--blue:#5b78ff;--orange:#ff7a29;--green:#2dd4a0;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;--sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 28px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint)}
+  .eyebrow b{color:var(--orange)}
+  h1{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:14px 0 8px}
+  .lede{font-size:15px;color:var(--muted);max-width:600px}
+  h2{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin:36px 0 14px}
+  a.tile{display:block;text-decoration:none;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:12px;transition:.16s;color:var(--ink)}
+  a.tile:hover{border-color:#39477a;transform:translateY(-2px)}
+  a.tile .t{font-size:16px;font-weight:600;display:flex;align-items:center;gap:9px}
+  a.tile .t .tag{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 8px;border-radius:5px;background:rgba(255,122,41,.16);color:var(--orange)}
+  a.tile .t .tag.b{background:rgba(91,120,255,.16);color:var(--blue)}
+  a.tile .x{font-size:13px;color:var(--muted);margin-top:5px}
+  .doc{font-family:var(--mono);font-size:13px;color:var(--muted);padding:8px 0;border-bottom:1px solid var(--line)}
+  .doc b{color:var(--ink);font-weight:500}
+  .status{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--green);border-radius:12px;padding:14px 18px;margin-top:14px;font-size:13.5px;color:var(--muted)}
+  .status b{color:var(--ink)}
+  footer{font-family:var(--mono);font-size:11px;color:var(--faint);margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">ARGOT v1 &nbsp;·&nbsp; Sourcify <b>×</b> Arkiv</div>
+  <h1>Getting Sourcify onto Arkiv</h1>
+  <p class="lede">First Arkiv integration target: move Sourcify's ~11M verified contracts off BigQuery onto a decentralized, queryable database — without breaking the tooling that already uses it.</p>
+
+  <div class="status"><b>Status — Phase 0 (research) largely done.</b> Load model + data model + mapping design complete. Gated on Marcos's P0 product answers (ownership, permanence, economics) before the mid-August CTO meeting.</div>
+
+  <h2>Show artifacts</h2>
+  <a class="tile" href="marcos-product-questions.html">
+    <div class="t">Product questions for Marcos <span class="tag">meeting</span></div>
+    <div class="x">Can Arkiv host Sourcify's DB? The 3 blockers + 7 questions for the ecosystem meeting. Includes the ERC-7730 pitch.</div>
+  </a>
+  <a class="tile" href="arkiv-mapping-design.html">
+    <div class="t">How the data lives in Arkiv <span class="tag b">design</span></div>
+    <div class="x">The entity schema, the API adapter, a real contract mapped to a real entity, and the migration plan — for the CTO.</div>
+  </a>
+
+  <h2>Working docs (internal)</h2>
+  <div class="doc"><b>sourcify-arkiv-dossier.md</b> — master doc (north star, wedge, verdict, phase plan)</div>
+  <div class="doc"><b>arkiv-load-model-research.md</b> — Arkiv capabilities, sourced</div>
+  <div class="doc"><b>sourcify-data-model-research.md</b> — Sourcify schema/API/distribution, sourced</div>
+  <div class="doc"><b>arkiv-mapping-design.md</b> — Step 2 design (entities, adapter, migration, telemetry)</div>
+
+  <footer>internal · do not publish Arkiv's testnet/mainnet timeline</footer>
+</div>
+</body>
+</html>

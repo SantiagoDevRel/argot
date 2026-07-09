@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>How Sourcify's data lives in Arkiv — Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#0f1524; --card:#141b2e; --card2:#182036;
+    --line:#242d45; --ink:#eef1fa; --muted:#8b95ac; --faint:#5c6684;
+    --blue:#5b78ff; --orange:#ff7a29; --green:#2dd4a0; --amber:#f5b544; --red:#ff5c60;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 28px}
+  section{padding:36px 0 0}
+  header{border-bottom:1px solid var(--line);background:radial-gradient(900px 300px at 15% -40%,rgba(91,120,255,.22),transparent 60%),var(--panel);padding:44px 0 34px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .eyebrow b{color:var(--orange)}
+  h1{font-size:30px;line-height:1.18;font-weight:700;letter-spacing:-.02em}
+  .lede{font-size:15px;color:var(--muted);max-width:720px;margin-top:12px}
+  h2{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  h2 .bar{width:22px;height:2px;background:var(--orange)}
+  .principle{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:12px;padding:18px 22px;margin-top:26px;font-size:15px}
+  .principle b{color:var(--ink)} .principle .no{color:var(--red);font-weight:600}
+  .grid{display:grid;gap:12px} .g3{grid-template-columns:repeat(3,1fr)} .g2{grid-template-columns:1fr 1fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 17px}
+  .card .t{font-family:var(--mono);font-size:12.5px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:8px}
+  .card .x{font-size:13px;color:var(--muted)}
+  .pillar .t{color:var(--blue)} .pillar{border-top:2px solid var(--blue)}
+  .k{font-family:var(--mono);font-size:11px;color:var(--orange)}
+  /* FLOW */
+  .flow{display:flex;align-items:stretch;gap:0;margin-top:4px;flex-wrap:wrap}
+  .fbox{flex:1;min-width:200px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .fbox .h{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px}
+  .fbox .s{font-size:12px;color:var(--muted)}
+  .farrow{display:flex;align-items:center;color:var(--faint);font-family:var(--mono);font-size:20px;padding:0 10px}
+  .fbox.mid{border-color:#39477a;background:var(--card2)}
+  .fbox.mid .h{color:var(--orange)}
+  .fbox.arkiv .h{color:var(--blue)}
+  /* CODE */
+  pre{margin:0;font-family:var(--mono);font-size:11.5px;line-height:1.62;color:#c2cbe8;white-space:pre-wrap;word-break:break-word}
+  .codewrap{background:#0a0f1e;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .codewrap .cap{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--faint);padding:11px 14px;border-bottom:1px solid var(--line)}
+  .codewrap pre{padding:13px 15px}
+  .cmt{color:var(--faint)} .live{color:var(--green)} .der{color:var(--amber)} .ref{color:var(--blue)}
+  .badge{font-family:var(--mono);font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;margin-left:6px}
+  .b-live{background:rgba(45,212,160,.14);color:var(--green)} .b-der{background:rgba(245,181,68,.14);color:var(--amber)} .b-ref{background:rgba(91,120,255,.16);color:var(--blue)}
+  /* STEPS */
+  .steps{counter-reset:s}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px 14px 52px;position:relative;margin-bottom:10px}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;left:16px;top:14px;width:24px;height:24px;border-radius:7px;background:var(--blue-soft,#26305a);color:var(--blue);font-family:var(--mono);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+  .step .h{font-weight:600;font-size:14px} .step .x{font-size:13px;color:var(--muted);margin-top:3px}
+  /* BREAKS */
+  .brk{display:flex;gap:12px;padding:11px 0;border-top:1px dashed var(--line);font-size:13.5px}
+  .brk:first-child{border-top:none}
+  .brk .q{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--red);background:rgba(255,92,96,.13);padding:3px 8px;border-radius:5px;flex:none;height:fit-content;margin-top:1px}
+  .brk .q.ok{color:var(--blue);background:rgba(91,120,255,.14)}
+  .note{margin:24px 0 0;font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .note b{color:var(--blue)}
+  footer{margin-top:36px;border-top:1px solid var(--line);padding:20px 0 44px;font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center}
+  @media(max-width:760px){.g3,.g2{grid-template-columns:1fr}.flow{flex-direction:column}.farrow{transform:rotate(90deg);padding:6px 0}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Sourcify <b>×</b> Arkiv &nbsp;·&nbsp; How your data lives in Arkiv &nbsp;·&nbsp; design draft</div>
+    <h1>Not a database copy — a queryable index.</h1>
+    <p class="lede">Sourcify's ~11M verified contracts, made decentralized and queryable on Arkiv, without losing the Sourcify v2 API that Foundry / Hardhat / Remix already speak. Here's the concrete shape.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="principle">
+    <b>Principle:</b> <span class="no">don't mirror the Postgres row-for-row.</span> Arkiv holds a <b>queryable index</b> + <b>content-addressed blob refs</b> + a <b>renewable cold pointer</b>. "Move the whole DB into entities" is the trap — it breaks on TTL, ordering, ownership, and large blobs.
+  </div>
+
+  <section>
+    <h2><span class="bar"></span>The pattern — three pieces</h2>
+    <div class="grid g3">
+      <div class="card pillar"><div class="t">Queryable index</div><div class="x">One entity per verified contract, with indexed attributes for the real lookups (by chain+address, code hash, compiler, match).</div></div>
+      <div class="card pillar"><div class="t">Content-addressed blobs</div><div class="x">Source bundles (100KB–1MB+) stay in Sourcify IPFS/GCS — Arkiv stores the hash + ref. Sourcify already keccak-addresses sources → natural fit.</div></div>
+      <div class="card pillar"><div class="t">Renewable cold pointer</div><div class="x">Rarely-used records drop to a tiny pointer; the data is fetched by Arkiv tx hash. Cheaper — but still needs renewal (no permanence primitive yet).</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>Architecture — tooling doesn't change</h2>
+    <div class="flow">
+      <div class="fbox"><div class="h">Foundry · Hardhat · Remix</div><div class="s">verify (POST std-JSON) + lookup (GET /v2/contract) — unchanged</div></div>
+      <div class="farrow">→</div>
+      <div class="fbox mid"><div class="h">Sourcify v2 API adapter</div><div class="s">field projection · pagination/sort · owner+hash auth · TTL renewal</div></div>
+      <div class="farrow">→</div>
+      <div class="fbox arkiv"><div class="h">Arkiv</div><div class="s">queryable index + cold store · blobs on IPFS/FileDB</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>Entities</h2>
+    <div class="grid g3">
+      <div class="card"><div class="t"><span class="k">◆</span> verified_contract</div><div class="x">Hot index. Key <span class="k">sourcify:vc:v1:&lt;chainId&gt;:&lt;addr&gt;</span>. Indexed attrs + compact payload (hashes+refs). TTL 30–90d, renewed on hits.</div></div>
+      <div class="card"><div class="t"><span class="k">◆</span> cold_pointer</div><div class="x">Tiny, always-renewed. Points to <span class="k">coldTxHash</span>; data via <span class="k">eth_getTransactionByHash</span>. The §4 cold tier.</div></div>
+      <div class="card"><div class="t"><span class="k">◆</span> proxy_snapshot</div><div class="x">Short TTL. Sourcify resolves proxies on-read → kept separate so the immutable record never goes stale.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>Real example — a live Sourcify contract → a real Arkiv entity</h2>
+    <div class="grid g2">
+      <div class="codewrap">
+        <div class="cap">SOURCIFY v2 RESPONSE (live · GetFlashLoan @ eth:0x70b17e…)</div>
+<pre>{
+  "match": "exact_match",
+  "chainId": "1",
+  "address": "0x70b17e…c6f514",
+  "matchId": "203404",
+  "verifiedAt": "2024-08-08T10:58:43Z",
+  "compilation": {
+    "compiler": "solc",
+    "compilerVersion": "0.6.6+commit.6c089d02",
+    "name": "GetFlashLoan",
+    "fullyQualifiedName":
+       "MyContract1.sol:GetFlashLoan"
+  },
+  "deployment": {
+    "blockNumber": "12351176",
+    "deployer": "0x7664F6…9BF119E"
+  }
+}</pre>
+      </div>
+      <div class="codewrap">
+        <div class="cap">ARKIV ENTITY <span class="badge b-live">live</span><span class="badge b-der">derived</span><span class="badge b-ref">ref</span></div>
+<pre><span class="cmt">// key</span>
+sourcify:vc:v1:1:0x70b17e…c6f514
+
+<span class="cmt">// indexed attributes</span>
+chainAddress = <span class="live">"1:0x70b17e…c6f514"</span>
+match        = <span class="live">"exact_match"</span>
+compilerKey  = <span class="der">"solc:0.6.6+commit.6c089d02"</span>
+contractName = <span class="live">"GetFlashLoan"</span>
+verifiedAtMs = <span class="der">"1723114723000"</span>
+matchIdSort  = <span class="der">"0000000000203404"</span>
+runtimeCodeHash = <span class="der">"0x…"</span>
+
+<span class="cmt">// payload → hashes + refs (not the source)</span>
+artifactRefs.repoV2Path = <span class="ref">"exact_match/1/0x70b17e…"</span>
+artifactRefs.coldTxHash = <span class="ref">"0x…"</span></pre>
+      </div>
+    </div>
+    <div class="codewrap" style="margin-top:12px">
+      <div class="cap">THE LOOKUP IT ANSWERS — GET /v2/contract/1/0x70b17e… becomes</div>
+<pre>dataset='sourcify' &amp;&amp; kind='verified_contract' &amp;&amp; chainAddress='1:0x70b17e4764cebd2f892f536c865f14f0e2c6f514'</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>Migration — no big bang</h2>
+    <div class="steps">
+      <div class="step"><div class="h">Dual-write</div><div class="x">Every new verification also writes its Arkiv entity. Postgres stays canonical — zero risk.</div></div>
+      <div class="step"><div class="h">Backfill</div><div class="x">Stream ~11M from the Parquet export → batch-write to Arkiv. ~11k txs, ~0.1–0.3 GLM (testnet), hours. Idempotent.</div></div>
+      <div class="step"><div class="h">Shadow-read</div><div class="x">Serve from Arkiv but cross-check a % against Sourcify — compare hashes, measure parity + latency.</div></div>
+      <div class="step"><div class="h">Cutover</div><div class="x">Flip to Arkiv-first once parity + SLA hold. Full off-BigQuery only after mainnet + permanence + ownership.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>What still needs product answers (→ Marcos)</h2>
+    <div class="card">
+      <div class="brk"><span class="q">Q1</span><span><b>EOA ownership.</b> One EOA owning ~11M public-good records is a blocker — needs multisig/threshold (no contract-signature path today).</span></div>
+      <div class="brk"><span class="q">Q2</span><span><b>Permanence.</b> Mandatory TTL, no permanence primitive → the renewable-index design works, but is it the blessed path?</span></div>
+      <div class="brk"><span class="q">Q3</span><span><b>Economics.</b> Gas for 11M writes is cheap; ongoing TTL renewals + mainnet fee spec (draft) — who pays for a public good?</span></div>
+      <div class="brk"><span class="q ok">Q5</span><span><b>Ordering.</b> No reliable server ORDER BY → listings sort client-side in the adapter. Confirm on the new testnet.</span></div>
+    </div>
+  </section>
+
+  <div class="note"><b>Draft, contingent on Marcos's P0 answers.</b> This is the "here's how I'd build it" — his answers refine ownership, permanence, and economics. Internal — do not publish Arkiv's timeline.</div>
+
+  <footer>ARGOT v1 · Sourcify × Arkiv · design draft · internal</footer>
+</div>
+</body>
+</html>

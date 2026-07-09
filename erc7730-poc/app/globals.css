@@ -1,0 +1,185 @@
+/* Clear Signing Studio — Arkiv × Sourcify · on-brand (blue leads, orange spark) */
+
+:root {
+  --ink: #07080f;
+  --arkiv-blue: #181ea9;
+  --arkiv-blue-bright: #4a52e0;
+  --arkiv-orange: #fe7446;
+  --sand: #efede6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--ink);
+  color: var(--sand);
+}
+
+body {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: #a6aaff;
+  text-decoration: none;
+}
+a:hover {
+  color: var(--arkiv-orange);
+}
+
+input,
+button {
+  font-family: inherit;
+}
+input::placeholder {
+  color: #454b66;
+}
+
+/* ---- prototype keyframes ---- */
+@keyframes appIn {
+  from { opacity: 0; transform: scale(0.988); filter: blur(7px); }
+  to { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes lineIn {
+  from { opacity: 0; transform: translateX(7px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.65); }
+  70% { opacity: 1; transform: scale(1.07); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes travel {
+  0% { left: 0; opacity: 0; }
+  10% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { left: calc(100% - 8px); opacity: 0; }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes spinCC {
+  to { transform: rotate(-360deg); }
+}
+@keyframes nodePulse {
+  0%, 100% { box-shadow: 0 0 22px rgba(24, 30, 169, 0.55), 0 0 60px rgba(24, 30, 169, 0.22); }
+  50% { box-shadow: 0 0 40px rgba(74, 82, 224, 0.85), 0 0 95px rgba(24, 30, 169, 0.4); }
+}
+@keyframes sparkPulse {
+  0%, 100% { box-shadow: 0 0 28px rgba(254, 116, 70, 0.55), 0 0 70px rgba(254, 116, 70, 0.18); }
+  50% { box-shadow: 0 0 55px rgba(254, 116, 70, 0.9), 0 0 120px rgba(254, 116, 70, 0.35); }
+}
+@keyframes dotPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+@keyframes dashMove {
+  to { background-position: -22px 0; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-9px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(3px); }
+}
+@keyframes blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+@keyframes chipFlash {
+  0% { border-color: #232a45; }
+  35% { border-color: #4a52e0; box-shadow: 0 0 16px rgba(74, 82, 224, 0.3); }
+  100% { border-color: #232a45; box-shadow: none; }
+}
+
+/* ---- motion-spec enrichments ---- */
+@keyframes breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 0.98; transform: scale(1.055); }
+}
+@keyframes coreSpark {
+  0% { transform: scale(0.35); opacity: 0.95; }
+  100% { transform: scale(2.1); opacity: 0; }
+}
+@keyframes particle {
+  0% { transform: translate(0, 0) scale(1); opacity: 0.95; }
+  100% { transform: translate(var(--px), var(--py)) scale(0.15); opacity: 0; }
+}
+@keyframes sheen {
+  0% { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}
+@keyframes march {
+  to { stroke-dashoffset: -14; }
+}
+@keyframes ripple {
+  0% { transform: scale(0.3); opacity: 0.8; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+@keyframes drawBorder {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes vign {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+
+/* ---- hover / focus utilities (Claude Design style-hover ports) ---- */
+.u-btn-blue:hover {
+  background: #2a32d8 !important;
+  box-shadow: 0 0 24px rgba(24, 30, 169, 0.65);
+  transform: translateY(-1px);
+}
+.u-btn-blue:active {
+  transform: translateY(0);
+}
+.u-btn-orange:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 38px rgba(254, 116, 70, 0.6);
+}
+.u-btn-orange:active:not(:disabled) {
+  transform: translateY(0);
+}
+.u-input:focus {
+  border-color: #4a52e0 !important;
+  box-shadow: 0 0 0 3px rgba(24, 30, 169, 0.32);
+}
+.u-hoverborder:hover {
+  border-color: #4a52e0 !important;
+}
+.u-pick:hover {
+  border-color: #4a52e0 !important;
+  color: #efede6 !important;
+  transform: translateY(-1px);
+}
+.u-menuitem:hover {
+  background: #181ea9 !important;
+}
+.u-row:hover {
+  background: rgba(24, 30, 169, 0.12);
+}
+.u-card:hover {
+  border-color: #4a52e0 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

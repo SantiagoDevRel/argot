@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sourcify × Arkiv — Product Questions for Marcos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e1a; --panel:#0f1524; --card:#141b2e; --card2:#182036;
+    --line:#242d45; --ink:#eef1fa; --muted:#8b95ac; --faint:#5c6684;
+    --blue:#5b78ff; --blue-soft:#26305a; --orange:#ff7a29;
+    --green:#2dd4a0; --amber:#f5b544; --red:#ff5c60;
+    --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:960px;margin:0 auto;padding:0 28px}
+  section{padding:34px 0 0}
+
+  /* HEADER */
+  header{border-bottom:1px solid var(--line);background:
+    radial-gradient(900px 300px at 15% -40%,rgba(91,120,255,.22),transparent 60%),var(--panel);padding:44px 0 34px}
+  .eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:16px}
+  .eyebrow b{color:var(--orange);font-weight:600}
+  h1{font-size:30px;line-height:1.18;font-weight:700;letter-spacing:-.02em}
+  .lede{font-size:15px;color:var(--muted);max-width:680px;margin-top:12px}
+  .meta{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+  .chip{font-family:var(--mono);font-size:11.5px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:20px;padding:6px 13px}
+  .chip b{color:var(--ink);font-weight:500}
+
+  /* SECTION TITLES */
+  h2{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+     margin-bottom:16px;display:flex;align-items:center;gap:10px}
+  h2 .bar{width:22px;height:2px;background:var(--orange)}
+
+  /* VERDICT */
+  .verdict{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--orange);border-radius:12px;padding:18px 22px;margin-top:26px}
+  .verdict .k{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:600}
+  .verdict p{margin-top:7px;font-size:15px;color:var(--ink)}
+  .verdict .g{color:var(--green);font-weight:600}
+
+  /* GRID CARDS */
+  .grid{display:grid;gap:12px}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  .g2{grid-template-columns:1fr 1fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;transition:.16s}
+  .card:hover{border-color:#33406a;transform:translateY(-2px)}
+  .card .t{font-family:var(--mono);font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .card .x{font-size:12.5px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.g{background:var(--green)} .dot.a{background:var(--amber)}
+  .strength .t{color:var(--green)}
+  .strength{border-top:2px solid var(--green)}
+
+  /* P0 BLOCKERS */
+  .blk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:12px}
+  .blk .head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .prio{font-family:var(--mono);font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;background:rgba(255,92,96,.14);color:var(--red)}
+  .blk .title{font-size:16px;font-weight:600}
+  .kv{display:grid;grid-template-columns:64px 1fr;gap:6px 14px;align-items:baseline}
+  .kv .lab{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding-top:2px}
+  .kv .val{font-size:14px;color:var(--muted)}
+  .kv .ask{font-size:14px;color:var(--blue);font-weight:500}
+
+  /* TIMELINE */
+  .tl{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .tl .s{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .tl .w{font-family:var(--mono);font-size:11.5px;color:var(--orange);font-weight:600;letter-spacing:.04em}
+  .tl .p{font-size:14px;margin-top:7px;color:var(--ink)}
+
+  .note{margin:24px 0 0;font-size:13px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .note b{color:var(--blue)}
+  code{font-family:var(--mono);font-size:12px;color:var(--amber)}
+  .disclose{margin-top:12px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .disclose summary{cursor:pointer;list-style:none;padding:15px 18px;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:10px}
+  .disclose summary::-webkit-details-marker{display:none}
+  .disclose .chev{margin-left:auto;color:var(--faint);transition:.2s}
+  .disclose[open] .chev{transform:rotate(90deg)}
+  .disclose .c{padding:14px 18px 18px;font-size:13.5px;color:var(--muted);border-top:1px solid var(--line)}
+  .disclose .c b{color:var(--ink)}
+  .disclose .c p+p{margin-top:10px}
+  .disclose .step{color:var(--blue);font-family:var(--mono);font-size:12px}
+  .req{margin-top:14px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card2)}
+  .req-h{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint);padding:11px 14px;border-bottom:1px solid var(--line)}
+  .req-row{border-bottom:1px solid var(--line)}
+  .req-main{display:flex;gap:12px;align-items:baseline;padding:10px 14px;font-size:13px;color:var(--ink);cursor:help}
+  .req-row:hover .req-main{background:var(--panel)}
+  .req-main .src{font-family:var(--mono);font-size:10px;font-weight:600;padding:3px 0;border-radius:5px;flex:none;width:104px;text-align:center}
+  .ex{max-height:0;overflow:hidden;transition:max-height .3s ease;background:#0a0f1e}
+  .req-row:hover .ex{max-height:240px}
+  .ex-cap{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;color:var(--faint);padding:11px 14px 0}
+  .ex pre{margin:0;padding:6px 14px 14px;font-family:var(--mono);font-size:11px;line-height:1.6;color:#aeb9de;white-space:pre-wrap;word-break:break-word}
+  .ex .c1{color:var(--green)} .ex .c2{color:var(--orange)}
+  .src.ok{background:rgba(45,212,160,.14);color:var(--green)}
+  .src.partial{background:rgba(245,181,68,.14);color:var(--amber)}
+  .src.gen{background:rgba(255,122,41,.16);color:var(--orange)}
+  .req-foot{padding:12px 14px;font-size:13px;color:var(--muted)}
+  .req-foot b{color:var(--ink)}
+  footer{margin-top:34px;border-top:1px solid var(--line);padding:20px 0 40px;font-family:var(--mono);font-size:11px;color:var(--faint);text-align:center}
+  @media(max-width:720px){.g4,.g2,.tl{grid-template-columns:1fr}h1{font-size:24px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Sourcify <b>×</b> Arkiv &nbsp;·&nbsp; Product questions for <b>Marcos</b></div>
+    <h1>Can Arkiv host Sourcify's database?</h1>
+    <p class="lede">Sourcify (Ethereum Foundation contract verification — ~4M contracts, ~15M req/day) wants off BigQuery and decentralized. I ran the load analysis. Three product decisions stand in the way.</p>
+    <div class="meta">
+      <span class="chip">From <b>Santiago · DevRel</b></span>
+      <span class="chip">Their infra <b>Postgres + IPFS + BigQuery</b></span>
+      <span class="chip">CTO follow-up <b>mid-August</b></span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <div class="verdict">
+    <span class="k">◆ Verdict</span>
+    <p>Full migration isn't viable yet — <b>3 product decisions</b>. <span class="g">Gas isn't the blocker</span> (4M writes ≈ 0.04–0.12 GLM, 2–7h). Reads are free.</p>
+  </div>
+
+  <section>
+    <h2><span class="bar"></span>What Arkiv already does well</h2>
+    <div class="grid g4">
+      <div class="card strength"><div class="t"><span class="dot g"></span>Cheap writes</div><div class="x">4M ≈ 0.04–0.12 GLM · 2–7h</div></div>
+      <div class="card strength"><div class="t"><span class="dot g"></span>Free reads</div><div class="x">No egress or per-query fee</div></div>
+      <div class="card strength"><div class="t"><span class="dot g"></span>SQL-like query</div><div class="x">AND/OR/NOT, glob, by owner</div></div>
+      <div class="card strength"><div class="t"><span class="dot g"></span>Index pattern fits</div><div class="x">Queryable index + referenced data</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>P0 — block a CTO's yes</h2>
+
+    <div class="blk">
+      <div class="head"><span class="prio">P0 · 1</span><span class="title">Ownership by multisig / contract</span></div>
+      <div class="kv">
+        <span class="lab">Finding</span><span class="val">Mutations are signed by an EOA key — a multisig (no key) can't sign. Lose the key, lose the DB.</span>
+        <span class="lab">Ask</span><span class="ask">Roadmap for contract/threshold ownership (ERC-1271 / account abstraction)?</span>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="head"><span class="prio">P0 · 2</span><span class="title">Permanence for write-once data</span></div>
+      <div class="kv">
+        <span class="lab">Finding</span><span class="val">Every entity needs a TTL (`expiresIn`, renewable). No permanence primitive.</span>
+        <span class="lab">Ask</span><span class="ask">Renewable index + data in calldata/IPFS — or native permanence coming?</span>
+      </div>
+    </div>
+
+    <div class="blk">
+      <div class="head"><span class="prio">P0 · 3</span><span class="title">Mainnet economics</span></div>
+      <div class="kv">
+        <span class="lab">Finding</span><span class="val">Mainnet fee spec ($GLM) still draft. 4M writes + growth; Sourcify has no revenue.</span>
+        <span class="lab">Ask</span><span class="ask">Fee model + grant/subsidy path for a public good?</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="bar"></span>P1 — define the design & scale</h2>
+    <div class="grid g2">
+      <div class="card"><div class="t"><span class="dot a"></span>Read performance</div><div class="x">15M req/day; the 500 queries/sec target isn't met yet. <b style="color:var(--blue)">Sustainable on new testnet/mainnet — when?</b></div></div>
+      <div class="card"><div class="t"><span class="dot a"></span>Server-side ORDER BY</div><div class="x">SDK exposes it; guidance says sort client-side. <b style="color:var(--blue)">Functional server-side?</b></div></div>
+      <div class="card"><div class="t"><span class="dot a"></span>RPC access</div><div class="x">Hub v1 self-serve keys pending. <b style="color:var(--blue)">Dedicated vs shared? Rate limits?</b></div></div>
+      <div class="card"><div class="t"><span class="dot a"></span>Payload size</div><div class="x">Source bundles exceed 120 kb block. <b style="color:var(--blue)">Per-entity cap? Chunking boundary?</b></div></div>
+    </div>
+  </section>
+
+  <div class="note"><b>Note:</b> ERC-7730 descriptor auto-gen is adjacent, not the core. The core is the DB migration.</div>
+
+  <details class="disclose">
+    <summary><span style="color:var(--orange)">◆</span> What is ERC-7730? — quick pitch <span class="chev">▸</span></summary>
+    <div class="c">
+      <p><b>Clear signing.</b> Today a wallet shows a transaction as raw hex — you sign blind. An ERC-7730 file is a small JSON that tells the wallet how to show it in plain language: <b>"Send 100 USDC to vitalik.eth"</b> instead of <code>0xa9059cbb…</code></p>
+      <p>The chain: <span class="step">verify on Sourcify</span> → <span class="step">write the descriptor</span> → <span class="step">wallet shows it clearly</span>. A contract must be verified on Sourcify before its descriptor is accepted — so Sourcify is the gateway.</p>
+      <p><b>Where Arkiv fits:</b> most contracts have no descriptor because writing them is manual. Arkiv can hold auto-generated candidate descriptors and make coverage queryable — <i>"which verified contracts still lack clear signing?"</i> Adjacent bonus, not the core migration.</p>
+
+      <div class="req">
+        <div class="req-h">What generating a descriptor needs — and who has it &nbsp;·&nbsp; hover a row for an example</div>
+
+        <div class="req-row">
+          <div class="req-main"><span class="src ok">SOURCIFY ✓</span><span>Verified ABI — functions + parameter names &amp; types</span></div>
+          <div class="ex"><div class="ex-cap">EXAMPLE — ABI</div><pre>[{ "type": "function", "name": "transfer",
+   "inputs": [ { "name": "to",    "type": "address" },
+               { "name": "value", "type": "uint256" } ] }]</pre></div>
+        </div>
+
+        <div class="req-row">
+          <div class="req-main"><span class="src ok">SOURCIFY ✓</span><span>Source code + NatSpec — what each function actually means</span></div>
+          <div class="ex"><div class="ex-cap">EXAMPLE — SOLIDITY + NATSPEC</div><pre><span class="c1">/// @notice Transfer `value` tokens to `to`
+/// @param to  recipient address</span>
+function transfer(address to, uint256 value)
+    public returns (bool)</pre></div>
+        </div>
+
+        <div class="req-row">
+          <div class="req-main"><span class="src ok">SOURCIFY ✓</span><span>Metadata — contract name, chain ID + address</span></div>
+          <div class="ex"><div class="ex-cap">EXAMPLE — METADATA</div><pre>{ "name":    "Tether USD",
+  "chainId": 1,
+  "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7" }</pre></div>
+        </div>
+
+        <div class="req-row">
+          <div class="req-main"><span class="src partial">ON-CHAIN ~</span><span>Token info — decimals / ticker (mostly derivable)</span></div>
+          <div class="ex"><div class="ex-cap">EXAMPLE — TOKEN INFO</div><pre>{ "ticker": "USDT", "decimals": 6 }</pre></div>
+        </div>
+
+        <div class="req-row">
+          <div class="req-main"><span class="src gen">LLM ⚙</span><span>Display mapping — how each parameter renders (the manual part today)</span></div>
+          <div class="ex"><div class="ex-cap">EXAMPLE — WHAT THE LLM PRODUCES</div><pre>"transfer(address to,uint256 value)": {
+  <span class="c2">"intent": "Send",</span>
+  "fields": [
+    { "path":"value", "format":"tokenAmount" },
+    { "path":"to",    "format":"addressName" } ] }</pre></div>
+        </div>
+
+        <div class="req-foot"><b>Sourcify already holds the hard inputs.</b> The only missing piece — the display mapping — is exactly what a local LLM infers. → verified inputs (Sourcify) + local LLMs (DGX) = auto-generation at scale.</div>
+      </div>
+    </div>
+  </details>
+
+  <footer>ARGOT v1 · Sourcify × Arkiv · internal</footer>
+
+</div>
+</body>
+</html>

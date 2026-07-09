@@ -1,0 +1,22 @@
+[Unit]
+Description=Clear Signing Studio — DGX wrapper (bearer-gated Ollama + erc7730 lint)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/dgx-wrapper
+# Secrets live in an env file, chmod 600, never committed:
+#   WRAPPER_BEARER=<from laptop .secrets/dgx-wrapper-bearer.txt>
+#   DGX_MODEL=qwen3-coder-next:q4_K_M
+#   ERC7730_BIN=erc7730
+EnvironmentFile=%h/dgx-wrapper/env
+ExecStart=/usr/bin/node %h/dgx-wrapper/server.mjs
+Restart=on-failure
+RestartSec=3
+# Hardening — the wrapper only needs loopback + outbound; no privileged access.
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=default.target

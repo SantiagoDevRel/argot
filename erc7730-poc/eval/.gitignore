@@ -1,0 +1,5 @@
+# Generated artifacts — reproducible from the registry + the scripts. Not committed.
+corpus.json
+report-*.json
+natspec-prevalence.json
+registry/
