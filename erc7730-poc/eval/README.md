@@ -107,6 +107,19 @@ descriptors only (eip712 is out of scope for this generator, not a failure).
 
 ## Result (2026-07-09)
 
+### Head-to-head (same representative sample, post-tuning)
+| Model | lint-pass | fnRecall | fieldOnHit | Notes |
+|---|---|---|---|---|
+| **qwen3-coder-next** (n=60, full) | **48%** | 0.34 | 0.08 | stable — completes batches; the LIVE app model |
+| **MiniMax-M2.5** (n=15 before crash) | **87%** | 0.67 | 0.35 | notably higher quality, BUT the 101GB server **crashed on a heavy prompt at ~contract 15** and couldn't finish |
+
+**Read:** a stronger model roughly **doubles** valid-draft rate and fnRecall — the concept scales with
+model quality. But MiniMax-M2.5 at Q3/101GB is **operationally fragile on this single-GPU box** (crashes
+mid-batch on the largest prompts; the memory note `reference_dgx_bigmodel_load_oom` warns it can freeze
+the box). Production would need a more robust serving setup (smaller quant, prompt chunking, or
+crash-recovery), not a bigger claim. The **live app runs qwen** (stable). MiniMax is an offline
+quality-ceiling probe.
+
 ### After tuning — qwen3-coder-next, 60-contract representative sample
 **`erc7730 lint`-pass ≈ 48%, fnRecall ≈ 0.34** (up from 20% / 0.14 pre-tuning — a 2.4× jump).
 The fix that moved it: the model kept writing array paths as `foo[]` instead of the
