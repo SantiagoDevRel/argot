@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type Dispatch, type SetStateAction, type CSSProperties } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction, type CSSProperties } from "react";
 import type { Chain, Pick, InputChip } from "@/lib/data";
 import type { LogLine } from "./Studio";
 import InputModal, { type ModalChip } from "./InputModal";
@@ -51,14 +51,48 @@ const PARTICLES = [
   { px: "-38px", py: "-6px", d: ".12s" },
 ];
 export default function CreateTab(p: Props) {
-  const [modalChip, setModalChip] = useState<ModalChip | null>(null);
-  // Merge the static input chips with the REAL per-contract data from /api/generate (full
-  // ABI, source files, NatSpec, proxy, decimals + a Sourcify provenance link) once available.
-  const realById = new Map((p.genInputs ?? []).map((i) => [i.id, i]));
-  const openChip = (c: InputChip) => {
-    const real = realById.get(c.id);
-    setModalChip({ id: c.id, title: c.title, enrichment: c.enrichment, detail: c.detail, sub: real?.sub ?? c.sub, link: real?.link ?? null, full: real?.full });
-  };
+  const [modalId, setModalId] = useState<string | null>(null);
+  const [liveInputs, setLiveInputs] = useState<ModalChip[] | null>(null);
+  const [inputsLoading, setInputsLoading] = useState(false);
+  const chainId = p.chains.find((c) => c.name === p.chain)?.id ?? "1";
+
+  // Fetch the REAL Sourcify inputs (full ABI, source files, NatSpec, proxy, on-chain decimals
+  // + provenance links) whenever the contract changes — so the inspector shows complete data
+  // the instant you click a chip, without needing to Generate first.
+  useEffect(() => {
+    const addr = p.address.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      setInputsLoading(true);
+      setLiveInputs(null);
+      fetch("/api/inputs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ chainId, address: addr }) })
+        .then((r) => r.json())
+        .then((d) => {
+          if (cancelled) return;
+          setLiveInputs(Array.isArray(d?.inputs) ? d.inputs : null);
+        })
+        .catch(() => !cancelled && setLiveInputs(null))
+        .finally(() => !cancelled && setInputsLoading(false));
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [chainId, p.address]);
+
+  // Prefer the generated-run inputs (exact contract that was generated); else the live fetch.
+  const source = p.genInputs ?? liveInputs;
+  const realById = new Map((source ?? []).map((i) => [i.id, i]));
+  // Resolve the OPEN chip live so it updates the moment /api/inputs returns.
+  const staticById = new Map(p.chip.map((c) => [c.id, c]));
+  const openModalChip: ModalChip | null = (() => {
+    if (!modalId) return null;
+    const c = staticById.get(modalId);
+    const real = realById.get(modalId);
+    return { id: modalId, title: c?.title ?? modalId, enrichment: c?.enrichment, detail: c?.detail, sub: real?.sub ?? c?.sub, link: real?.link ?? null, apiLink: real?.apiLink ?? null, full: real?.full, loading: !real && inputsLoading };
+  })();
+  const openChip = (c: InputChip) => setModalId(c.id);
 
   const flowing = p.gen === "flowing";
   const revealing = p.gen === "revealing";
@@ -203,7 +237,7 @@ export default function CreateTab(p: Props) {
           </div>
         </section>
 
-        <InputModal chip={modalChip} onClose={() => setModalChip(null)} />
+        <InputModal chip={openModalChip} onClose={() => setModalId(null)} />
 
         {/* DGX column */}
         <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16, padding: "30px 0", minHeight: 430 }}>

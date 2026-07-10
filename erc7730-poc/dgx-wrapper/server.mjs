@@ -471,43 +471,14 @@ const server = createServer(async (req, res) => {
       const notice = genUser?.methods || {};
       const params = genDev?.methods || {};
       const sBase = `https://sourcify.dev/server/v2/contract/${chainId}/${address}`;
+      const repo = `https://repo.sourcify.dev/${chainId}/${address}`;
       const inputs = [
-        {
-          id: "identity", title: "Identity", enrichment: false,
-          sub: `chainId ${chainId} · ${address.slice(0, 6)}…${address.slice(-4)}`,
-          link: `${sBase}?fields=match,metadata`,
-          full: { contract: name, chainId: Number(chainId), address, match: sourcify.match || sourcify.runtimeMatch || "match", verifiedAt: sourcify.verifiedAt || null, compiler: sourcify.metadata?.compiler?.version || null },
-        },
-        {
-          id: "abi", title: "ABI", enrichment: false,
-          sub: `${abiSigs.length} functions${boundImpl ? " · via impl" : ""}`,
-          link: `${sBase}?fields=abi`,
-          full: { functions: abiSigs },
-        },
-        {
-          id: "natspec", title: "NatSpec", enrichment: false,
-          sub: Object.keys(notice).length ? `@notice · ${Object.keys(notice).length} methods` : "absent — source-inferred",
-          link: `${sBase}?fields=userdoc,devdoc`,
-          full: { notice, params },
-        },
-        {
-          id: "source", title: "Source", enrichment: false,
-          sub: `${sourceFiles.length} files`,
-          link: `${sBase}?fields=sources`,
-          full: { files: sourceFiles },
-        },
-        {
-          id: "proxy", title: "Proxy", enrichment: false,
-          sub: boundImpl ? `proxy — bound to ${boundImpl.slice(0, 6)}…` : sourcify.proxyResolution?.isProxy ? "proxy" : "not a proxy",
-          link: `${sBase}?fields=proxyResolution`,
-          full: sourcify.proxyResolution || { isProxy: false },
-        },
-        {
-          id: "decimals", title: "Token decimals", enrichment: true,
-          sub: meta?.decimals != null ? `${meta.decimals}${meta.symbol ? " · " + meta.symbol : ""} · eth_call` : "not a token / n/a",
-          link: null,
-          full: meta ? { method: "eth_call (deterministic — never model-inferred)", rpc: meta.rpc, to: meta.address, calls: [{ fn: "decimals()", selector: "0x313ce567", rawResult: meta.decHex, decoded: meta.decimals }, { fn: "symbol()", selector: "0x95d89b41", rawResult: meta.symHex, decoded: meta.symbol }] } : { note: "no token detected at this address" },
-        },
+        { id: "identity", title: "Identity", enrichment: false, sub: `chainId ${chainId} · ${address.slice(0, 6)}…${address.slice(-4)}`, link: repo, apiLink: `${sBase}?fields=match,metadata`, full: { contract: name, chainId: Number(chainId), address, match: sourcify.match || sourcify.runtimeMatch || "match", verifiedAt: sourcify.verifiedAt || null, compiler: sourcify.metadata?.compiler?.version || null } },
+        { id: "abi", title: "ABI", enrichment: false, sub: `${abiSigs.length} functions${boundImpl ? " · via impl" : ""}`, link: repo, apiLink: `${sBase}?fields=abi`, full: { functions: abiSigs } },
+        { id: "natspec", title: "NatSpec", enrichment: false, sub: Object.keys(notice).length ? `@notice · ${Object.keys(notice).length} methods` : "absent — source-inferred", link: repo, apiLink: `${sBase}?fields=userdoc,devdoc`, full: { notice, params } },
+        { id: "source", title: "Source", enrichment: false, sub: `${sourceFiles.length} files`, link: repo, apiLink: `${sBase}?fields=sources`, full: { files: sourceFiles } },
+        { id: "proxy", title: "Proxy", enrichment: false, sub: boundImpl ? `proxy — bound to ${boundImpl.slice(0, 6)}…` : sourcify.proxyResolution?.isProxy ? "proxy" : "not a proxy", link: repo, apiLink: `${sBase}?fields=proxyResolution`, full: sourcify.proxyResolution || { isProxy: false } },
+        { id: "decimals", title: "Token decimals", enrichment: true, sub: meta?.decimals != null ? `${meta.decimals}${meta.symbol ? " · " + meta.symbol : ""} · eth_call` : "not a token / n/a", link: null, apiLink: null, full: meta ? { method: "eth_call (deterministic — never model-inferred)", rpc: meta.rpc, to: meta.address, calls: [{ fn: "decimals()", selector: "0x313ce567", rawResult: meta.decHex, decoded: meta.decimals }, { fn: "symbol()", selector: "0x95d89b41", rawResult: meta.symHex, decoded: meta.symbol }] } : { note: "no token detected at this address" } },
       ];
       return json(res, 200, {
         chainId: String(chainId),

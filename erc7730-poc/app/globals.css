@@ -12,6 +12,31 @@
   box-sizing: border-box;
 }
 
+/* Branded scrollbars (blue thumb on ink track, brighter on hover) — page + every scroller. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3178 #0c0f1b;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: #0c0f1b;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #232a55, #2a3178);
+  border: 2px solid #0c0f1b;
+  border-radius: 8px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #3a42a8, #4a52e0);
+}
+*::-webkit-scrollbar-corner {
+  background: #0c0f1b;
+}
+
 html,
 body {
   margin: 0;

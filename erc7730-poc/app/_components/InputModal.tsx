@@ -10,8 +10,10 @@ export type ModalChip = {
   sub?: string;
   enrichment?: boolean;
   detail?: string; // static fallback (pre-generate)
-  link?: string | null; // Sourcify provenance deep-link
-  full?: Any; // real data from /api/generate
+  link?: string | null; // Sourcify human contract page ("View on Sourcify")
+  apiLink?: string | null; // exact v2-API deep-link for THIS field's data
+  full?: Any; // real data from /api/inputs or /api/generate
+  loading?: boolean; // real data still being fetched
 };
 
 // Full-screen input inspector. Opens over the studio, scrolls INTERNALLY (the page never
@@ -92,6 +94,11 @@ export default function InputModal({ chip, onClose }: { chip: ModalChip | null; 
 
         {/* body (the ONLY scroller — the page underneath stays put) */}
         <div style={{ overflow: "auto", padding: "16px 18px", minHeight: 0 }}>
+          {chip.apiLink && (
+            <a href={chip.apiLink} target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 5, marginBottom: 12, font: "500 10px var(--font-mono)", color: "#6B7290", textDecoration: "none", borderBottom: "1px dashed #2A3155", paddingBottom: 1 }}>
+              exact {chip.title} JSON from the Sourcify v2 API ↗
+            </a>
+          )}
           <Body chip={chip} />
         </div>
       </div>
@@ -101,11 +108,19 @@ export default function InputModal({ chip, onClose }: { chip: ModalChip | null; 
 
 function Body({ chip }: { chip: ModalChip }) {
   const full = chip.full;
-  // Pre-generate: no real data yet → show the static explainer.
+  if (!full && chip.loading) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, font: "500 12px var(--font-mono)", color: "#8A91A8", padding: "6px 0" }}>
+        <span style={{ width: 14, height: 14, border: "2px solid transparent", borderTopColor: "#8F94FF", borderRadius: "50%", display: "inline-block", animation: "spin .8s linear infinite" }} />
+        fetching from Sourcify…
+      </div>
+    );
+  }
+  // No real data (unverified on Sourcify / bad address) → static explainer.
   if (!full) {
     return (
       <p style={{ font: "400 12.5px/1.7 var(--font-sans)", color: "#9BA2B8", margin: 0 }}>
-        {chip.detail || "Generate a descriptor to inspect the live Sourcify data for this contract."}
+        {chip.detail || "This contract isn't verified on Sourcify for the selected chain — no source-of-truth data to show."}
       </p>
     );
   }
