@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CHAINS,
-  PICKS,
+  EXAMPLES,
   INPUT_CHIPS,
   DB,
   JSON_TEXT,
@@ -26,6 +26,22 @@ const CODE = "123";
 const linesOf = (text: string) => text.split("\n").map((l, i) => ({ n: String(i + 1), toks: tokenize(l) }));
 const MOCK_LINES = linesOf(JSON_TEXT);
 
+// The stored descriptor inlines the full ABI (the linter requires it), which dominates the
+// size and buries the interesting part. For the on-screen view we collapse it to a one-line
+// note; the COPIED descriptor keeps the real, complete ABI so it stays a valid ERC-7730 file.
+function collapseAbi(descStr: string): string {
+  try {
+    const d = JSON.parse(descStr);
+    const abi = d?.context?.contract?.abi;
+    if (Array.isArray(abi) && abi.length) {
+      d.context.contract.abi = `[ ${abi.length} ABI entries — hidden here for readability · see the ABI input · full ABI is in the copied file ]`;
+    }
+    return JSON.stringify(d, null, 2);
+  } catch {
+    return descStr;
+  }
+}
+
 export default function Studio() {
   // The gate is enforced server-side (proxy.ts + /api/gate cookie), so by the time
   // this renders the request is already authorized — no client-side gate overlay.
@@ -36,7 +52,7 @@ export default function Studio() {
   // ---- create: contract ----
   const [chain, setChain] = useState("Ethereum");
   const [chainOpen, setChainOpen] = useState(false);
-  const [address, setAddress] = useState(PICKS[0].addr);
+  const [address, setAddress] = useState(EXAMPLES.find((e) => e.label === "WETH")?.addr ?? EXAMPLES[0].addr);
 
   // ---- model ----
   const [model, setModel] = useState<Model>("idle");
@@ -52,6 +68,7 @@ export default function Studio() {
   const [badges, setBadges] = useState(false);
   const [copied, setCopied] = useState(false);
   const [genLines, setGenLines] = useState(MOCK_LINES);
+  const [fullDescriptor, setFullDescriptor] = useState(JSON_TEXT);
   const [genConf, setGenConf] = useState(CONFIDENCE);
   const [genLint, setGenLint] = useState(true);
   const [genInputs, setGenInputs] = useState<ModalChip[] | null>(null);
@@ -153,7 +170,8 @@ export default function Studio() {
     const [data] = await Promise.all([req, new Promise((r) => setTimeout(r, 1400))]);
 
     const descriptor: string = data?.descriptor || JSON_TEXT;
-    const revLines = linesOf(descriptor);
+    setFullDescriptor(descriptor);
+    const revLines = linesOf(collapseAbi(descriptor));
     setGenLines(revLines);
     setGenConf(Array.isArray(data?.confidence) && data.confidence.length ? data.confidence : CONFIDENCE);
     setGenLint(data ? !!data.lintPassed : true);
@@ -176,7 +194,7 @@ export default function Studio() {
 
   const onCopy = () => {
     try {
-      navigator.clipboard?.writeText(genLines.map((l) => l.toks.map((t) => t.t).join("")).join("\n"));
+      navigator.clipboard?.writeText(fullDescriptor);
     } catch {}
     setCopied(true);
     after(1400, () => setCopied(false));
@@ -305,7 +323,7 @@ export default function Studio() {
             {tab === "create" && (
               <CreateTab
                 chains={CHAINS}
-                picks={PICKS}
+                examples={EXAMPLES}
                 chip={INPUT_CHIPS}
                 chain={chain}
                 setChain={setChain}

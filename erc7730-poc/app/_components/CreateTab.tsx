@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type Dispatch, type SetStateAction, type CSSProperties } from "react";
-import type { Chain, Pick, InputChip } from "@/lib/data";
+import type { Chain, InputChip, Example } from "@/lib/data";
+import { TIER_COLOR } from "@/lib/data";
 import type { LogLine } from "./Studio";
 import InputModal, { type ModalChip } from "./InputModal";
 
@@ -11,7 +12,7 @@ type JsonLine = { n: string; toks: { t: string; c: string }[] };
 
 type Props = {
   chains: Chain[];
-  picks: Pick[];
+  examples: Example[];
   chip: InputChip[];
   chain: string;
   setChain: (s: string) => void;
@@ -52,9 +53,18 @@ const PARTICLES = [
 ];
 export default function CreateTab(p: Props) {
   const [modalId, setModalId] = useState<string | null>(null);
+  const [examplesOpen, setExamplesOpen] = useState(false);
   const [liveInputs, setLiveInputs] = useState<ModalChip[] | null>(null);
   const [inputsLoading, setInputsLoading] = useState(false);
   const chainId = p.chains.find((c) => c.name === p.chain)?.id ?? "1";
+  const selectedExample = p.examples.find((e) => e.addr.toLowerCase() === p.address.trim().toLowerCase());
+
+  useEffect(() => {
+    if (!examplesOpen) return;
+    const close = () => setExamplesOpen(false);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [examplesOpen]);
 
   // Fetch the REAL Sourcify inputs (full ABI, source files, NatSpec, proxy, on-chain decimals
   // + provenance links) whenever the contract changes — so the inspector shows complete data
@@ -181,33 +191,58 @@ export default function CreateTab(p: Props) {
           className="u-input"
           style={{ flex: 1, minWidth: 250, padding: "10px 14px", background: "#0C0F1B", border: "1px solid #232A45", borderRadius: 10, color: "#EFEDE6", font: "500 12.5px var(--font-mono)", outline: "none" }}
         />
-        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-          <span style={{ font: "500 9.5px var(--font-mono)", letterSpacing: ".14em", color: "#454B66" }}>EXAMPLES</span>
-          {p.picks.map((pk) => {
-            const active = p.address === pk.addr;
-            return (
-              <button
-                key={pk.label}
-                onClick={() => {
-                  p.setAddress(pk.addr);
-                  p.setChain(pk.chain);
-                }}
-                className="u-pick"
-                style={{
-                  padding: "7px 12px",
-                  background: active ? "rgba(24,30,169,.32)" : "transparent",
-                  border: `1px solid ${active ? "#4A52E0" : "#232A45"}`,
-                  borderRadius: 999,
-                  color: active ? "#EFEDE6" : "#8A91A8",
-                  font: "500 11px var(--font-mono)",
-                  cursor: "pointer",
-                  transition: "all .2s",
-                }}
-              >
-                {pk.label}
-              </button>
-            );
-          })}
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setExamplesOpen((v) => !v);
+            }}
+            className="u-hoverborder"
+            style={{ display: "flex", alignItems: "center", gap: 9, padding: "10px 14px", background: "#0C0F1B", border: "1px solid #232A45", borderRadius: 10, color: "#EFEDE6", font: "500 12px var(--font-mono)", cursor: "pointer", whiteSpace: "nowrap", transition: "border-color .25s" }}
+          >
+            <span style={{ font: "500 9.5px var(--font-mono)", letterSpacing: ".12em", color: "#6B7290" }}>EXAMPLES</span>
+            {selectedExample ? (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: TIER_COLOR[selectedExample.tier] }} />
+                {selectedExample.label}
+              </span>
+            ) : (
+              <span style={{ color: "#8A91A8" }}>pick one</span>
+            )}
+            <span style={{ color: "#6B7290", fontSize: 8, display: "inline-block", transform: examplesOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform .25s" }}>▼</span>
+          </button>
+          {examplesOpen && (
+            <div style={{ position: "absolute", top: "calc(100% + 6px)", right: 0, minWidth: 300, background: "#0F1322", border: "1px solid #2A3155", borderRadius: 12, padding: 6, zIndex: 40, boxShadow: "0 18px 48px rgba(0,0,0,.65)", animation: "fadeUp .18s ease both" }}>
+              <div style={{ font: "500 8.5px var(--font-mono)", letterSpacing: ".14em", color: "#565E7E", padding: "6px 9px 4px" }}>SHORT / FAST → LONG / SLOW</div>
+              {p.examples.map((ex) => {
+                const active = p.address.toLowerCase() === ex.addr.toLowerCase();
+                return (
+                  <button
+                    key={ex.addr}
+                    onClick={() => {
+                      p.setAddress(ex.addr);
+                      p.setChain(ex.chain);
+                      setExamplesOpen(false);
+                    }}
+                    className="u-menuitem"
+                    style={{ display: "flex", width: "100%", alignItems: "center", gap: 10, padding: "8px 9px", background: active ? "rgba(24,30,169,.4)" : "transparent", border: "none", borderRadius: 8, cursor: "pointer", textAlign: "left" }}
+                  >
+                    <span style={{ width: 8, height: 8, flex: "none", borderRadius: "50%", background: TIER_COLOR[ex.tier], boxShadow: `0 0 7px ${TIER_COLOR[ex.tier]}66` }} />
+                    <span style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ display: "block", font: "600 12px var(--font-mono)", color: "#EFEDE6" }}>{ex.label}</span>
+                      <span style={{ display: "block", font: "400 10px var(--font-sans)", color: "#8A91A8", marginTop: 1 }}>{ex.note}</span>
+                    </span>
+                    <span style={{ flex: "none", font: "600 9.5px var(--font-mono)", color: TIER_COLOR[ex.tier] }}>{ex.fns} fn{ex.fns === 1 ? "" : "s"}</span>
+                  </button>
+                );
+              })}
+              <div style={{ display: "flex", gap: 12, padding: "7px 9px 4px", font: "400 8.5px var(--font-mono)", color: "#565E7E", borderTop: "1px solid #1A2036", marginTop: 4 }}>
+                <span><span style={{ color: TIER_COLOR.simple }}>●</span> fast</span>
+                <span><span style={{ color: TIER_COLOR.medium }}>●</span> medium</span>
+                <span><span style={{ color: TIER_COLOR.complex }}>●</span> big / slow</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

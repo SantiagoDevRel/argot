@@ -31,6 +31,22 @@ export const PICKS: Pick[] = [
   { label: "Lido stETH", addr: "0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", chain: "Ethereum" },
 ];
 
+// Curated examples ranked by size/speed: fewer state-changing functions = smaller descriptor
+// + faster generation (green = fast, orange = medium, red = big/slow). All Sourcify-verified.
+export type Tier = "simple" | "medium" | "complex";
+export type Example = { label: string; addr: string; chain: string; fns: number; tier: Tier; note: string };
+export const EXAMPLES: Example[] = [
+  { label: "ETH2 Deposit", addr: "0x00000000219ab540356cbb839cbe05303d7705fa", chain: "Ethereum", fns: 1, tier: "simple", note: "one function — deposit" },
+  { label: "USDC", addr: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", chain: "Ethereum", fns: 3, tier: "simple", note: "proxy → implementation" },
+  { label: "WETH", addr: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", chain: "Ethereum", fns: 5, tier: "simple", note: "wrap / unwrap ETH" },
+  { label: "Aave V3 Pool", addr: "0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2", chain: "Ethereum", fns: 5, tier: "medium", note: "supply / borrow / repay" },
+  { label: "ENS Registrar", addr: "0x253553366Da8546fC250F225fe3d25d0C782303b", chain: "Ethereum", fns: 7, tier: "medium", note: "register a name" },
+  { label: "DAI", addr: "0x6B175474E89094C44Da98b954EedeAC495271d0F", chain: "Ethereum", fns: 11, tier: "medium", note: "classic ERC-20 + permit" },
+  { label: "1inch Router V5", addr: "0x1111111254EEB25477B68fb85Ed929f73A960582", chain: "Ethereum", fns: 28, tier: "complex", note: "aggregation router — slower" },
+  { label: "Uniswap Router", addr: "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45", chain: "Ethereum", fns: 33, tier: "complex", note: "40+ functions — slowest" },
+];
+export const TIER_COLOR: Record<Tier, string> = { simple: "#3ECF8E", medium: "#FE7446", complex: "#F05A5A" };
+
 export const JSON_TEXT = [
   "{",
   '  "context": { "contract": { "deployments": [ { "chainId": 1, "address": "0x68b3…Fc45" } ] } },',
