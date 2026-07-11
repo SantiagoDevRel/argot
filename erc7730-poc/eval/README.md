@@ -105,7 +105,77 @@ contract's functions from the ABI). **eip712** descriptors describe signed typed
 — a different generation task — so the benchmark runs the **247 calldata** ground-truth
 descriptors only (eip712 is out of scope for this generator, not a failure).
 
-## Result (2026-07-09)
+## Result (2026-07-11) — model sweep + deterministic baseline (supersedes the 2026-07-09 run)
+
+**The headline:** a robust, locally-served model — **`gpt-oss:120b`** (65 GB, Ollama) —
+reaches **82% lint-pass / 0.594 fnRecall / 0.325 fieldExact / 0.204 intent** over the **full
+n=60** held-out sample, **beating the deterministic incumbent, the live model, and MiniMax's
+fragile partial — with zero crashes.** This replaces the earlier "MiniMax 87% but only over
+~15 survivors before OOM" story with a real, complete number from a model that finishes the
+batch on this single-GPU box.
+
+### Full head-to-head (n=60, identical held-out calldata contracts, deterministic shuffle)
+| Generator | lint-pass | fnRecall | fieldExact (onHit) | intent (onHit) | robust? |
+|---|---|---|---|---|---|
+| **`gpt-oss:120b`** ⭐ | **82%** | **0.594** | **0.325 (0.427)** | **0.204 (0.256)** | ✅ full 60, no crash |
+| `erc7730 generate` (Ledger, deterministic) | 60% | 0.497 | 0.211 (0.212) | **0.000** | ✅ |
+| `qwen3-coder-next` (the LIVE app model) | 50% | 0.372 | 0.082 (0.09) | 0.124 (0.128) | ✅ |
+| `qwen3.5:122b-a10b` (general MoE) | 20% | 0.155 | 0.047 | 0.030 | ✅ but weak at schema JSON |
+| `hybrid` (deterministic skeleton + qwen intent) | 18% | 0.097 | 0.006 | 0.009 | ⚠️ see limitation below |
+
+`gpt-oss:120b` bimodal: **standard 91% lint / 0.687 fnRecall / 0.494 fieldExact**;
+**long-tail 70% lint / 0.481 fnRecall / 0.118 fieldExact**.
+
+### The honest reframe (what the deterministic baseline taught us)
+The deterministic Ledger `erc7730 generate` (**60% lint / 0.497 fnRecall / 0.211 fieldExact**)
+**beats the live qwen-coder on every STRUCTURAL metric** — it reads paths/types straight from
+the ABI and never hallucinates them. Its one gap: it produces **zero intent** (a deterministic
+tool structurally can't say *what* a call does). So the LLM's value was never structural
+accuracy — it's **semantic intent**. The winning move is a model strong enough to beat the
+deterministic structure *and* add intent: `gpt-oss:120b` does exactly that (its fieldExact
+0.325 already exceeds the deterministic 0.211, and it adds intent 0.204).
+
+> **Baseline path-normalization (documented, fair):** the registry writes calldata paths
+> **bare** (`desc.amount`); `erc7730 generate` emits the `#.`/`@.` root-selector form. Those
+> are the same reference — `baseline-erc7730.mjs` strips the selector for **scoring only**
+> (else the deterministic baseline scores ~0 on fieldExact from a prefix mismatch, unfairly
+> flattering our model). The linted descriptor keeps the selector the linter requires.
+
+### The hybrid: explored, dominated, deprioritized
+Hypothesis: graft the deterministic skeleton's structure onto LLM intent. It **underperforms
+(18%)** because `erc7730 generate` emits **`nested_fields`** for tuple/struct params, and the
+flat merge/normalize adds an illegal `format` to those container fields → *"Extra inputs are
+not permitted"* on the tuple-heavy long tail (96% of the corpus). It's fixable with a
+nested-field-aware merge, but **architecturally dominated**: its ceiling is its own
+deterministic skeleton (60%), which `gpt-oss:120b` (82%) already exceeds — so it can't change
+the recommendation. Kept in the repo (`hybrid-erc7730.mjs`) as an explored adapter with this
+documented limitation.
+
+### Coverage at scale (Lever D) + distillation dataset (Lever B groundwork)
+- **101** `gpt-oss:120b` lint-passing candidate descriptors harvested over recent verified
+  Sourcify mainnet contracts (58.7% pass-rate on the heterogeneous long tail vs 82% on the
+  curated registry) and written to **Arkiv Braga in one `mutateEntities` tx**
+  (`0x673bca20e026a20aac447b2eda2774eb86fa51c57df319ed3be7d879a81c70c5`, dataset
+  `erc7730-harvest`) — **12.6× the 8 curated demo entities**, all queryable, all `candidate`
+  / `attested:false`. Pipeline: `scripts/harvest.mjs` (DGX) → `scripts/arkiv-harvest-seed.mjs`
+  (laptop, funded burner). The curated demo dataset (`erc7730-poc`) is untouched.
+- Those same 101 rows carry **SFT `{system,user,assistant}` pairs** = a distillation dataset
+  ready for QLoRA. codex validated the recipe (Qwen2.5-Coder-7B LoRA on GB10, ~30-90 min via
+  the NVIDIA Unsloth-on-Spark playbook); the **fine-tune itself is deferred** — the ARM64 env
+  setup risk on an unattended box, plus a 7B's low ceiling vs the 82% `gpt-oss:120b` headline,
+  didn't justify it tonight. Dataset + recipe are ready to run deliberately.
+
+### How to reproduce
+```bash
+# on the DGX (wrapper live, models pulled): the model sweep
+node run-eval.mjs --gen dgx --model gpt-oss:120b --limit 60
+node baseline-erc7730.mjs --limit 60            # deterministic Ledger baseline (CPU, no GPU)
+node hybrid-erc7730.mjs --model qwen3-coder-next:q4_K_M --limit 60   # explored hybrid
+```
+
+---
+
+## Result (2026-07-09) — prior run (superseded by the sweep above)
 
 ### Head-to-head (same representative sample, post-tuning)
 | Model | lint-pass | fnRecall | fieldOnHit | Notes |
