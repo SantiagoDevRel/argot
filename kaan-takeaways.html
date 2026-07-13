@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Kaan (Sourcify CTO) — what it means for Arkiv</title>
+<style>
+  :root{
+    --blue:#181EA9; --blue-l:#4A52E0; --blue-ll:#A6AAFF; --orange:#FE7446;
+    --ink:#0A0C16; --panel:#0C0F1B; --line:#1E2440; --sand:#EFEDE6; --stone:#9BA2B8; --dim:#6B7290; --green:#3ECF8E;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:
+    radial-gradient(1100px 500px at 80% -10%, rgba(24,30,169,.35), transparent 60%),
+    radial-gradient(800px 400px at -5% 110%, rgba(254,116,70,.10), transparent 60%),
+    var(--ink);
+    color:var(--sand);font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    min-height:100%;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1000px;margin:0 auto;padding:56px 40px 64px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.22em;color:var(--blue-ll);text-transform:uppercase}
+  h1{font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:30px;line-height:1.2;margin:12px 0 0;letter-spacing:-.01em}
+  h1 .spark{color:var(--orange)}
+  .lede{font-size:15px;line-height:1.7;color:var(--stone);margin-top:16px;max-width:760px}
+  .lede b{color:var(--sand);font-weight:600}
+  .quote{margin:26px 0 34px;padding:16px 20px;border-left:3px solid var(--blue-l);background:rgba(24,30,169,.10);border-radius:0 12px 12px 0}
+  .quote .q{font-size:13.5px;line-height:1.75;color:#C7CBDB}
+  .quote .q b{color:var(--sand)}
+  .quote .src{font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--dim);margin-top:10px;letter-spacing:.04em}
+  .needs-h{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.12em;color:var(--stone);text-transform:uppercase;margin:0 0 16px;display:flex;align-items:center;gap:10px}
+  .needs-h::after{content:"";flex:1;height:1px;background:var(--line)}
+  ul{list-style:none;display:flex;flex-direction:column;gap:14px}
+  li{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;
+     background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;
+     transition:border-color .2s, transform .2s}
+  li:hover{border-color:var(--blue-l);transform:translateY(-2px)}
+  .check{width:24px;height:24px;border-radius:7px;background:rgba(62,207,142,.12);border:1px solid rgba(62,207,142,.5);
+    display:flex;align-items:center;justify-content:center;color:var(--green);font-size:14px;font-weight:700;margin-top:1px}
+  .need{font-size:14px;line-height:1.5;color:var(--sand);font-weight:600}
+  .need .tag{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--orange);letter-spacing:.06em;margin-left:8px;vertical-align:1px}
+  .maps{font-size:12.5px;line-height:1.6;color:var(--stone);margin-top:6px}
+  .maps b{color:var(--blue-ll);font-weight:600}
+  .foot{margin-top:34px;font-size:12.5px;line-height:1.7;color:var(--stone);border-top:1px solid var(--line);padding-top:20px}
+  .foot b{color:var(--sand)}
+  .pill{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--blue-ll);
+    border:1px solid var(--blue-l);border-radius:999px;padding:3px 10px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Sourcify CTO · Kaan Uzdogan · EIP-7730 co-author</div>
+  <h1>He described an <span class="spark">Arkiv-shaped</span> problem</h1>
+  <p class="lede">
+    The ERC-7730 standard defines <b>how</b> descriptors are written — it's registry-agnostic. The registry (the actual list)
+    moved off Ledger onto the Ethereum Foundation's GitHub, but <b>the intention is to move it onchain and make it
+    permissionless, with trust coming from attestations</b>. Descriptors must come from the dapps themselves;
+    the submission process <b>isn't built yet</b>. Onchain · permissionless · attestation-based · queryable = the Web3 database.
+  </p>
+
+  <div class="quote">
+    <div class="q">
+      “Our intention is to move this onchain and make it permissionless. But the trust will come from attestations:
+      Ledger can attest to some descriptors' correctness with a key… The descriptors need to come from dapps themselves.
+      Right now it has to be a PR and needs to be reviewed. <b>We're yet to implement a process there.</b> …
+      The descriptors are <b>required</b> to be able to clear-sign transactions.”
+    </div>
+    <div class="src">— Kaan, Sourcify CTO (verbatim, primary source)</div>
+  </div>
+
+  <div class="needs-h">What the ecosystem needs — and where Arkiv fits</div>
+  <ul>
+    <li>
+      <div class="check">✓</div>
+      <div>
+        <div class="need">An onchain, permissionless home for the registry <span class="tag">not a GitHub PR bottleneck</span></div>
+        <div class="maps"><b>Arkiv</b> is the queryable onchain database — descriptors live as entities anyone can read and write, no gatekeeper.</div>
+      </div>
+    </li>
+    <li>
+      <div class="check">✓</div>
+      <div>
+        <div class="need">Attestation-based trust, baked into storage <span class="tag">who attested what</span></div>
+        <div class="maps"><b>Arkiv</b> stores each descriptor with its attestations as queryable attributes — “show me everything Ledger attested,” answered in one query.</div>
+      </div>
+    </li>
+    <li>
+      <div class="check">✓</div>
+      <div>
+        <div class="need">A submission → review → adopt pipeline <span class="tag">“yet to implement”</span></div>
+        <div class="maps"><b>Arkiv</b> models the lifecycle natively: a candidate draft lands unattested, the app owner reviews and adopts, then attests — nothing auto-submitted.</div>
+      </div>
+    </li>
+    <li>
+      <div class="check">✓</div>
+      <div>
+        <div class="need">Coverage for the existing long tail <span class="tag">the DSL only helps new contracts</span></div>
+        <div class="maps">The write-time DSL streamlines <i>future</i> contracts; the millions of already-verified ones still show blind hex. <b>Arkiv</b>-hosted candidates fill that coverage gap today.</div>
+      </div>
+    </li>
+  </ul>
+
+  <div class="foot">
+    <span class="pill">the ask</span>
+    <b>Arkiv is the queryable, permissionless, attestation-aware registry Kaan is describing</b> — plus a candidate layer that covers the
+    long tail the DSL won't reach. The next step is a sidecar prototype over Sourcify v2 + the ERC-7730 registry, arriving to the
+    mid-August follow-up with answers, not questions.
+  </div>
+</div>
+</body>
+</html>
