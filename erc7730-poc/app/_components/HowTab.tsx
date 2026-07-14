@@ -59,12 +59,12 @@ const STAGES: Stage[] = [
   {
     icon: "◆", iconColor: "#FE7446", bg: "rgba(254,116,70,.07)", border: "1px dashed rgba(254,116,70,.6)", glow: "#FE7446",
     title: "Arkiv entity", sub: "candidate · queryable",
-    role: "The passing descriptor is written to Arkiv — the Web3 database — as a queryable entity, not a blob in a flat file.",
+    role: "This is where OUR part ends: the lint-passing draft is written to Arkiv as a candidate entity — a proposal we seed for the app to review, never authoritative.",
     detail:
-      "Stored with indexed attributes so it answers the questions a flat registry can't: which verified contracts still lack a descriptor (coverage gap), which are stale after a proxy upgrade, who attested what. This is the queryability wedge.",
+      "Everything up to here is us: Sourcify inputs → local generation → lint → we store the draft as a queryable Arkiv entity (status = candidate, attested = false). It's a coverage seed, not an official descriptor. From here the contract's owner takes over — nothing is auto-submitted, and authorship is never ours.",
     items: [
-      "Entity with indexed attributes (contract, selector, attester…)",
-      "Query by coverage gap · by attester · by stale binding",
+      "WE produced this — a candidate proposal, not an official descriptor",
+      "Stored as a queryable entity (query by coverage gap · attester · stale binding)",
       "status = candidate · attested = false (always, at first)",
       "Live on Braga — the Database tab reads it in real time",
     ],
@@ -86,10 +86,11 @@ const STAGES: Stage[] = [
     title: "Attestation", sub: "trusted → wallet clear-signs",
     role: "An authority signs an attestation — only then do wallets trust the descriptor and clear-sign with it.",
     detail:
-      "The owner (or an auditor like Ledger) cryptographically vouches for the descriptor. Wallets honor attestations from keys they trust, so the user finally sees a human-readable transaction instead of blind hex — the whole point of clear signing.",
+      "The owner (or an auditor like Ledger) cryptographically vouches for the descriptor. The entity records WHO signed — attested by uniswap.eth, circle.eth, ledger.eth — so trust is legible and queryable. Wallets honor attestations from keys they trust, so the user finally sees a human-readable transaction instead of blind hex.",
     items: [
-      "Owner / auditor signs an attestation (a trust signal)",
-      "Wallets clear-sign only what a trusted key attested",
+      "A signer (owner / auditor) attests → the entity shows \"attested by: <ens>\"",
+      "Wallets clear-sign only what a key they trust attested",
+      "Query it: \"show me everything ledger.eth attested\"",
       "Result: readable tx, not blind hex — the user knows what they sign",
     ],
   },
