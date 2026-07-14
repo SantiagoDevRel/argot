@@ -14,6 +14,7 @@ import {
 } from "@/lib/data";
 import CreateTab from "./CreateTab";
 import DatabaseTab from "./DatabaseTab";
+import EntityModal, { type EntityView } from "./EntityModal";
 import HowTab from "./HowTab";
 import type { ModalChip } from "./InputModal";
 
@@ -82,6 +83,7 @@ export default function Studio() {
   const [q, setQ] = useState("");
   const [dbChainOpen, setDbChainOpen] = useState(false);
   const [hover, setHover] = useState<{ t: string; k: string } | null>(null);
+  const [entityModal, setEntityModal] = useState<EntityView>(null);
 
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const iv = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -357,6 +359,7 @@ export default function Studio() {
             {tab === "database" && (
               <DatabaseTab
                 db={dbRows}
+                onOpen={(row, focus) => setEntityModal({ row, focus })}
                 live={dbLive}
                 dbView={dbView}
                 setDbView={setDbView}
@@ -395,6 +398,7 @@ export default function Studio() {
           </footer>
         </div>
       )}
+      <EntityModal data={entityModal} onClose={() => setEntityModal(null)} />
     </>
   );
 }

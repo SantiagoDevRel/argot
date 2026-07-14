@@ -2,10 +2,12 @@
 
 import { type Dispatch, type SetStateAction, type CSSProperties } from "react";
 import type { DbRow } from "@/lib/data";
+import type { EntityFocus } from "./EntityModal";
 
 type Hover = { t: string; k: string } | null;
 type Props = {
   db: DbRow[];
+  onOpen: (row: DbRow, focus: EntityFocus) => void;
   live: boolean;
   dbView: "graph" | "table";
   setDbView: (v: "graph" | "table") => void;
@@ -197,7 +199,7 @@ export default function DatabaseTab(p: Props) {
                   const hl = !!(hv && ((hv.t === "c" && hv.k === c.name) || (hv.t === "e" && connected.some((r) => r.id === hv.k)) || (hv.t === "a" && connected.some((r) => r.att === hv.k))));
                   const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.2) : 0.92;
                   return (
-                    <g key={"c" + c.name} onMouseEnter={() => p.setHover({ t: "c", k: c.name })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
+                    <g key={"c" + c.name} onClick={() => { const f = p.db.find((x) => x.contract === c.name); if (f) p.onOpen(f, "contract"); }} onMouseEnter={() => p.setHover({ t: "c", k: c.name })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
                       <rect x={CONX - 7} y={y - 7} width={14} height={14} rx={4} style={{ fill: "#141830", stroke: "#4A52E0", strokeWidth: 1.4 }} />
                     </g>
                   );
@@ -210,7 +212,7 @@ export default function DatabaseTab(p: Props) {
                   const hl = !!(hv && ((hv.t === "a" && hv.k === a) || (hv.t === "e" && connected.some((r) => r.id === hv.k)) || (hv.t === "c" && connected.some((r) => r.contract === hv.k))));
                   const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.2) : 0.92;
                   return (
-                    <g key={"a" + a} onMouseEnter={() => p.setHover({ t: "a", k: a })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
+                    <g key={"a" + a} onClick={() => { const f = p.db.find((x) => x.att === a); if (f) p.onOpen(f, "attester"); }} onMouseEnter={() => p.setHover({ t: "a", k: a })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
                       <rect x={ATTX - 6} y={y - 6} width={12} height={12} rx={2} transform={`rotate(45 ${ATTX} ${y})`} style={{ fill: "#141830", stroke: "#8F94FF", strokeWidth: 1.4 }} />
                     </g>
                   );
@@ -222,7 +224,7 @@ export default function DatabaseTab(p: Props) {
                     hl = entHL(r);
                   const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.18) : 0.92;
                   return (
-                    <g key={"e" + r.id} onMouseEnter={() => p.setHover({ t: "e", k: r.id })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
+                    <g key={"e" + r.id} onClick={() => p.onOpen(r, null)} onMouseEnter={() => p.setHover({ t: "e", k: r.id })} onMouseLeave={() => p.setHover(null)} style={{ cursor: "pointer", opacity: o, transition: "opacity .25s" }}>
                       <circle cx={ENTX} cy={y} r={hl ? 12 : 9} style={{ fill: r.status === "attested" ? "#181EA9" : "rgba(254,116,70,.1)", stroke: r.status === "attested" ? "#6E74F0" : "#FE7446", strokeWidth: 1.6, strokeDasharray: r.status === "attested" ? "none" : "4 4", animation: r.status === "candidate" && vis ? "march 1.4s linear infinite" : "none", transition: "r .2s" }} />
                     </g>
                   );
@@ -236,7 +238,7 @@ export default function DatabaseTab(p: Props) {
                 const hl = !!(hv && ((hv.t === "c" && hv.k === c.name) || (hv.t === "e" && connected.some((r) => r.id === hv.k)) || (hv.t === "a" && connected.some((r) => r.att === hv.k))));
                 const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.2) : 0.92;
                 return (
-                  <div key={"cl" + c.name} onMouseEnter={() => p.setHover({ t: "c", k: c.name })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: 0, top: y - 11, width: CONX - 18, textAlign: "right", opacity: o, transition: "opacity .25s", cursor: "pointer" }}>
+                  <div key={"cl" + c.name} onClick={() => { const f = p.db.find((x) => x.contract === c.name); if (f) p.onOpen(f, "contract"); }} onMouseEnter={() => p.setHover({ t: "c", k: c.name })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: 0, top: y - 11, width: CONX - 18, textAlign: "right", opacity: o, transition: "opacity .25s", cursor: "pointer" }}>
                     <div style={{ font: "600 11px var(--font-mono)", color: "#C9CEDF", whiteSpace: "nowrap" }}>{c.name}</div>
                     <div style={{ font: "400 9px var(--font-mono)", color: "#565E7E", whiteSpace: "nowrap", marginTop: 1 }}>{c.addrs.length > 1 ? c.addrs.length + " deployments" : c.addrs[0]}</div>
                   </div>
@@ -250,7 +252,7 @@ export default function DatabaseTab(p: Props) {
                 const hl = !!(hv && ((hv.t === "a" && hv.k === a) || (hv.t === "e" && connected.some((r) => r.id === hv.k)) || (hv.t === "c" && connected.some((r) => r.contract === hv.k))));
                 const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.2) : 0.92;
                 return (
-                  <div key={"al" + a} onMouseEnter={() => p.setHover({ t: "a", k: a })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: ATTX + 18, top: y - 6, opacity: o, transition: "opacity .25s", cursor: "pointer", font: "600 10.5px var(--font-mono)", color: "#C9CEDF", whiteSpace: "nowrap" }}>
+                  <div key={"al" + a} onClick={() => { const f = p.db.find((x) => x.att === a); if (f) p.onOpen(f, "attester"); }} onMouseEnter={() => p.setHover({ t: "a", k: a })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: ATTX + 18, top: y - 6, opacity: o, transition: "opacity .25s", cursor: "pointer", font: "600 10.5px var(--font-mono)", color: "#C9CEDF", whiteSpace: "nowrap" }}>
                     {a}
                   </div>
                 );
@@ -262,7 +264,7 @@ export default function DatabaseTab(p: Props) {
                   hl = entHL(r);
                 const o = !vis ? 0.08 : hv ? (hl ? 1 : 0.18) : 0.92;
                 return (
-                  <div key={"el" + r.id} onMouseEnter={() => p.setHover({ t: "e", k: r.id })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: ENTX + 19, top: y - 6, opacity: o, transition: "opacity .25s", cursor: "pointer", font: "500 9.5px var(--font-mono)", color: "#9BA2B8", whiteSpace: "nowrap" }}>
+                  <div key={"el" + r.id} onClick={() => p.onOpen(r, null)} onMouseEnter={() => p.setHover({ t: "e", k: r.id })} onMouseLeave={() => p.setHover(null)} style={{ position: "absolute", left: ENTX + 19, top: y - 6, opacity: o, transition: "opacity .25s", cursor: "pointer", font: "500 9.5px var(--font-mono)", color: "#9BA2B8", whiteSpace: "nowrap" }}>
                     {r.fn}
                   </div>
                 );
@@ -283,19 +285,19 @@ export default function DatabaseTab(p: Props) {
           </div>
           {rows.map((r) => (
             <div key={r.id} className="u-row" style={{ ...tableGrid, padding: "12px 18px", borderBottom: "1px solid #10142A", alignItems: "center", transition: "background .2s" }}>
-              <span style={{ minWidth: 0 }}>
-                <span style={{ display: "block", font: "600 12px var(--font-mono)", color: "#EFEDE6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.contract}</span>
+              <span onClick={() => p.onOpen(r, "contract")} title="Open the Arkiv entity (highlights the contract address)" style={{ minWidth: 0, cursor: "pointer" }}>
+                <span className="u-link" style={{ display: "block", font: "600 12px var(--font-mono)", color: "#EFEDE6", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.contract}</span>
                 <span style={{ display: "block", font: "400 10px var(--font-mono)", color: "#565E7E", marginTop: 2 }}>{r.addr}</span>
               </span>
               <span style={{ font: "500 11.5px var(--font-mono)", color: "#9BA2B8" }}>{r.chain}</span>
-              <span style={{ minWidth: 0 }}>
+              <span onClick={() => p.onOpen(r, null)} title="Open the Arkiv entity" style={{ minWidth: 0, cursor: "pointer" }}>
                 <span style={{ display: "block", font: "500 11px var(--font-mono)", color: "#A6AAFF" }}>{r.sel}</span>
                 <span style={{ display: "block", font: "400 10px var(--font-mono)", color: "#565E7E", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.fn}</span>
               </span>
               <span>
-                <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 999, border: `1px ${r.status === "candidate" ? "dashed rgba(254,116,70,.55)" : "solid rgba(74,82,224,.55)"}`, color: r.status === "candidate" ? "#FE7446" : "#A6AAFF", background: r.status === "candidate" ? "rgba(254,116,70,.07)" : "rgba(24,30,169,.2)", font: "600 10px var(--font-mono)" }}>{r.status}</span>
+                <span onClick={() => p.onOpen(r, "status")} title="Open the entity (highlights status)" style={{ display: "inline-block", padding: "3px 10px", borderRadius: 999, border: `1px ${r.status === "candidate" ? "dashed rgba(254,116,70,.55)" : "solid rgba(74,82,224,.55)"}`, color: r.status === "candidate" ? "#FE7446" : "#A6AAFF", background: r.status === "candidate" ? "rgba(254,116,70,.07)" : "rgba(24,30,169,.2)", font: "600 10px var(--font-mono)", cursor: "pointer" }}>{r.status}</span>
               </span>
-              <span style={{ font: "500 11.5px var(--font-mono)", color: r.att ? "#C9CEDF" : "#3A4160" }}>{r.att || "—"}</span>
+              <span onClick={() => r.att && p.onOpen(r, "attester")} title={r.att ? "Open the entity (highlights the attester)" : undefined} style={{ font: "500 11.5px var(--font-mono)", color: r.att ? "#C9CEDF" : "#3A4160", cursor: r.att ? "pointer" : "default" }}>{r.att || "—"}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 48, height: 3, borderRadius: 99, background: "#1A2036", overflow: "hidden", display: "inline-block" }}>
                   <span style={{ display: "block", height: "100%", width: r.conf + "%", background: r.status === "candidate" ? "#FE7446" : "#4A52E0" }} />

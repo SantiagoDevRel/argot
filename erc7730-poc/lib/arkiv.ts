@@ -38,6 +38,9 @@ export async function queryDescriptors(): Promise<EntitiesResult> {
       status: attested ? "attested" : "candidate",
       att: attr(attrs, "attester") ?? null,
       conf: Number(attr(attrs, "confidence") ?? 0),
+      // The full attribute set as Arkiv stores it — powers the entity inspector modal
+      // (click a cell → see exactly where that value lives in the on-chain entity).
+      attrs: attrs.map((a) => ({ key: a.key, value: a.value })),
     };
   });
 

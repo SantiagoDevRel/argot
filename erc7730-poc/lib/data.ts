@@ -15,6 +15,7 @@ export type DbRow = {
   status: "attested" | "candidate";
   att: string | null;
   conf: number;
+  attrs?: { key: string; value: string | number }[]; // full Arkiv attribute set (live rows)
 };
 
 export const CHAINS: Chain[] = [
