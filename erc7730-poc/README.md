@@ -84,3 +84,14 @@ lib/data.ts           mock data + JSON tokenizer + helpers
 - Warm qwen3-coder-next + run the wrapper end-to-end; set `DGX_URL`+`DGX_BEARER` on Vercel.
 - The eval batch run (real accuracy + baseline deltas) — `node eval/run-eval.mjs --gen dgx`.
 - codex audit of the DGX security wiring + the eval result.
+
+## Roadmap
+
+- **Feed relevant Solidity source to the generator (better intent).** Today `buildUserMsg`
+  passes only ABI + NatSpec (`@notice`/`@param`) — not the source. For the sparse-NatSpec long
+  tail (e.g. Lido `submit`'s `_referral`) the model infers intent from names alone → lower
+  grounding. Extract the relevant **state-changing function bodies** (+ their structs/enums)
+  from the Sourcify source and pass those too — NOT the full source (big routers blow the
+  context). Then re-run the eval to **measure** intent-match before/after (confirm it helps),
+  and update the How tab DGX stage to "reads ABI + NatSpec + relevant source". Touches the LIVE
+  path → do with eval verification, not blind.
