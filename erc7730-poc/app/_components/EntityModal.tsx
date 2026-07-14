@@ -57,6 +57,10 @@ export default function EntityModal({ data, onClose }: { data: EntityView; onClo
   const hot = new Set(focus ? FOCUS_KEYS[focus] : []);
   const attested = row.status === "attested";
   const HL = "#FE7446";
+  // Live entities have a real 0x…64-hex Arkiv key → link to the Braga explorer entity view.
+  // Seed-fallback rows (ids like "e1") don't exist on-chain, so no link.
+  const isLiveEntity = /^0x[0-9a-fA-F]{64}$/.test(row.id);
+  const explorerUrl = isLiveEntity ? `https://explorer.braga.hoodi.arkiv.network/entity/${row.id}` : null;
 
   return (
     <div
@@ -76,6 +80,17 @@ export default function EntityModal({ data, onClose }: { data: EntityView; onClo
             </div>
             <span style={{ display: "block", font: "400 10.5px var(--font-mono)", color: "#6B7290", marginTop: 3 }}>Arkiv entity · descriptor for <span style={{ color: "#9BA2B8" }}>{row.fn}</span></span>
           </div>
+          {explorerUrl && (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="u-hoverborder"
+              style={{ flex: "none", display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", background: "rgba(62,207,142,.1)", border: "1px solid rgba(62,207,142,.45)", borderRadius: 8, color: "#3ECF8E", font: "600 10.5px var(--font-mono)", textDecoration: "none", whiteSpace: "nowrap" }}
+            >
+              View in explorer ↗
+            </a>
+          )}
           <button onClick={onClose} className="u-hoverborder" style={{ flex: "none", width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", background: "transparent", border: "1px solid #232A45", borderRadius: 8, color: "#9BA2B8", font: "600 15px var(--font-mono)", cursor: "pointer" }}>✕</button>
         </div>
 
