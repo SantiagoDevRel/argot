@@ -305,12 +305,18 @@ export default function DatabaseTab(p: Props) {
                 <span onClick={() => p.onOpen(r, "status")} title="Open the entity (highlights status)" style={{ display: "inline-block", padding: "3px 10px", borderRadius: 999, border: `1px ${r.status === "candidate" ? "dashed rgba(254,116,70,.55)" : "solid rgba(74,82,224,.55)"}`, color: r.status === "candidate" ? "#FE7446" : "#A6AAFF", background: r.status === "candidate" ? "rgba(254,116,70,.07)" : "rgba(24,30,169,.2)", font: "600 10px var(--font-mono)", cursor: "pointer" }}>{r.status}</span>
               </span>
               <span onClick={() => r.att && p.onOpen(r, "attester")} title={r.att ? "Open the entity (highlights the attester)" : undefined} style={{ font: "500 11.5px var(--font-mono)", color: r.att ? "#C9CEDF" : "#3A4160", cursor: r.att ? "pointer" : "default" }}>{r.att || "—"}</span>
-              <span title={CONF_TIP} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "help" }}>
-                <span style={{ width: 48, height: 3, borderRadius: 99, background: "#1A2036", overflow: "hidden", display: "inline-block" }}>
-                  <span style={{ display: "block", height: "100%", width: r.conf + "%", background: r.status === "candidate" ? "#FE7446" : "#4A52E0" }} />
+              {r.status === "attested" ? (
+                <span title="Trusted via its attestation (see attester) — confidence is a pre-review signal for candidates only." style={{ display: "inline-flex", alignItems: "center", gap: 5, cursor: "help", font: "500 10.5px var(--font-mono)", color: "#8F94FF" }}>
+                  ✓ via attestation
                 </span>
-                <span style={{ font: "600 11px var(--font-mono)", color: "#C9CEDF" }}>{r.conf}%</span>
-              </span>
+              ) : (
+                <span title={CONF_TIP} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "help" }}>
+                  <span style={{ width: 48, height: 3, borderRadius: 99, background: "#1A2036", overflow: "hidden", display: "inline-block" }}>
+                    <span style={{ display: "block", height: "100%", width: r.conf + "%", background: "#FE7446" }} />
+                  </span>
+                  <span style={{ font: "600 11px var(--font-mono)", color: "#C9CEDF" }}>{r.conf}%</span>
+                </span>
+              )}
             </div>
           ))}
           {rows.length === 0 && <div style={{ padding: 38, textAlign: "center", font: "500 12px var(--font-mono)", color: "#6B7290" }}>no Arkiv entities match — adjust filters</div>}

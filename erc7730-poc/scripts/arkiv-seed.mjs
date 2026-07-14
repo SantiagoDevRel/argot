@@ -185,12 +185,15 @@ async function main() {
     console.log(`✓ deleted ${(del.deletedEntities || []).length || existing.entities.length} · tx ${del.txHash}`);
   }
 
-  // Compute the REAL confidence per seed from live Sourcify NatSpec (concurrent fetch).
+  // Confidence is a CANDIDATE-only, pre-review signal (how NatSpec-grounded the auto-generated
+  // intent/labels are). Attested descriptors don't get one — their trust comes from the
+  // attestation (the signer), not a generation score. So we compute it only for candidates.
   const confs = await Promise.all(
     SEED.map(async (d) => {
+      if (d.attested) return null;
       const { userdoc, devdoc } = await sourcifyNatSpec(d.chainId, d.address);
       const c = computeConfidence(d.intent, d.fields, userdoc, devdoc);
-      console.log(`  confidence ${d.contract} · ${d.short} = ${c}% (NatSpec-grounded)`);
+      console.log(`  confidence ${d.contract} · ${d.short} = ${c}% (candidate · NatSpec-grounded)`);
       return c;
     })
   );
@@ -213,9 +216,9 @@ async function main() {
       { key: "attested", value: d.attested ? "true" : "false" },
       { key: "sourcifyVerified", value: "true" },
       { key: "generatedBy", value: d.generatedBy },
-      { key: "confidence", value: confs[i] },
       { key: "descriptorHash", value: descriptorHash },
     ];
+    if (!d.attested && confs[i] != null) attributes.push({ key: "confidence", value: confs[i] });
     if (d.attester) attributes.push({ key: "attester", value: d.attester });
     return { payload: jsonToPayload(desc), contentType: "application/json", expiresIn: EXPIRES_IN, attributes };
   });

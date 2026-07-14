@@ -36,7 +36,8 @@ function attrsFor(row: DbRow): { key: string; value: string }[] {
   map.set("status", row.status);
   map.set("attested", row.status === "attested" ? "true" : "false");
   if (row.att) map.set("attester", row.att);
-  map.set("confidence", String(row.conf));
+  // confidence is a candidate-only pre-review signal; attested descriptors are trusted via attestation
+  if (row.status !== "attested") map.set("confidence", String(row.conf));
   // overlay the real on-chain attributes when present (live rows) — richer + authoritative
   for (const a of row.attrs ?? []) map.set(a.key, String(a.value));
   const keys = [...new Set([...ORDER, ...map.keys()])].filter((k) => map.has(k) && k !== "addrShort" && k !== "chainAddress");
