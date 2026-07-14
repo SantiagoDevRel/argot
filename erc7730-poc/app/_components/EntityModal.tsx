@@ -9,6 +9,10 @@ import type { DbRow } from "@/lib/data";
 export type EntityFocus = "contract" | "address" | "status" | "attester" | null;
 export type EntityView = { row: DbRow; focus: EntityFocus } | null;
 
+// tooltip for the confidence attribute — where the number comes from (never a mystery number)
+const CONF_TIP =
+  "Confidence = how grounded the descriptor's intent & field labels are in the contract's on-chain NatSpec (@notice/@param). Higher = NatSpec-backed; lower = inferred from source. A generation-quality signal for candidates — not a trust guarantee (trust comes from review + attestation).";
+
 // which attribute keys light up for a given click
 const FOCUS_KEYS: Record<Exclude<EntityFocus, null>, string[]> = {
   contract: ["contract", "address"],
@@ -117,15 +121,16 @@ export default function EntityModal({ data, onClose }: { data: EntityView; onClo
               return (
                 <div
                   key={a.key}
+                  title={a.key === "confidence" ? CONF_TIP : undefined}
                   style={{
                     display: "grid", gridTemplateColumns: "150px 1fr", gap: 12, alignItems: "baseline",
                     padding: "8px 12px", borderBottom: i < attrs.length - 1 ? "1px solid #10142A" : "none",
                     background: on ? "rgba(254,116,70,.12)" : "transparent",
                     borderLeft: on ? `3px solid ${HL}` : "3px solid transparent",
-                    transition: "background .2s",
+                    transition: "background .2s", cursor: a.key === "confidence" ? "help" : "default",
                   }}
                 >
-                  <span style={{ font: "500 10.5px var(--font-mono)", color: on ? HL : "#6B7290" }}>{a.key}</span>
+                  <span style={{ font: "500 10.5px var(--font-mono)", color: on ? HL : "#6B7290", display: "inline-flex", alignItems: "center", gap: 5 }}>{a.key}{a.key === "confidence" && <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 12, height: 12, borderRadius: "50%", border: "1px solid #3A4160", color: "#6B7290", font: "700 8px var(--font-mono)" }}>i</span>}</span>
                   <span style={{ font: "500 11.5px var(--font-mono)", color: on ? "#FFE7DD" : valueColor(a.key), wordBreak: "break-all" }}>{a.value}</span>
                 </div>
               );

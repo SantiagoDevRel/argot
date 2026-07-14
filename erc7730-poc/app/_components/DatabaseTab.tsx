@@ -27,6 +27,10 @@ const CONX = 176,
   ENTX = 490,
   ATTX = 806;
 
+// Where the confidence number comes from — surfaced as a tooltip so it's never a mystery number.
+const CONF_TIP =
+  "Confidence = how grounded the descriptor's intent & field labels are in the contract's on-chain NatSpec (@notice/@param). Higher = NatSpec-backed; lower = inferred from source. It's a generation-quality signal for candidates — not a trust guarantee (trust comes from human review + attestation).";
+
 export default function DatabaseTab(p: Props) {
   const query = p.q.trim().toLowerCase();
   const rows = p.db.filter(
@@ -281,7 +285,10 @@ export default function DatabaseTab(p: Props) {
             <span>SELECTOR</span>
             <span>STATUS</span>
             <span>ATTESTER</span>
-            <span>CONFIDENCE</span>
+            <span title={CONF_TIP} style={{ cursor: "help", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              CONFIDENCE
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 12, height: 12, borderRadius: "50%", border: "1px solid #3A4160", color: "#6B7290", font: "700 8px var(--font-mono)" }}>i</span>
+            </span>
           </div>
           {rows.map((r) => (
             <div key={r.id} className="u-row" style={{ ...tableGrid, padding: "12px 18px", borderBottom: "1px solid #10142A", alignItems: "center", transition: "background .2s" }}>
@@ -298,7 +305,7 @@ export default function DatabaseTab(p: Props) {
                 <span onClick={() => p.onOpen(r, "status")} title="Open the entity (highlights status)" style={{ display: "inline-block", padding: "3px 10px", borderRadius: 999, border: `1px ${r.status === "candidate" ? "dashed rgba(254,116,70,.55)" : "solid rgba(74,82,224,.55)"}`, color: r.status === "candidate" ? "#FE7446" : "#A6AAFF", background: r.status === "candidate" ? "rgba(254,116,70,.07)" : "rgba(24,30,169,.2)", font: "600 10px var(--font-mono)", cursor: "pointer" }}>{r.status}</span>
               </span>
               <span onClick={() => r.att && p.onOpen(r, "attester")} title={r.att ? "Open the entity (highlights the attester)" : undefined} style={{ font: "500 11.5px var(--font-mono)", color: r.att ? "#C9CEDF" : "#3A4160", cursor: r.att ? "pointer" : "default" }}>{r.att || "—"}</span>
-              <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span title={CONF_TIP} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "help" }}>
                 <span style={{ width: 48, height: 3, borderRadius: 99, background: "#1A2036", overflow: "hidden", display: "inline-block" }}>
                   <span style={{ display: "block", height: "100%", width: r.conf + "%", background: r.status === "candidate" ? "#FE7446" : "#4A52E0" }} />
                 </span>

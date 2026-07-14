@@ -134,6 +134,37 @@ function hashDescriptor(obj) {
   return "0x" + createHash("sha256").update(JSON.stringify(obj)).digest("hex");
 }
 
+// REAL confidence = how grounded the descriptor's intent + field labels are in the contract's
+// on-chain NatSpec (@notice/@param). Mirrors the DGX wrapper's confidence(): a NatSpec-backed
+// label/intent scores high, a source-inferred one scores lower. This is a generation-quality
+// signal for candidates — NOT a trust guarantee (trust comes from review + attestation).
+async function sourcifyNatSpec(chainId, address) {
+  const base = "https://sourcify.dev/server/v2/contract";
+  try {
+    const r = await fetch(`${base}/${chainId}/${address}?fields=userdoc,devdoc,proxyResolution`);
+    if (!r.ok) return { userdoc: {}, devdoc: {} };
+    const s = await r.json();
+    let userdoc = s.userdoc, devdoc = s.devdoc;
+    const impl = s.proxyResolution?.isProxy ? s.proxyResolution.implementations?.[0]?.address : null;
+    if (/^0x[0-9a-fA-F]{40}$/.test(String(impl || ""))) {
+      try { const ir = await fetch(`${base}/${chainId}/${impl}?fields=userdoc,devdoc`); if (ir.ok) { const iso = await ir.json(); userdoc = iso.userdoc || userdoc; devdoc = iso.devdoc || devdoc; } } catch { /* fall back to proxy natspec */ }
+    }
+    return { userdoc: userdoc || {}, devdoc: devdoc || {} };
+  } catch { return { userdoc: {}, devdoc: {} }; }
+}
+function computeConfidence(intent, fields, userdoc, devdoc) {
+  const doc = (JSON.stringify(userdoc || {}) + " " + JSON.stringify(devdoc || {})).toLowerCase();
+  const firstWord = (s) => String(s || "").toLowerCase().split(/\s+/).filter(Boolean)[0] || "";
+  const scores = [];
+  const iw = firstWord(intent);
+  scores.push(iw && doc.includes(iw) ? 92 : 74); // intent: NatSpec-backed vs inferred
+  for (const f of fields || []) {
+    const lw = firstWord(f.label);
+    scores.push(lw && doc.includes(lw) ? 95 : 78); // field label: backed vs inferred
+  }
+  return Math.round(scores.reduce((a, b) => a + b, 0) / (scores.length || 1));
+}
+
 async function main() {
   const account = privateKeyToAccount(pk.startsWith("0x") ? pk : "0x" + pk);
   const transport = http(RPC);
@@ -145,7 +176,26 @@ async function main() {
   console.log(`network chainId=${chainId} · wallet ${short(account.address)} · balance ${formatEther(balance)} GLM`);
   if (balance === 0n) throw new Error("wallet has 0 balance — fund at https://braga.hoodi.arkiv.network/faucet/");
 
-  const creates = SEED.map((d) => {
+  // Idempotent: delete any prior entities in this dataset (we own them) before re-creating,
+  // so re-running never leaves duplicates/orphans (e.g. after an attribute rename).
+  const existing = await pub.query(`dataset = "${DATASET}"`, { includeData: { attributes: false }, resultsPerPage: 100 });
+  if (existing.entities.length) {
+    console.log(`deleting ${existing.entities.length} existing "${DATASET}" entities…`);
+    const del = await wallet.mutateEntities({ deletes: existing.entities.map((e) => ({ entityKey: e.key })) });
+    console.log(`✓ deleted ${(del.deletedEntities || []).length || existing.entities.length} · tx ${del.txHash}`);
+  }
+
+  // Compute the REAL confidence per seed from live Sourcify NatSpec (concurrent fetch).
+  const confs = await Promise.all(
+    SEED.map(async (d) => {
+      const { userdoc, devdoc } = await sourcifyNatSpec(d.chainId, d.address);
+      const c = computeConfidence(d.intent, d.fields, userdoc, devdoc);
+      console.log(`  confidence ${d.contract} · ${d.short} = ${c}% (NatSpec-grounded)`);
+      return c;
+    })
+  );
+
+  const creates = SEED.map((d, i) => {
     const desc = descriptor(d.contract, d.chainId, d.address, d.fn, d.intent, d.fields, d.owner);
     const descriptorHash = hashDescriptor(desc);
     const attributes = [
@@ -163,7 +213,7 @@ async function main() {
       { key: "attested", value: d.attested ? "true" : "false" },
       { key: "sourcifyVerified", value: "true" },
       { key: "generatedBy", value: d.generatedBy },
-      { key: "confidence", value: d.conf },
+      { key: "confidence", value: confs[i] },
       { key: "descriptorHash", value: descriptorHash },
     ];
     if (d.attester) attributes.push({ key: "attester", value: d.attester });
