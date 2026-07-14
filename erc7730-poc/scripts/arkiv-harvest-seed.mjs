@@ -40,7 +40,7 @@ function rowToEntity(row) {
   const nFns = Object.keys(desc?.display?.formats || {}).length;
   const attributes = [
     { key: "dataset", value: DATASET },
-    { key: "kind", value: "descriptor" },
+    { key: "type", value: "descriptor" },
     { key: "chainId", value: String(row.chainId) },
     { key: "address", value: row.address },
     { key: "chainAddress", value: `${row.chainId}:${row.address}` },
@@ -89,7 +89,7 @@ async function main() {
   }
   console.log(`✓ wrote ${written} candidate descriptor entities total`);
 
-  const res = await pub.query(`dataset = "${DATASET}" && kind = "descriptor"`, {
+  const res = await pub.query(`dataset = "${DATASET}" && type = "descriptor"`, {
     includeData: { attributes: true, payload: false, metadata: false }, resultsPerPage: 50,
   });
   console.log(`✓ read-back (first page): ${res.entities.length} entities match dataset="${DATASET}"`);

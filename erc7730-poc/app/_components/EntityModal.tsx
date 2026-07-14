@@ -19,7 +19,7 @@ const FOCUS_KEYS: Record<Exclude<EntityFocus, null>, string[]> = {
 
 // Preferred display order + friendly presence. Live rows carry all of these; seed rows are
 // synthesized from the row fields below.
-const ORDER = ["dataset", "kind", "chainId", "chain", "address", "contract", "selector", "fn", "status", "attested", "attester", "sourcifyVerified", "generatedBy", "source", "confidence", "descriptorHash"];
+const ORDER = ["dataset", "type", "chainId", "chain", "address", "contract", "selector", "fn", "status", "attested", "attester", "sourcifyVerified", "generatedBy", "source", "confidence", "descriptorHash"];
 
 function attrsFor(row: DbRow): { key: string; value: string }[] {
   const map = new Map<string, string>();

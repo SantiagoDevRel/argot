@@ -20,7 +20,7 @@ export type EntitiesResult = { rows: DbRow[]; live: boolean; network: string; co
 
 export async function queryDescriptors(): Promise<EntitiesResult> {
   const pub = createPublicClient({ chain: braga, transport: http(RPC) });
-  const res = await pub.query(`dataset = "${DATASET}" && kind = "descriptor"`, {
+  const res = await pub.query(`dataset = "${DATASET}" && type = "descriptor"`, {
     includeData: { attributes: true, payload: false, metadata: false },
     resultsPerPage: 100,
   });

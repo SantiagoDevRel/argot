@@ -150,7 +150,7 @@ async function main() {
     const descriptorHash = hashDescriptor(desc);
     const attributes = [
       { key: "dataset", value: DATASET },
-      { key: "kind", value: "descriptor" },
+      { key: "type", value: "descriptor" },
       { key: "chainId", value: String(d.chainId) },
       { key: "address", value: d.address },
       { key: "chainAddress", value: `${d.chainId}:${d.address}` },
@@ -177,7 +177,7 @@ async function main() {
   (r.createdEntities || []).forEach((k, i) => console.log(`   ${SEED[i].contract} · ${SEED[i].short} → ${k}`));
 
   // read-back verification (public query)
-  const res = await pub.query(`dataset = "${DATASET}" && kind = "descriptor"`, {
+  const res = await pub.query(`dataset = "${DATASET}" && type = "descriptor"`, {
     includeData: { attributes: true, payload: false, metadata: false },
     resultsPerPage: 50,
   });
