@@ -21,6 +21,7 @@ import { spawn, execFile } from "node:child_process";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir, homedir } from "node:os";
 import { join } from "node:path";
+import { extractRelevantSource } from "./src-extract.mjs";
 
 const PORT = Number(process.env.PORT || 9010);
 const BEARER = process.env.WRAPPER_BEARER || "";
@@ -38,7 +39,7 @@ const inflight = { load: 0, generate: 0 };
 const CAP = { load: 1, generate: 2 };
 const MAX_BODY = 256 * 1024; // reject oversized request bodies (readBody DoS guard)
 // Only vetted models may be loaded/run — never an arbitrary request-supplied model id.
-const MODEL_ALLOW = new Set([DEFAULT_MODEL, "qwen3-coder-next:q4_K_M", "minimax-m2.5"]);
+const MODEL_ALLOW = new Set([DEFAULT_MODEL, "qwen3-coder-next:q4_K_M", "minimax-m2.5", "qwen3.5:122b-a10b", "gpt-oss:120b", "gpt-oss:20b"]);
 const pickModel = (m) => (typeof m === "string" && MODEL_ALLOW.has(m) ? m : DEFAULT_MODEL);
 // Per-chain public RPCs (with fallbacks) for the deterministic decimals()/symbol() eth_call.
 const RPCS = {
@@ -172,17 +173,18 @@ const FORMAT_SCHEMA = {
   required: ["formats"],
 };
 
-function buildUserMsg(abi, userdoc, devdoc) {
+function buildUserMsg(abi, userdoc, devdoc, source) {
   return [
     `ABI (functions only): ${JSON.stringify((abi || []).filter((x) => x.type === "function")).slice(0, 14000)}`,
     `NatSpec userdoc (@notice): ${JSON.stringify(userdoc || {}).slice(0, 6000)}`,
     `NatSpec devdoc (@param/@dev): ${JSON.stringify(devdoc || {}).slice(0, 6000)}`,
+    ...(source ? [`Relevant Solidity source (function bodies + types — read the code to understand what each function actually does; ground the intent in it): ${source}`] : []),
     `Produce the "formats" JSON now.`,
   ].join("\n\n");
 }
 
-async function generateFormats(model, abi, userdoc, devdoc) {
-  return chatFormats(model, buildUserMsg(abi, userdoc, devdoc));
+async function generateFormats(model, abi, userdoc, devdoc, source) {
+  return chatFormats(model, buildUserMsg(abi, userdoc, devdoc, source));
 }
 
 // The AUDITOR loop: feed the exact linter errors back to the model so it fixes the
@@ -398,22 +400,22 @@ const server = createServer(async (req, res) => {
     inflight.generate++;
     try {
       // 1. Sourcify v2 inputs
-      const sres = await fetch(`${SOURCIFY}/${chainId}/${address}?fields=abi,userdoc,devdoc,metadata,proxyResolution`);
+      const sres = await fetch(`${SOURCIFY}/${chainId}/${address}?fields=abi,userdoc,devdoc,metadata,proxyResolution,sources`);
       if (!sres.ok) return json(res, 404, { error: `sourcify ${sres.status}` });
       const sourcify = await sres.json();
 
       // 1b. proxy → generate from the IMPLEMENTATION's logic (ABI/NatSpec), but bind the
       // descriptor to the proxy address the user actually calls.
-      let genAbi = sourcify.abi, genUser = sourcify.userdoc, genDev = sourcify.devdoc, boundImpl = null;
+      let genAbi = sourcify.abi, genUser = sourcify.userdoc, genDev = sourcify.devdoc, genSrc = sourcify.sources, boundImpl = null;
       const implRaw = sourcify.proxyResolution?.isProxy ? sourcify.proxyResolution.implementations?.[0]?.address : null;
       const impl = /^0x[0-9a-fA-F]{40}$/.test(String(implRaw || "")) ? implRaw : null; // validate before re-fetch
       if (impl) {
         try {
-          const ires = await fetch(`${SOURCIFY}/${chainId}/${impl}?fields=abi,userdoc,devdoc`);
+          const ires = await fetch(`${SOURCIFY}/${chainId}/${impl}?fields=abi,userdoc,devdoc,sources`);
           if (ires.ok) {
             const iso = await ires.json();
             if (Array.isArray(iso.abi) && iso.abi.length) {
-              genAbi = iso.abi; genUser = iso.userdoc; genDev = iso.devdoc; boundImpl = impl;
+              genAbi = iso.abi; genUser = iso.userdoc; genDev = iso.devdoc; genSrc = iso.sources; boundImpl = impl;
             }
           }
         } catch { /* fall back to the proxy's own ABI */ }
@@ -437,7 +439,8 @@ const server = createServer(async (req, res) => {
         display: { formats: normalizeFormats(formats || {}) },
       });
 
-      const gen = await generateFormats(model, genAbi, genUser, genDev);
+      const genSource = extractRelevantSource(genSrc, genAbi);
+      const gen = await generateFormats(model, genAbi, genUser, genDev, genSource);
       let descriptor = buildDescriptor(gen.formats || {});
       let lintRes = await lint(descriptor);
       let repaired = false;

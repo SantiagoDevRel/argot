@@ -87,11 +87,19 @@ lib/data.ts           mock data + JSON tokenizer + helpers
 
 ## Roadmap
 
-- **Feed relevant Solidity source to the generator (better intent).** Today `buildUserMsg`
-  passes only ABI + NatSpec (`@notice`/`@param`) — not the source. For the sparse-NatSpec long
-  tail (e.g. Lido `submit`'s `_referral`) the model infers intent from names alone → lower
-  grounding. Extract the relevant **state-changing function bodies** (+ their structs/enums)
-  from the Sourcify source and pass those too — NOT the full source (big routers blow the
-  context). Then re-run the eval to **measure** intent-match before/after (confirm it helps),
-  and update the How tab DGX stage to "reads ABI + NatSpec + relevant source". Touches the LIVE
-  path → do with eval verification, not blind.
+- ✅ **Feed relevant Solidity source to the generator (better intent) — DONE (2026-07-15).**
+  `buildUserMsg` now passes ABI + NatSpec **+ the relevant Solidity source** (`src-extract.mjs`
+  pulls the state-changing function bodies + struct/enum defs, capped at 12 KB — not the full
+  source, which would blow the context on big routers). **Measured A/B (n=30, same held-out
+  contracts, one experimental wrapper on :9011 vs the baseline on :9010):**
+
+  | metric | ABI+NatSpec | +relevant source | Δ |
+  |---|---|---|---|
+  | lint-pass | 50% | **57%** | +7pp |
+  | fnRecall | 0.372 | **0.435** | +0.06 |
+  | fieldExact | 0.054 | **0.104** | ~2× |
+  | intent | 0.097 | **0.119** | +23% |
+
+  Consistent win on all four (lint did NOT drop — the concern about a bigger prompt hurting
+  structure didn't materialize; only the long-tail lint dipped ~1 contract, noise). Promoted to
+  the live wrapper. The model now grounds intent in what the code *does*, not just param names.

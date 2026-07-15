@@ -35,12 +35,12 @@ const STAGES: Stage[] = [
     title: "DGX · qwen3-coder-next", sub: "local · offline generation",
     role: "A local coder model drafts ONLY the hard, semantic part — what each function does and which fields to show.",
     detail:
-      "Runs fully offline on the DGX; sources never leave the box. The model emits only display.formats (intent + field mapping) as schema-constrained JSON. The deterministic parts are injected in code, never model-guessed.",
+      "Runs fully offline on the DGX; sources never leave the box. It reads the ABI, NatSpec, AND the relevant Solidity function bodies — so the intent is grounded in what the code actually does, not just parameter names — then emits display.formats (intent + field mapping) as schema-constrained JSON. The deterministic parts are injected in code, never model-guessed.",
     items: [
+      "Reads: ABI + NatSpec + the relevant Solidity function bodies",
       "Output: intent per function (\"Swap tokens\", \"Approve USDC\")",
       "Output: field map → tokenAmount / addressName / duration / date / raw",
-      "Injected in code: contract identity + context",
-      "Injected on-chain: token decimals via eth_call (never the model)",
+      "Injected in code: contract identity + context; decimals via on-chain eth_call",
     ],
   },
   {
