@@ -1,0 +1,688 @@
+<title>Sourcify Migration Readout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#FAF9F6; --surface:#FFFFFF; --sunk:#F2F1F6;
+  --ink:#0E1030; --slate:#5A5F80; --faint:#8B90AC;
+  --line:#E2E2ED; --hair:#EDEDF4;
+  --blue:#181EA9; --blue-soft:#E8E9FA;
+  --orange:#FE7446; --orange-soft:#FFEDE6;
+  --ok:#146B4F; --ok-soft:#E3F2EC;
+  --warn:#8A5A0B; --warn-soft:#FBF0DC;
+  --stop:#96162F; --stop-soft:#FBE7EA;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0B0C1C; --surface:#14162E; --sunk:#1B1D38;
+    --ink:#EDEDF6; --slate:#A7ABC8; --faint:#787D9C;
+    --line:#2A2D4E; --hair:#222542;
+    --blue:#8B92FF; --blue-soft:#1D2050;
+    --orange:#FF8A61; --orange-soft:#3A2117;
+    --ok:#5FD1A8; --ok-soft:#0F2E25;
+    --warn:#E0B25F; --warn-soft:#332609;
+    --stop:#FF8095; --stop-soft:#38131C;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0B0C1C; --surface:#14162E; --sunk:#1B1D38;
+  --ink:#EDEDF6; --slate:#A7ABC8; --faint:#787D9C;
+  --line:#2A2D4E; --hair:#222542;
+  --blue:#8B92FF; --blue-soft:#1D2050;
+  --orange:#FF8A61; --orange-soft:#3A2117;
+  --ok:#5FD1A8; --ok-soft:#0F2E25;
+  --warn:#E0B25F; --warn-soft:#332609;
+  --stop:#FF8095; --stop-soft:#38131C;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px; margin:0 auto; padding:0 28px 96px}
+h1,h2,h3,.lbl,.num,table,code,.pill{font-family:var(--mono)}
+a{color:var(--blue)}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--orange); outline-offset:3px; border-radius:2px}
+
+/* ---------- masthead ---------- */
+header{border-bottom:2px solid var(--ink); padding:44px 0 22px; margin-bottom:38px}
+.eyebrow{
+  font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--blue); display:flex; gap:12px; flex-wrap:wrap;
+  align-items:center; margin-bottom:20px;
+}
+.eyebrow .sep{color:var(--faint)}
+h1{
+  font-size:clamp(30px,5vw,46px); font-weight:600; line-height:1.1; margin:0 0 14px;
+  letter-spacing:-.02em; text-wrap:balance;
+}
+.standfirst{font-size:17px; color:var(--slate); max-width:64ch; margin:0}
+.stamp{
+  margin-top:22px; font-family:var(--mono); font-size:12px; color:var(--faint);
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+}
+.stamp b{color:var(--slate); font-weight:500}
+
+/* ---------- section scaffolding ---------- */
+section{margin:56px 0 0}
+.shead{display:flex; align-items:baseline; gap:14px; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:22px; flex-wrap:wrap}
+.shead h2{font-size:19px; font-weight:600; margin:0; letter-spacing:-.01em}
+.shead .note{font-family:var(--sans); font-size:13.5px; color:var(--faint); margin-left:auto}
+.prose{max-width:68ch; color:var(--slate); font-size:15.5px}
+.prose strong{color:var(--ink); font-weight:600}
+
+/* ---------- verdict tiles ---------- */
+/* 4 tiles: 1 / 2x2 / 4 &mdash; never a row of one */
+.verdicts{display:grid; grid-template-columns:1fr; gap:1px; background:var(--line); border:1px solid var(--line)}
+@media(min-width:620px){.verdicts{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1060px){.verdicts{grid-template-columns:repeat(4,1fr)}}
+.vt{background:var(--surface); padding:20px 18px}
+.vt .lbl{font-size:11px; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--faint); display:block; margin-bottom:9px}
+.vt p{margin:0; font-size:14.5px; color:var(--ink); line-height:1.5}
+.vt .when{font-family:var(--mono); font-size:11px; color:var(--blue); font-weight:600; letter-spacing:.06em}
+
+/* ---------- KPI grid ---------- */
+/* both KPI blocks hold 8 and 4 items: 2 cols -> 4x2 / 2x2, 4 cols -> 2x2 / 1x4. No orphans at any width. */
+.kpis{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line)}
+@media(max-width:479px){.kpis{grid-template-columns:1fr}}
+@media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--surface); padding:17px 16px 15px}
+.kpi .lbl{display:block; font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; line-height:1.4}
+.kpi .num{display:block; font-size:25px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1.15}
+.kpi .sub{display:block; font-size:12.5px; color:var(--slate); margin-top:5px; line-height:1.45}
+.kpi.hero .num{color:var(--blue)}
+.kpi.gap{background:var(--orange-soft)}
+.kpi.gap .num{color:var(--orange)}
+
+/* ---------- tables ---------- */
+.scroll{overflow-x:auto; border:1px solid var(--line); background:var(--surface)}
+table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:640px}
+th{
+  text-align:left; font-size:10.5px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap;
+  background:var(--sunk); position:sticky; top:0;
+}
+td{padding:11px 14px; border-bottom:1px solid var(--hair); vertical-align:top; font-family:var(--sans); line-height:1.5}
+tr:last-child td{border-bottom:none}
+td.m{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td.k{font-family:var(--mono); font-weight:500; color:var(--ink); white-space:nowrap}
+td.ask{color:var(--orange); font-weight:500}
+tbody tr:hover{background:var(--sunk)}
+
+/* ---------- pills ---------- */
+.pill{
+  display:inline-block; font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase;
+  padding:3px 8px; border-radius:2px; white-space:nowrap;
+}
+.p-ok{background:var(--ok-soft); color:var(--ok)}
+.p-warn{background:var(--warn-soft); color:var(--warn)}
+.p-stop{background:var(--stop-soft); color:var(--stop)}
+.p-blue{background:var(--blue-soft); color:var(--blue)}
+.p-gap{background:var(--orange-soft); color:var(--orange)}
+
+/* ---------- findings ---------- */
+.finding{border:1px solid var(--line); background:var(--surface); padding:16px 18px; margin-bottom:-1px}
+.finding > summary{cursor:pointer; list-style:none; display:flex; gap:12px; align-items:flex-start}
+.finding > summary::-webkit-details-marker{display:none}
+.finding .fid{font-family:var(--mono); font-size:11px; font-weight:600; color:var(--faint); padding-top:3px; min-width:26px}
+.finding .ftitle{font-family:var(--sans); font-size:15px; font-weight:600; flex:1; line-height:1.45}
+.finding .body{margin:12px 0 0 38px; font-size:14px; color:var(--slate); max-width:68ch}
+.finding .body p{margin:0 0 9px}
+.finding .body p:last-child{margin-bottom:0}
+.finding .body em{color:var(--ink); font-style:normal; font-weight:600}
+.quote{
+  border-left:2px solid var(--blue); padding:2px 0 2px 13px; margin:11px 0;
+  font-family:var(--mono); font-size:12.5px; color:var(--ink); line-height:1.55;
+}
+
+/* ---------- ask blocks ---------- */
+.asks{display:grid; gap:1px; background:var(--line); border:1px solid var(--line)}
+.ask-col{background:var(--surface); padding:20px 20px 22px}
+.ask-col > h3{font-size:14px; font-weight:600; margin:0 0 3px; letter-spacing:-.005em}
+.ask-col .who{font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.06em; margin-bottom:14px}
+ol.q{margin:0; padding-left:0; list-style:none; counter-reset:q}
+ol.q li{counter-increment:q; position:relative; padding-left:30px; margin-bottom:13px; font-size:14px; line-height:1.55}
+ol.q li::before{
+  content:"Q" counter(q); position:absolute; left:0; top:1px;
+  font-family:var(--mono); font-size:10.5px; font-weight:600; color:var(--blue);
+}
+ol.q li .unit{display:block; font-family:var(--mono); font-size:11.5px; color:var(--faint); margin-top:3px}
+ol.q li.why{padding-left:30px}
+
+/* ---------- callout ---------- */
+.callout{border:1px solid var(--orange); background:var(--orange-soft); padding:18px 20px; margin:22px 0}
+.callout .lbl{font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.13em; text-transform:uppercase; color:var(--orange); display:block; margin-bottom:8px}
+.callout p{margin:0 0 8px; font-size:14.5px; color:var(--ink); max-width:70ch}
+.callout p:last-child{margin-bottom:0}
+
+/* ---------- sources ---------- */
+.src{columns:2; column-gap:34px; font-size:12.5px; color:var(--slate); font-family:var(--mono); line-height:1.75}
+.src div{break-inside:avoid; margin-bottom:5px}
+@media(max-width:720px){
+  .src{columns:1}
+  .wrap{padding:0 18px 64px}
+  .finding .body{margin-left:0}
+}
+footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--faint)}
+</style>
+
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">
+    <span>[ ARKIV ]</span><span class="sep">&times;</span><span>Sourcify</span>
+    <span class="sep">/</span><span>Design-partner readout</span>
+  </div>
+  <h1>What we already know, and what we still have to ask</h1>
+  <p class="standfirst">
+    Every number below was measured from public endpoints on 18 August 2026 &mdash; no access to Sourcify's
+    database, no download of the 170&nbsp;GB dataset. The point of this page is to separate three things:
+    what we can state as fact, what the strategy doc gets wrong, and the short list of questions only
+    Sourcify or Arkiv engineering can answer.
+  </p>
+  <div class="stamp">
+    <span><b>Measured</b> 2026-08-18</span><span class="sep">&middot;</span>
+    <span><b>Sources</b> stats.sourcify.dev &middot; GCS export &middot; argotorg/sourcify issues &middot; Cheesecake test run</span><span class="sep">&middot;</span>
+    <span><b>Reproduce</b> <code>sourcify-lab/measure.py</code></span>
+  </div>
+</header>
+
+<section style="margin-top:0">
+  <div class="shead"><h2>Three meetings, three answers</h2></div>
+  <div class="verdicts">
+    <div class="vt">
+      <span class="lbl">Today <span class="when">&mdash; Kaan</span></span>
+      <p>Do <b>not</b> ask for anything we can compute. Ask the six things the public dataset structurally
+      cannot answer: the read workload, the index split, the 27% that never gets exported, and the
+      mutability contract.</p>
+    </div>
+    <div class="vt">
+      <span class="lbl">Tomorrow <span class="when">&mdash; Arkiv engineering</span></span>
+      <p>The write side is already solved on paper: their organic load is <b>0.4 entities/s</b> against a
+      measured <b>107/s</b>. Everything worth asking for is on the <b>read</b> side and in the query language.</p>
+    </div>
+    <div class="vt">
+      <span class="lbl">Monday <span class="when">&mdash; Arkiv + Sourcify</span></span>
+      <p>Lead with the <b>4byte pilot</b>: ~6% of their data carrying ~47% of their traffic, backfillable in
+      about a day. Never lead with price &mdash; that argument is closed and we lost it.</p>
+    </div>
+    <div class="vt">
+      <span class="lbl">The trap <span class="when">&mdash; avoid</span></span>
+      <p>Sourcify already ran a "move the database" evaluation in July and concluded <b>don't migrate</b>.
+      Re-running that pitch burns the room. The opening is how contracts are <b>served</b>, not where bytes sit.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Measured today, without asking Sourcify</h2>
+    <span class="note">Public endpoints only &middot; reproducible</span>
+  </div>
+  <div class="kpis">
+    <div class="kpi hero">
+      <span class="lbl">Verified contracts</span>
+      <span class="num">43.78 M</span>
+      <span class="sub">29.1% exact / 70.9% partial &middot; 377 chains with contracts, 497 configured</span>
+    </div>
+    <div class="kpi hero">
+      <span class="lbl">Organic writes</span>
+      <span class="num">~34 k<span style="font-size:15px; font-weight:500">/day</span></span>
+      <span class="sub">Last 7d 34,639 &middot; last 30d 37,545. This is the real steady state.</span>
+    </div>
+    <div class="kpi">
+      <span class="lbl">Live database</span>
+      <span class="num">949.6 GB</span>
+      <span class="sub"><code>pg_database_size()</code>, indexes and TOAST included</span>
+    </div>
+    <div class="kpi">
+      <span class="lbl">Exported / not exported</span>
+      <span class="num">73 / 27<span style="font-size:15px; font-weight:500">%</span></span>
+      <span class="sub">692.9 GB in the 10 published tables &middot; 256.7 GB never leaves</span>
+    </div>
+    <div class="kpi">
+      <span class="lbl">Parquet export</span>
+      <span class="num">170.4 GB</span>
+      <span class="sub">2,687 files, zstd &middot; 4.07&times; vs exported tables, 5.57&times; vs whole DB</span>
+    </div>
+    <div class="kpi">
+      <span class="lbl">Compilation reuse</span>
+      <span class="num">7.7&times;</span>
+      <span class="sub">43.78M contracts resolve to ~5.2M distinct compilations. Storage scales with the small number.</span>
+    </div>
+    <div class="kpi">
+      <span class="lbl">4byte slice</span>
+      <span class="num">5.8<span style="font-size:15px; font-weight:500">% of DB</span></span>
+      <span class="sub">54.7 GB serving &gt;7M of &gt;15M requests/day &mdash; ~47% of traffic</span>
+    </div>
+    <div class="kpi gap">
+      <span class="lbl">Read gap vs Arkiv</span>
+      <span class="num">5,800&times;</span>
+      <span class="sub">4byte needs ~81 req/s average. Arkiv's public endpoint allows 50 req/<i>hour</i>/IP.</span>
+    </div>
+  </div>
+  <p class="prose" style="margin-top:18px">
+    Two of these did not exist in any of our documents before today. <strong>43.78M verified contracts</strong> &mdash;
+    our files still say ~11M, which was the figure at the end of 2025; the number grew 5&times; in twelve months,
+    mostly because Foundry and Hardhat now verify to Sourcify by default. And <strong>the whole daily curve is
+    already public</strong>: <code>stats.sourcify.dev/data.json</code> carries per-chain cumulative counts back to
+    April 2023, refreshed daily. The strategy doc proposes deriving that from the Parquet export. Correct answer,
+    much harder instrument &mdash; the JSON is 4.6 MB and answers it in one request.
+  </p>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>Accuracy review of the strategy doc</h2>
+    <span class="note">13 claims checked against primary sources</span>
+  </div>
+  <p class="prose" style="margin-bottom:20px">
+    The doc holds up well. Every size figure, the 4.07&times; vs 5.5&times; explanation, the egress revision, the
+    "don't migrate" conclusion and &mdash; importantly &mdash; the warning that 15M requests/day must never be quoted as
+    contract lookups are all <strong>confirmed against primary sources</strong>. What follows is only what needs
+    changing, ordered by how much it would cost us if said out loud on Monday.
+  </p>
+
+  <details class="finding" open>
+    <summary>
+      <span class="fid">F1</span>
+      <span class="ftitle">The growth rate is overstated by roughly 7&times;. This is the one that must be fixed before Monday.</span>
+      <span class="pill p-stop">fix</span>
+    </summary>
+    <div class="body">
+      <p>The doc states growth is "<em>now around 189 GiB per month</em>", sourced to issue #2866. The issue does say
+      that. But three independent size readings disagree:</p>
+      <p><code>pg_database_size</code> was <b>939.9 GB</b> on 7 Aug (Kaan's own summary), <b>942.28 GB</b> on 10 Aug
+      (the doc), and <b>949.62 GB</b> today. That is <b>+9.05 GiB in 11 days = ~24.7 GiB/month</b>.</p>
+      <p>At the observed <b>25.5 KiB per verification</b>, sustaining 189 GiB/month would require <b>259,000
+      verifications/day</b>. The measured organic rate is <b>33,878/day</b>.</p>
+      <p>The explanation is in the same issue: <em>"the tall spikes are Jul 16&ndash;17, which is when similarity-import
+      ran."</em> Our own curve shows <b>2026-07-17: +2,774,661 contracts in a single day</b>. The 189 GiB figure was
+      measured across a window containing a one-time bulk backfill. It is a backfill rate, not a growth rate.</p>
+      <p>Why it matters: 189 GiB/month sizes an Arkiv proposal at roughly 7&times; the real thing, and Kaan will know
+      his own steady state. Quoting it makes us look like we read one issue instead of measuring.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F2</span>
+      <span class="ftitle">The #2866 numbers are an AI analysis of Sourcify's infra, already partially corrected &mdash; not an audited review.</span>
+      <span class="pill p-warn">reframe</span>
+    </summary>
+    <div class="body">
+      <p>The doc calls it "Sourcify's own hosted Postgres cost review". The thread opens with Marco Castignoli
+      writing: <em>"Pasting here the tldr of the analysis done by Claude on our Infra."</em> Kaan then pushed back on
+      the egress figure and it was revised from 15.9 TB to 13.6 TB.</p>
+      <p>The doc already handles the egress revision correctly. Extend the same caution to the rest: cite these as
+      Sourcify's <em>working estimates</em>. If we present them as audited facts and one is wrong in the room, we own
+      the error.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F3</span>
+      <span class="ftitle">The 27% gap is arithmetic, not a category. We cannot claim it is "derived and operational data".</span>
+      <span class="pill p-warn">sharpen</span>
+    </summary>
+    <div class="body">
+      <p>Confirmed in the exporter source: per-table figures come from <code>pg_total_relation_size()</code>, the
+      total from <code>pg_database_size()</code>. The gap is therefore everything the ten tables are not &mdash; other
+      tables, system catalogues, <em>and free space and bloat inside the database</em>.</p>
+      <p>The doc's own instinct is right ("what else sits in there is a good question for Sourcify"), but the
+      sentence before it asserts a composition we cannot derive. Ask, do not assert &mdash; a database that has been
+      updated in place for years can carry a lot of bloat, and if a meaningful slice of 256 GB is dead space that
+      changes the story in Sourcify's favour, not ours.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F4</span>
+      <span class="ftitle">Missing: the 139 GB of duplicated metadata their own schema cannot fix. This is the strongest opening we have.</span>
+      <span class="pill p-gap">add</span>
+    </summary>
+    <div class="body">
+      <p>Issue <b>#2924</b>, opened 10 Aug 2026 and still open: compiler metadata is stored per <em>deployment</em>
+      instead of per <em>compilation</em>, averaging <b>8.5 copies</b>. <code>sourcify_matches</code> is 182 GB of
+      which <b>163 GB (90%) is that metadata</b>. Normalising would free <b>~139 GB</b> and shrink the table to ~19 GB.</p>
+      <p>The reason it has not been fixed is the interesting part: the Verifier Alliance schema, which they share
+      with Blockscout and Routescan, has <em>no slot for it</em>. They are carrying 139 GB of duplication because a
+      shared relational schema cannot express the relationship.</p>
+      <p>That is a content-addressed storage problem described in their own words, in their own issue tracker,
+      opened eight days ago. It belongs in the Monday conversation.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F5</span>
+      <span class="ftitle">Missing: they hand-built a bytecode-prefix index last week. Arkiv has prefix search as a primitive.</span>
+      <span class="pill p-gap">add</span>
+    </summary>
+    <div class="body">
+      <p>Similarity verification searches by the first 75 bytes of runtime bytecode &mdash; the rule the doc already
+      cites. What the doc does not have is that the naive implementation <b>walked 142k rows and took 36 seconds in
+      production</b>, and that in August they shipped a materialised <b>runtime-code-prefix table</b> (issue #2918)
+      maintained by an insert trigger, purely to make that query fast.</p>
+      <p>Arkiv's typed query language ships <code>STARTSWITH</code> on typed attributes. This is the one place where
+      a capability we already have maps one-to-one onto a problem they solved last week by hand. Worth raising as a
+      question &mdash; "would you rather not maintain that trigger?" &mdash; not as a claim.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F6</span>
+      <span class="ftitle">The Parquet export is an append-only log, not a snapshot. It cannot be replayed as a backfill.</span>
+      <span class="pill p-stop">fix</span>
+    </summary>
+    <div class="body">
+      <p>The doc treats the export as "the full history, every verified contract since day one". Mostly true, with a
+      sharp edge. Files are named by an export row counter and, per the v2 design, a full file is <em>never touched
+      again</em>. So the counter drifts above the live table as rows are deleted or replaced.</p>
+      <p>Measured: the file ranges imply <b>74.2M</b> rows for <code>sourcify_matches</code>, while Sourcify measured
+      <b>42.7M</b> in that table on 10 Aug. <code>compiled_contracts</code>: 5.72M implied vs 5.16M measured.</p>
+      <p>Consequence for us: a migration that replays the export will write tens of millions of superseded entities
+      unless it de-duplicates by primary key first. It also means <em>we must not quote file-range figures as row
+      counts</em> &mdash; that is why this page quotes bytes per table, and takes row counts only from Sourcify's own
+      measurements. Why the drift is that large is a genuine question for Kaan.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F7</span>
+      <span class="ftitle">The cheapest alternative to anything we propose is Sourcify turning their CDN on.</span>
+      <span class="pill p-warn">know this</span>
+    </summary>
+    <div class="body">
+      <p>From the same issue: Cloud CDN is <b>switched off</b> while <b>88.6% of successful GETs are repeat URLs</b>,
+      costing about <b>$700/month in uncached internet egress</b>.</p>
+      <p>Any serving-layer pitch has to beat a change that costs them one afternoon. That does not kill the pitch &mdash;
+      a CDN does not make the data queryable, verifiable or independently hostable &mdash; but if we do not raise it
+      ourselves, someone in that room will.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F8</span>
+      <span class="ftitle">Kaan's own summary attributes 15M requests/day to the contract API. The doc is right and his doc is loose.</span>
+      <span class="pill p-blue">confirmed</span>
+    </summary>
+    <div class="body">
+      <p>The 2025 recap says "our APIs serve over 15 Million requests per day (all Sourcify APIs)" and separately
+      that 4byte alone serves over 7M. Kaan's summary document says <code>sourcify.dev/server</code> "serves ~15M
+      requests a day", which reads as the contract API alone.</p>
+      <p>The doc's warning &mdash; <em>never quote 15M as contract lookups</em> &mdash; is correct and load-bearing: it is the
+      difference between a 174 req/s target and an ~87 req/s one. Worth confirming with Kaan gently, as a question
+      about the split rather than a correction.</p>
+    </div>
+  </details>
+
+  <details class="finding">
+    <summary>
+      <span class="fid">F9</span>
+      <span class="ftitle">Two smaller things: an empty stub, and the headline number the doc never states.</span>
+      <span class="pill p-warn">tidy</span>
+    </summary>
+    <div class="body">
+      <p><em>"Questions PB:"</em> is an empty heading in the current draft. Either fill it or cut it before this
+      circulates to Pawe&#322;.</p>
+      <p>And the doc never states how many verified contracts exist. It is the denominator under every other figure
+      on the page &mdash; 43.78M as of today, 5&times; growth in twelve months. Lead the Context section with it.</p>
+    </div>
+  </details>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>The capability gap</h2>
+    <span class="note">Arkiv column measured on Cheesecake devnet, 2026-08-14</span>
+  </div>
+  <p class="prose" style="margin-bottom:20px">
+    This is the table for tomorrow's engineering meeting. Green means we can already do it and have the
+    measurement to prove it. Orange is what we need from engineering &mdash; either a number we do not have, or a
+    capability that does not exist yet.
+  </p>
+  <div class="scroll">
+    <table>
+      <thead><tr>
+        <th>Capability</th><th>What Sourcify needs</th><th>Arkiv today, measured</th><th></th><th>What we need from engineering</th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="k">Write throughput</td>
+          <td class="m">~34k/day = 0.4/s</td>
+          <td class="m">107 entities/s sustained<br><span style="color:var(--faint)">300 wallets, 30 min, 0 failures</span></td>
+          <td><span class="pill p-ok">clear</span></td>
+          <td>Nothing. 250&times; headroom on organic load.</td>
+        </tr>
+        <tr>
+          <td class="k">Bulk backfill</td>
+          <td class="m">2.77M in one day, observed</td>
+          <td class="m">107/s &rarr; 32/s needed<br><span style="color:var(--faint)">43.78M full index = 4.7 days</span></td>
+          <td><span class="pill p-ok">clear</span></td>
+          <td>Confirm sustained 107/s is not a burst ceiling over multi-day runs.</td>
+        </tr>
+        <tr>
+          <td class="k">Read throughput</td>
+          <td class="m">~174 req/s all APIs<br>~81 req/s for 4byte alone</td>
+          <td class="m">50 req/hour/IP = 0.014 req/s<br><span style="color:var(--faint)">an API key raises spend, not the cap</span></td>
+          <td><span class="pill p-stop">blocker</span></td>
+          <td class="ask">The single most important ask. What read path exists on the September testnet, and can a design partner get a dedicated one?</td>
+        </tr>
+        <tr>
+          <td class="k">Point lookup</td>
+          <td class="m">chainId + address, dominant path</td>
+          <td class="m">equality on typed attributes<br>9 ms @257k &rarr; 40 ms @1.8M</td>
+          <td><span class="pill p-ok">clear</span></td>
+          <td>Read latency under concurrent read load &mdash; the soak sampled reads once a minute, not under pressure.</td>
+        </tr>
+        <tr>
+          <td class="k">Field projection</td>
+          <td class="m"><code>?fields=</code> / <code>?omit=</code>, dot-notation</td>
+          <td class="m">single field, named subset, schema, <code>*</code></td>
+          <td><span class="pill p-ok">clear</span></td>
+          <td>Nothing. Partial reads are exactly how we cut their egress.</td>
+        </tr>
+        <tr>
+          <td class="k">Prefix / similarity search</td>
+          <td class="m">first 75 bytes of runtime bytecode</td>
+          <td class="m"><code>STARTSWITH</code> on typed attributes</td>
+          <td><span class="pill p-blue">verify</span></td>
+          <td class="ask">Is <code>STARTSWITH</code> index-backed or a scan? At 40M entities that difference is the whole feature.</td>
+        </tr>
+        <tr>
+          <td class="k">Pagination</td>
+          <td class="m">cursor <code>afterMatchId</code>, limit &le;200</td>
+          <td class="m">cursor pagination, pages pinned to a block</td>
+          <td><span class="pill p-ok">clear</span></td>
+          <td>Confirm the page-size ceiling on the September testnet.</td>
+        </tr>
+        <tr>
+          <td class="k">Ordering</td>
+          <td class="m"><code>sort=asc|desc</code> on the corpus endpoint</td>
+          <td class="m">no ORDER BY. Fixed: creation time, then key</td>
+          <td><span class="pill p-stop">missing</span></td>
+          <td class="ask">Is server-side ordering scheduled? Marked TBD internally. Client-side sorting does not survive 43M entities.</td>
+        </tr>
+        <tr>
+          <td class="k">Inequality</td>
+          <td class="m">standard SQL predicate</td>
+          <td class="m"><code>!=</code> not implemented</td>
+          <td><span class="pill p-stop">missing</span></td>
+          <td class="ask">Scheduled? Small gap, but it shows up in every real query planner.</td>
+        </tr>
+        <tr>
+          <td class="k">Aggregation</td>
+          <td class="m">corpus analytics, per-chain counts, stats page</td>
+          <td class="m">whole-chain count only. No GROUP BY, no joins</td>
+          <td><span class="pill p-stop">missing</span></td>
+          <td class="ask">Do we position analytics as out of scope (stays on Parquet/BigQuery), or is this roadmap?</td>
+        </tr>
+        <tr>
+          <td class="k">Payload size</td>
+          <td class="m">sources avg ~5.6 KB; compilations ~19 KB<br>bytecode capped at 24 KB by EIP-170</td>
+          <td class="m">128 KB per transaction &rarr; 226 entities/tx</td>
+          <td><span class="pill p-warn">check</span></td>
+          <td class="ask">Hard per-entity payload ceiling, and the chunking boundary above it.</td>
+        </tr>
+        <tr>
+          <td class="k">Ownership</td>
+          <td class="m">a non-profit's public-good dataset</td>
+          <td class="m">single EOA signature. No multisig, no ERC-1271</td>
+          <td><span class="pill p-stop">blocker</span></td>
+          <td class="ask">One key controlling 43M public-good entities is not something an EF-funded non-profit can sign off on. Is contract-account ownership scheduled?</td>
+        </tr>
+        <tr>
+          <td class="k">Permanence</td>
+          <td class="m">write-once, immutable, no expiry</td>
+          <td class="m">Entity Expiration required; <code>u64</code> max is effectively permanent</td>
+          <td><span class="pill p-ok">resolved</span></td>
+          <td>New on Cheesecake &mdash; confirm it survives into the September testnet.</td>
+        </tr>
+        <tr>
+          <td class="k">Deletion</td>
+          <td class="m">open need to delete sources from pinning</td>
+          <td class="m">tombstones remove from reads and predicates</td>
+          <td><span class="pill p-blue">verify</span></td>
+          <td class="ask">Does a tombstone remove the payload from historical <code>atBlock</code> reads? If not, permanence is a liability for them, not a feature.</td>
+        </tr>
+        <tr>
+          <td class="k">Data survival</td>
+          <td class="m">the POC must still exist at Devcon</td>
+          <td class="m">nothing migrates between networks; keys do not carry over</td>
+          <td><span class="pill p-stop">blocker</span></td>
+          <td class="ask">Will September testnet data survive to mainnet, or does the POC get rewritten? Sourcify must be told the answer up front.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="shead">
+    <h2>The pilot worth proposing</h2>
+    <span class="note">4byte signature service</span>
+  </div>
+  <p class="prose">
+    The strategy doc reaches this conclusion on its own and it is the best judgement in the document:
+    <strong>6% of the data carries about half the traffic</strong>. It is small, self-contained, schema-simple,
+    extremely high volume, and it is a lookup service &mdash; which is the shape Arkiv actually serves well. Matthias
+    has already said internally that this "would be quite interesting to start". The numbers:
+  </p>
+  <div class="kpis" style="margin-top:20px">
+    <div class="kpi"><span class="lbl">Entities</span><span class="num">9.34 M</span><span class="sub">signature hash &rarr; text, 303 bytes/row</span></div>
+    <div class="kpi"><span class="lbl">Backfill time</span><span class="num">~24 h</span><span class="sub">at 107 entities/s &middot; 11.7 h floor at block gas</span></div>
+    <div class="kpi"><span class="lbl">Gas</span><span class="num">0.76e12</span><span class="sub">81,024 gas/entity, flat regardless of batch size</span></div>
+    <div class="kpi gap"><span class="lbl">Read load to serve</span><span class="num">81 req/s</span><span class="sub">&gt;7M requests/day, average &mdash; peaks unknown</span></div>
+  </div>
+  <div class="callout">
+    <span class="lbl">The honest gate</span>
+    <p>Every number above except the last is comfortable. The pilot is <b>entirely gated on the read path</b> &mdash;
+    9.34M entities is a day of writing, and then we need to serve 81 requests per second against an endpoint
+    that currently allows 50 per hour.</p>
+    <p>So the ask to engineering is narrow and answerable: <b>what does the read path look like on the September
+    testnet, and can a named design partner get a dedicated one?</b> If the answer is no, the honest move is to
+    propose a mirror rather than a migration, and say so before Sourcify discovers it.</p>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><h2>The asks, in order</h2><span class="note">today &rarr; tomorrow &rarr; Monday</span></div>
+  <div class="asks" style="grid-template-columns:1fr">
+
+    <div class="ask-col">
+      <h3>Today &mdash; Kaan</h3>
+      <div class="who">Sourcify &middot; only what the public dataset structurally cannot answer</div>
+      <ol class="q">
+        <li>What does the read mix actually look like across the API? Endpoint breakdown, cache-hit rate, peak requests/second and p99 latency.
+          <span class="unit">unit: req/day per endpoint &middot; % cacheable &middot; peak req/s &middot; p99 ms &nbsp;&mdash; a snapshot is an inventory, not a workload</span></li>
+        <li>How much of the 949 GB is indexes rather than content? One read-only query gives ten rows.
+          <span class="unit">unit: <code>pg_table_size</code> / <code>pg_indexes_size</code> / <code>pg_total_relation_size</code> per table</span></li>
+        <li>What lives in the 27% that is never exported &mdash; and how much of it is bloat rather than data?
+          <span class="unit">unit: GB per non-exported relation, plus dead-tuple estimate</span></li>
+        <li>Of the 13.6 TB/month egress, which fields cause it? Marco's own conclusion was that a migration only pays if this drops ~95%.
+          <span class="unit">unit: TB/month split by endpoint and by field &mdash; sources vs bytecode vs metadata</span></li>
+        <li>What is actually mutable? 75&ndash;80% is immutable, but <code>sourcify_matches.metadata</code> is updated in place and re-verifications overwrite.
+          <span class="unit">unit: rows updated/day vs inserted/day &middot; deletions/month and their legal basis</span></li>
+        <li>The 15M requests/day figure &mdash; is that all APIs combined, with 4byte roughly half? Our reading of the 2025 recap says yes; your summary reads as the contract API alone.
+          <span class="unit">unit: confirm the split. It is the difference between a 174 req/s and an ~87 req/s target.</span></li>
+        <li>Why does the export's file counter run ahead of the live tables (74.2M vs 42.7M rows in <code>sourcify_matches</code>)? We want to know before we plan a backfill off it.
+          <span class="unit">unit: explanation &mdash; are superseded rows retained in the append-only files?</span></li>
+        <li>Is the ERC-7730 registry still headed on-chain? The shipped design is EAS attestations over a mirrorable off-chain registry, which reads differently from "move it on-chain and make it permissionless".
+          <span class="unit">unit: a direction, not a number &mdash; this one changed since we last spoke</span></li>
+      </ol>
+      <p class="prose" style="margin-top:14px; font-size:14px">
+        Deliberately <em>not</em> asked, because we computed them: contracts per day, total verified contracts,
+        per-chain distribution, exact-vs-partial split, table sizes, compression ratio, reuse factor. Saying so
+        explicitly is the point &mdash; it is what makes the other eight questions land as engineering rather than
+        discovery.
+      </p>
+    </div>
+
+    <div class="ask-col">
+      <h3>Tomorrow &mdash; Arkiv engineering</h3>
+      <div class="who">Ask each owner one thing, not the room everything</div>
+      <ol class="q">
+        <li><b>Read path.</b> 50 req/hour/IP is a 5,800&times; gap against the pilot alone. What exists on the September testnet, and can a design partner get a dedicated endpoint? <i>(Bouncer / API keys)</i>
+          <span class="unit">blocker &middot; everything else is downstream of this answer</span></li>
+        <li><b>Query language.</b> Is <code>STARTSWITH</code> index-backed or a scan at 40M entities? Are <code>!=</code> and server-side ordering scheduled? <i>(core protocol)</i>
+          <span class="unit">ordering is marked TBD internally &mdash; we need a yes/no before Monday</span></li>
+        <li><b>Ownership.</b> Contract-account or multisig ownership that can still update, delete and extend. An EF-funded non-profit cannot put a public good behind one EOA.
+          <span class="unit">this is a governance blocker, not a technical preference</span></li>
+        <li><b>Payload ceiling.</b> Hard per-entity limit and the chunking boundary above it. Their compilations average ~19 KB.</li>
+        <li><b>Data survival.</b> Does September testnet data survive to mainnet? Sourcify has to be told this before they invest, not after.
+          <span class="unit">nothing has migrated between networks so far &mdash; Braga, Zeppelin, FLAN all gone</span></li>
+        <li><b>Read latency under load.</b> The soak sampled reads once a minute. We need concurrent-read numbers before we promise anything.</li>
+      </ol>
+    </div>
+
+    <div class="ask-col">
+      <h3>Monday &mdash; Arkiv + Sourcify</h3>
+      <div class="who">Pawe&#322; &middot; Matthias &middot; Kaan and one more from Sourcify</div>
+      <ol class="q">
+        <li>Open with what we measured, not with what we want. Everything in the second panel of this page was derived from their public endpoints without asking &mdash; that establishes we are engineers on their problem, not a vendor with a deck.</li>
+        <li>State the thing they already decided, before they do: they evaluated migration in July and correctly concluded don't migrate. We are not reopening that.</li>
+        <li>Name the real opening in Marco's words &mdash; cutting DB egress by ~95% means "redesigning how we serve contracts" &mdash; and note that we would have to beat simply switching their CDN on.</li>
+        <li>Propose the 4byte pilot with the sizing above, and state the read-path gate honestly in the same breath.</li>
+        <li>Raise #2924 as a question, not a pitch: 139 GB of duplicated metadata they cannot normalise because the Verifier Alliance schema has no slot for it.</li>
+        <li>Ask what would have to be true for them to reopen #2866 &mdash; Kaan closed it himself with "can be opened later". That sentence is the entire commercial opening and it is his.</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><h2>Sources</h2><span class="note">every figure on this page traces to one of these</span></div>
+  <div class="src">
+    <div>stats.sourcify.dev/data.json &mdash; daily per-chain series, lastUpdated 2026-08-18</div>
+    <div>storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json &mdash; generatedAt 2026-08-18T02:39:55Z</div>
+    <div>GCS bucket listing &mdash; 2,688 objects, manifest kept in sourcify-lab/</div>
+    <div>github.com/argotorg/sourcify/issues/2866 &mdash; cost review, closed, reopenable</div>
+    <div>github.com/argotorg/sourcify/issues/2924 &mdash; metadata duplication, open</div>
+    <div>github.com/argotorg/sourcify/issues/2918 &mdash; runtime-code prefix index</div>
+    <div>github.com/argotorg/sourcify/issues/2917 &mdash; row counts and planner skew</div>
+    <div>docs.sourcify.dev/blog/recap-2025 &mdash; the 15M and 7M request figures</div>
+    <div>docs.sourcify.dev/docs/similarity-verification &mdash; the 75-byte rule</div>
+    <div>github.com/sourcifyeth/parquet-export &mdash; pg_total_relation_size, pg_database_size</div>
+    <div>Kaan Uzdo&#287;an, "Sourcify Summary" &mdash; 43,367,321 contracts, 370 chains @ 2026-08-07</div>
+    <div>tests/ccheesecake/results.json &mdash; Arkiv devnet run, chain 7733102, 2026-08-14</div>
+    <div>#arkiv-engineering &mdash; feature matrix (Seweryn, 2026-08-11), 4byte reaction (Matthias, 2026-08-10)</div>
+    <div>argot/sourcify-lab/measure.py &mdash; reproduces every computed figure above</div>
+  </div>
+</section>
+
+<footer>
+  Prepared 2026-08-18 &middot; Figures move daily &mdash; restate the measurement date whenever these are quoted &middot;
+  Arkiv network timeline beyond the September testnet is internal and not for this room
+</footer>
+
+</div>
