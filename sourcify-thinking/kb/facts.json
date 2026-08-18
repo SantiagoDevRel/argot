@@ -1,0 +1,1283 @@
+{
+  "generatedAt": "2026-08-18",
+  "count": 62,
+  "facts": [
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.compiled_contracts_signatures",
+      "statement": "The Sourcify Parquet export contains 175,489,918 rows in the compiled_contracts_signatures table.",
+      "value": 175489918,
+      "unit": "rows",
+      "scope": "EXPORT rows in compiled_contracts_signatures, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "compiled_contracts_signatures",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.sourcify_matches",
+      "statement": "The Sourcify Parquet export contains 74,196,213 rows in the sourcify_matches table.",
+      "value": 74196213,
+      "unit": "rows",
+      "scope": "EXPORT rows in sourcify_matches, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "sourcify_matches",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.verified_contracts",
+      "statement": "The Sourcify Parquet export contains 44,391,604 rows in the verified_contracts table.",
+      "value": 44391604,
+      "unit": "rows",
+      "scope": "EXPORT rows in verified_contracts, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "verified_contracts",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.contract_deployments",
+      "statement": "The Sourcify Parquet export contains 44,303,315 rows in the contract_deployments table.",
+      "value": 44303315,
+      "unit": "rows",
+      "scope": "EXPORT rows in contract_deployments, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "contract_deployments",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.code",
+      "statement": "The Sourcify Parquet export contains 40,163,166 rows in the code table.",
+      "value": 40163166,
+      "unit": "rows",
+      "scope": "EXPORT rows in code, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "code",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.compiled_contracts_sources",
+      "statement": "The Sourcify Parquet export contains 36,586,086 rows in the compiled_contracts_sources table.",
+      "value": 36586086,
+      "unit": "rows",
+      "scope": "EXPORT rows in compiled_contracts_sources, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "compiled_contracts_sources",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.contracts",
+      "statement": "The Sourcify Parquet export contains 24,662,400 rows in the contracts table.",
+      "value": 24662400,
+      "unit": "rows",
+      "scope": "EXPORT rows in contracts, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "contracts",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.signatures",
+      "statement": "The Sourcify Parquet export contains 9,920,797 rows in the signatures table.",
+      "value": 9920797,
+      "unit": "rows",
+      "scope": "EXPORT rows in signatures, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "signatures",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.sources",
+      "statement": "The Sourcify Parquet export contains 6,329,026 rows in the sources table.",
+      "value": 6329026,
+      "unit": "rows",
+      "scope": "EXPORT rows in sources, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "sources",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.compiled_contracts",
+      "statement": "The Sourcify Parquet export contains 5,716,510 rows in the compiled_contracts table.",
+      "value": 5716510,
+      "unit": "rows",
+      "scope": "EXPORT rows in compiled_contracts, not live database rows -- the v2 export is append-only and retains superseded versions",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "count",
+        "compiled_contracts",
+        "parquet",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "rows.total",
+      "statement": "Across all ten exported tables the Parquet export contains 461,759,035 rows.",
+      "value": 461759035,
+      "unit": "rows",
+      "scope": "sum of the ten exported tables, export population",
+      "source": {
+        "label": "Parquet footers, 2,687 files (sourcify-lab/exact_rows.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "rows",
+        "total",
+        "export"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "size.raw_uncompressed",
+      "statement": "Summing every column chunk, Sourcify's exported data is 1269 GB of raw uncompressed content.",
+      "value": 1269,
+      "unit": "GB",
+      "scope": "raw uncompressed column bytes across the ten exported tables",
+      "source": {
+        "label": "Parquet footers, column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "size",
+        "raw",
+        "uncompressed",
+        "total"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.sourcify_matches.metadata",
+      "statement": "sourcify_matches.metadata averages 8,090 bytes per value and totals 600.3 GB raw; its heaviest row group averages 189,538 bytes per value.",
+      "value": 8090,
+      "unit": "bytes per value (average)",
+      "scope": "column metadata of sourcify_matches; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "sourcify_matches",
+        "metadata",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 600.3,
+        "heaviest_block_bytes": 189538
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.code.code",
+      "statement": "code.code averages 7,899 bytes per value and totals 317.2 GB raw; its heaviest row group averages 18,219 bytes per value.",
+      "value": 7899,
+      "unit": "bytes per value (average)",
+      "scope": "column code of code; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "code",
+        "code",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 317.2,
+        "heaviest_block_bytes": 18219
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.sources.content",
+      "statement": "sources.content averages 16,427 bytes per value and totals 104 GB raw; its heaviest row group averages 41,440 bytes per value.",
+      "value": 16427,
+      "unit": "bytes per value (average)",
+      "scope": "column content of sources; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "sources",
+        "content",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 104,
+        "heaviest_block_bytes": 41440
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.compiled_contracts.runtime_code_artifacts",
+      "statement": "compiled_contracts.runtime_code_artifacts averages 17,653 bytes per value and totals 100.9 GB raw; its heaviest row group averages 33,365 bytes per value.",
+      "value": 17653,
+      "unit": "bytes per value (average)",
+      "scope": "column runtime_code_artifacts of compiled_contracts; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "compiled_contracts",
+        "runtime_code_artifacts",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 100.9,
+        "heaviest_block_bytes": 33365
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.compiled_contracts.compilation_artifacts",
+      "statement": "compiled_contracts.compilation_artifacts averages 12,152 bytes per value and totals 69.5 GB raw; its heaviest row group averages 27,457 bytes per value.",
+      "value": 12152,
+      "unit": "bytes per value (average)",
+      "scope": "column compilation_artifacts of compiled_contracts; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "compiled_contracts",
+        "compilation_artifacts",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 69.5,
+        "heaviest_block_bytes": 27457
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "col.compiled_contracts.creation_code_artifacts",
+      "statement": "compiled_contracts.creation_code_artifacts averages 2,854 bytes per value and totals 16.3 GB raw; its heaviest row group averages 17,523 bytes per value.",
+      "value": 2854,
+      "unit": "bytes per value (average)",
+      "scope": "column creation_code_artifacts of compiled_contracts; the heaviest-block figure is the worst row-group average, a LOWER bound on the true single-object maximum -- Parquet statistics store min/max values, not lengths",
+      "source": {
+        "label": "Parquet column metadata (sourcify-lab/column_sizes.py)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "column",
+        "size",
+        "bytes",
+        "compiled_contracts",
+        "creation_code_artifacts",
+        "blob"
+      ],
+      "extra": {
+        "total_gb": 16.3,
+        "heaviest_block_bytes": 17523
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "split.index_shaped",
+      "statement": "Only 52.6 GB (4.1% of raw bytes) of Sourcify's data is index-shaped: small rows of 58 to 620 bytes across six tables.",
+      "value": 4.1,
+      "unit": "% of raw bytes",
+      "scope": "sum of verified_contracts, contract_deployments, contracts, signatures, compiled_contracts_signatures, compiled_contracts_sources",
+      "source": {
+        "label": "derived from Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "split",
+        "index",
+        "arkiv",
+        "architecture",
+        "mapping"
+      ],
+      "extra": {
+        "gb": 52.65
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "split.blob_shaped",
+      "statement": "1216.3 GB (95.9% of raw bytes) is blob-shaped: a handful of very large text and JSON columns.",
+      "value": 95.9,
+      "unit": "% of raw bytes",
+      "scope": "raw uncompressed bytes not in the six index-shaped tables",
+      "source": {
+        "label": "derived from Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "split",
+        "blob",
+        "ipfs",
+        "architecture",
+        "mapping",
+        "off-chain"
+      ],
+      "extra": {
+        "gb": 1216.3
+      }
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.verified_contracts",
+      "statement": "verified_contracts averages 620 bytes per row (27.51 GB across 44,391,604 rows).",
+      "value": 620,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for verified_contracts",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "verified_contracts",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.contract_deployments",
+      "statement": "contract_deployments averages 167 bytes per row (7.38 GB across 44,303,315 rows).",
+      "value": 167,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for contract_deployments",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "contract_deployments",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.contracts",
+      "statement": "contracts averages 115 bytes per row (2.84 GB across 24,662,400 rows).",
+      "value": 115,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for contracts",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "contracts",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.signatures",
+      "statement": "signatures averages 85 bytes per row (0.84 GB across 9,920,797 rows).",
+      "value": 85,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for signatures",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "signatures",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.compiled_contracts_signatures",
+      "statement": "compiled_contracts_signatures averages 58 bytes per row (10.12 GB across 175,489,918 rows).",
+      "value": 58,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for compiled_contracts_signatures",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "compiled_contracts_signatures",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "bpr.compiled_contracts_sources",
+      "statement": "compiled_contracts_sources averages 108 bytes per row (3.95 GB across 36,586,086 rows).",
+      "value": 108,
+      "unit": "bytes per row",
+      "scope": "raw uncompressed bytes / export rows for compiled_contracts_sources",
+      "source": {
+        "label": "Parquet column metadata",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "bytes",
+        "row",
+        "compiled_contracts_sources",
+        "index"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.verified_contracts",
+      "statement": "Sourcify holds 43,781,389 verified contracts.",
+      "value": 43781389,
+      "unit": "contracts",
+      "scope": "distinct verified contracts across all chains, from Sourcify's own stats dashboard",
+      "source": {
+        "label": "stats.sourcify.dev/data.json",
+        "url": "https://stats.sourcify.dev"
+      },
+      "tags": [
+        "contracts",
+        "verified",
+        "total",
+        "scale",
+        "headline"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.match_split",
+      "statement": "29.1% of verified contracts are exact matches and 70.9% are partial matches (12,737,278 and 31,044,111).",
+      "value": "29.1% exact / 70.9% partial",
+      "scope": "share of the 43.78M verified contracts",
+      "source": {
+        "label": "stats.sourcify.dev/data.json",
+        "url": "https://stats.sourcify.dev"
+      },
+      "tags": [
+        "exact",
+        "partial",
+        "match",
+        "split",
+        "quality"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "def.exact_match",
+      "statement": "An exact match means the compiler-embedded metadata hash in the bytecode also matches, proving the source is byte-for-byte what was deployed, down to comments and whitespace. A partial match means the compiled bytecode matches on chain but the metadata hash does not: behaviour is identical, but comments, variable names or file paths may differ.",
+      "unit": "definition",
+      "scope": "Sourcify verification semantics",
+      "source": {
+        "label": "docs.sourcify.dev",
+        "url": "https://docs.sourcify.dev/docs/full-vs-partial-match/"
+      },
+      "tags": [
+        "definition",
+        "exact",
+        "partial",
+        "match",
+        "glossary"
+      ],
+      "short": "exact vs partial match"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.growth",
+      "statement": "Sourcify grew roughly 4x in eight months: 11M verified contracts at the end of 2025, 38.5M by 1 July 2026, 43.78M today.",
+      "value": "~4x in 8 months",
+      "scope": "Sourcify's own published figures at three dates; we did NOT establish the cause",
+      "source": {
+        "label": "Sourcify recaps 2025 and H1 2026",
+        "url": "https://docs.sourcify.dev/blog/recap-2026-h1/"
+      },
+      "tags": [
+        "growth",
+        "trend",
+        "scale",
+        "forecast"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.writes_per_day",
+      "statement": "Sourcify absorbs about 34,639 new verifications per day on a 7-day average, and 37,545 on a 30-day average, excluding bulk imports.",
+      "value": 34639,
+      "unit": "verifications/day",
+      "scope": "organic steady state; trailing windows that span July are inflated by a bulk import",
+      "source": {
+        "label": "computed from stats.sourcify.dev daily series",
+        "url": "https://stats.sourcify.dev"
+      },
+      "tags": [
+        "writes",
+        "load",
+        "per day",
+        "throughput",
+        "ingest"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.write_anatomy",
+      "statement": "One verification is not one row: it lands about 10.4 rows across the ten tables and adds about 25.5 KiB to the database. So ~34k verifications/day is roughly 355k rows/day and ~850 MB/day.",
+      "value": "~10.4 rows + ~25.5 KiB per verification",
+      "scope": "corpus average (total export rows / verified_contracts rows); the byte figure is measured from three database-size readings 11 days apart",
+      "source": {
+        "label": "derived from Parquet footers + export stats.json",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "write",
+        "rows",
+        "anatomy",
+        "load",
+        "amplification"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.dedup",
+      "statement": "Only 0.13 rows per verification land in compiled_contracts and 0.14 in sources, so roughly 87% of verifications add no new compilation and no new source file at all: the contract is a copy of something already stored.",
+      "value": "~87% of verifications add no new compilation",
+      "scope": "corpus average; this is why blob storage scales with 5.7M compilations rather than 43.8M contracts",
+      "source": {
+        "label": "derived from Parquet footers",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "dedup",
+        "reuse",
+        "storage",
+        "compilations",
+        "cost"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.db_size",
+      "statement": "Sourcify's live Postgres database is 949.6 GB by pg_database_size, of which the ten exported tables are 692.9 GB (73.0%).",
+      "value": 949.6,
+      "unit": "GB",
+      "scope": "whole database on disk including indexes, TOAST, catalogs and free space",
+      "source": {
+        "label": "export stats.json (pg_database_size)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "size",
+        "database",
+        "postgres",
+        "disk"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.residual",
+      "statement": "256.7 GB (27.0%) of the database is physical footprint not explained by the ten exported relations. It could be other tables, materialized views, system catalogs or bloat -- we cannot label it without a relation inventory from Sourcify.",
+      "value": 256.7,
+      "unit": "GB",
+      "scope": "pg_database_size minus the sum of pg_total_relation_size for the ten exported tables; a residual, not a category",
+      "source": {
+        "label": "derived from export stats.json",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "residual",
+        "unexported",
+        "27%",
+        "bloat",
+        "unknown"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.parquet",
+      "statement": "The public Parquet export is 170.4 GB across 2,687 files, zstd compressed, refreshed daily. That is 4.07x smaller than the ten exported tables and 7.45x smaller than the raw uncompressed content.",
+      "value": 170.4,
+      "unit": "GB",
+      "scope": "the v2 export at storage.googleapis.com/sourcify-production-parquet-export/v2",
+      "source": {
+        "label": "export stats.json",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "parquet",
+        "export",
+        "compressed",
+        "download",
+        "dataset"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.export_append_only",
+      "statement": "The v2 Parquet export is append-only: a full file is never rewritten, so updated rows are appended and the old version stays. sourcify_matches holds 74,196,213 rows in the export against 42,733,948 measured live, about 31.5M superseded versions or 42.4% of the export. It therefore cannot be replayed as a backfill without deduplicating by primary key.",
+      "value": 42.4,
+      "unit": "% of the export that is superseded rows",
+      "scope": "sourcify_matches only; compiled_contracts shows the same pattern at 9.7%",
+      "source": {
+        "label": "Parquet footers vs Sourcify issue #2924",
+        "url": "https://github.com/argotorg/sourcify/issues/2924"
+      },
+      "tags": [
+        "append-only",
+        "export",
+        "superseded",
+        "backfill",
+        "migration",
+        "gotcha"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.growth_rate",
+      "statement": "Sourcify's database grows about 24.7 GiB per month organically (26.5 GB), measured from three pg_database_size readings across 11 days.",
+      "value": 24.7,
+      "unit": "GiB/month",
+      "scope": "organic steady state. The widely quoted 189 GiB/month figure from their July cost issue is 7.7x higher because it was measured across a window containing a bulk import",
+      "source": {
+        "label": "three readings of export stats.json",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "tags": [
+        "growth",
+        "rate",
+        "storage",
+        "GiB",
+        "189"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.backfill_spike",
+      "statement": "On 17 July 2026 Sourcify added 2,774,661 verified contracts in a single day, which their own cost issue attributes to a similarity-import job.",
+      "value": 2774661,
+      "unit": "contracts in one day",
+      "scope": "the largest single-day jump in the recent series; bulk imports are a different regime from organic writes",
+      "source": {
+        "label": "stats.sourcify.dev daily series + issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "tags": [
+        "backfill",
+        "spike",
+        "import",
+        "similarity",
+        "burst"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.chains",
+      "statement": "Sourcify currently supports 267 chains out of 420 configured, and 377 chains have at least one verified contract.",
+      "value": 267,
+      "unit": "supported chains",
+      "scope": "three different metrics that must not be mixed: supported=true on the live /chains endpoint (267), total entries in /chains (420), chains appearing in the stats dataset (377)",
+      "source": {
+        "label": "sourcify.dev/server/chains",
+        "url": "https://sourcify.dev/server/chains"
+      },
+      "tags": [
+        "chains",
+        "networks",
+        "count",
+        "coverage"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.traffic",
+      "statement": "Sourcify's own posts give two conflicting scopes for 15M requests/day: the Dec 2025 recap says over 15M across ALL Sourcify APIs with 4byte alone above 7M, while the May 2026 post on retiring API v1 says v2 is 'already serving 15M+ requests/day', which reads as the contract API on its own.",
+      "unit": "requests/day",
+      "scope": "unresolved -- the difference is roughly a factor of two on any capacity target. This is question 6 to Kaan.",
+      "source": {
+        "label": "Sourcify recap 2025 and api-v1-brownouts",
+        "url": "https://docs.sourcify.dev/blog/api-v1-brownouts/"
+      },
+      "tags": [
+        "traffic",
+        "requests",
+        "15M",
+        "rps",
+        "load",
+        "read"
+      ],
+      "short": "15M req/day (scope disputed)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.4byte",
+      "statement": "The 4byte signature service holds 9,920,797 signatures in 0.84 GB across 9.9M rows -- the smallest, most self-contained table, and it carries a large share of Sourcify's traffic. Their public /stats counter reports 9,340,765 but its own refreshed_at is 2026-07-06, so it is six weeks stale.",
+      "value": 9920797,
+      "unit": "signatures",
+      "scope": "exact count from Parquet footers today; their published counter is stale",
+      "source": {
+        "label": "Parquet footers vs api.4byte.sourcify.dev stats",
+        "url": "https://4byte.sourcify.dev"
+      },
+      "tags": [
+        "4byte",
+        "signatures",
+        "pilot",
+        "selectors",
+        "lookup"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.egress",
+      "statement": "Sourcify's production database sends about 13.6 TB per month to its clients. Inside Google Cloud that costs zero; externally it would be roughly 1,400 USD per month, more than their entire database bill.",
+      "value": 13.6,
+      "unit": "TB/month",
+      "scope": "measured by Sourcify from Cloud Monitoring; an earlier figure of 15.9 TB was revised down after Kaan pushed back",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "tags": [
+        "egress",
+        "bandwidth",
+        "cost",
+        "network"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.costs",
+      "statement": "Sourcify's entire Cloud SQL fleet costs about 1,003 USD per month across both projects, the production database 373 USD, analytics about 42 USD, and the Parquet export sits in GCS at 242 GiB for about 5 USD.",
+      "value": 1003,
+      "unit": "USD/month",
+      "scope": "their July 2026 cost review; note these figures came from an AI analysis of their infra that Sourcify posted, and one number in it was later revised",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "tags": [
+        "cost",
+        "bill",
+        "cloudsql",
+        "budget",
+        "price"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.cdn_off",
+      "statement": "Sourcify's Cloud CDN is switched off while 88.6% of successful GETs are repeat URLs, costing roughly 700 USD per month in uncached internet egress. Turning it on is the cheapest optimisation available to them, and any serving proposal has to acknowledge that.",
+      "value": 88.6,
+      "unit": "% of successful GETs that are repeat URLs",
+      "scope": "measured by Sourcify while investigating egress",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "tags": [
+        "cdn",
+        "cache",
+        "egress",
+        "competitor",
+        "alternative"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.dont_migrate",
+      "statement": "Sourcify already evaluated moving their database in July 2026 and concluded 'don't migrate'. Crucially that review compared conventional hosted Postgres providers -- Neon, Supabase, Crunchy, Aiven, Hetzner, Scaleway -- and never evaluated Arkiv. Kaan closed it saying 'it seems still too expensive to me... can be opened later'.",
+      "unit": "decision",
+      "scope": "hosted Postgres alternatives only; nothing was decided about Arkiv",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "tags": [
+        "migration",
+        "decision",
+        "cost",
+        "positioning",
+        "strategy"
+      ],
+      "short": "their July \"don't migrate\" decision"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.metadata_duplication",
+      "statement": "Sourcify's open issue #2924 reports that compiler metadata is stored per deployment rather than per compilation, averaging 8.5 copies. sourcify_matches is 182 GB of which 163 GB (90%) is that metadata; normalising would free about 139 GB. They cannot fix it because the shared Verifier Alliance schema has no slot for it. Our own column measurement independently confirms it: sourcify_matches.metadata is 600.3 GB of raw bytes, 99.6% of that table.",
+      "value": 139,
+      "unit": "GB recoverable",
+      "scope": "their estimate; our independent measurement of the metadata column agrees on the shape",
+      "source": {
+        "label": "Sourcify issue #2924",
+        "url": "https://github.com/argotorg/sourcify/issues/2924"
+      },
+      "tags": [
+        "duplication",
+        "metadata",
+        "normalisation",
+        "opening",
+        "content-addressed",
+        "2924"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.schema",
+      "statement": "The schema is the Verifier Alliance base shared with Blockscout and Routescan (code, contracts, contract_deployments, compiled_contracts, compiled_contracts_sources, sources, verified_contracts) plus three Sourcify tables (sourcify_matches, signatures, compiled_contracts_signatures). Those ten are what gets exported. verification_jobs, verification_jobs_ephemeral, a signature-stats materialized view and migration bookkeeping are never exported; session and sourcify_sync were dropped in March and July 2026.",
+      "unit": "schema",
+      "scope": "table inventory taken from services/database/migrations in the repo",
+      "source": {
+        "label": "argotorg/sourcify migrations + live schema diagram",
+        "url": "https://dbdiagram.io/d/Sourcify-DB-67fcf5ee9cea640381a217d2"
+      },
+      "tags": [
+        "schema",
+        "tables",
+        "verifier alliance",
+        "structure",
+        "model"
+      ],
+      "short": "the Verifier Alliance schema"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "sourcify.similarity_index",
+      "statement": "Sourcify's 75-byte bytecode similarity search is served by a Postgres expression index on code -- substring(code FROM 1 FOR 75) -- not a separate table. The naive implementation walked 142k rows and took 36 seconds in production before they indexed it.",
+      "unit": "implementation detail",
+      "scope": "migration 20251101120000_add_code_first_75_index",
+      "source": {
+        "label": "argotorg/sourcify migrations, issue #2918",
+        "url": "https://github.com/argotorg/sourcify/issues/2918"
+      },
+      "tags": [
+        "similarity",
+        "prefix",
+        "75 bytes",
+        "index",
+        "search",
+        "startswith"
+      ],
+      "short": "their 75-byte prefix index"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.api_shape",
+      "statement": "The main read path is GET /v2/contract/{chainId}/{address} with field selection (?fields= or ?omit=, dot-notation for nested fields). It also resolves proxies at request time, which is computed rather than stored. Other routes: /v2/contract/all-chains/{address}, a paginated /v2/contracts/{chainId} with cursor afterMatchId and limit up to 200, and POST /v2/verify/similarity/{chainId}/{address}.",
+      "unit": "API surface",
+      "scope": "Sourcify API v2; v1 was permanently retired on 2026-07-07",
+      "source": {
+        "label": "docs.sourcify.dev/docs/api",
+        "url": "https://docs.sourcify.dev/docs/api/"
+      },
+      "tags": [
+        "api",
+        "endpoint",
+        "read",
+        "lookup",
+        "v2",
+        "adapter"
+      ],
+      "short": "the Sourcify v2 API"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "arkiv.write_throughput",
+      "statement": "On our Cheesecake devnet we measured 107 entities/second sustained with 300 concurrent wallets over 30 minutes, with zero failed writes among included transactions. That figure is incomplete on its own: a large share of submissions were turned away under queue pressure, so attempted, admitted and included throughput must be reported separately.",
+      "value": 107,
+      "unit": "entities/second",
+      "scope": "PROVISIONAL. Devnet under construction, small synthetic entities, not a multi-day Sourcify-shaped workload. Do not quote to Sourcify as a capability commitment.",
+      "source": {
+        "label": "internal devnet test run, 2026-08-14",
+        "url": ""
+      },
+      "tags": [
+        "arkiv",
+        "write",
+        "throughput",
+        "entities",
+        "provisional"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "arkiv.tx_cap",
+      "statement": "An Arkiv transaction is capped at 128 KB, which worked out to 226 entities per transaction in our devnet test. There is no documented PER-ENTITY payload ceiling, and Sourcify's heaviest metadata blocks average about 186 KB -- past a whole transaction on their own.",
+      "value": 128,
+      "unit": "KB per transaction",
+      "scope": "PROVISIONAL, measured on a devnet under construction. The per-entity limit is an open question for Arkiv engineering.",
+      "source": {
+        "label": "internal devnet test run, 2026-08-14",
+        "url": ""
+      },
+      "tags": [
+        "arkiv",
+        "payload",
+        "limit",
+        "size",
+        "entity",
+        "chunking"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "arkiv.query_surface",
+      "statement": "Arkiv's typed query language supports equality, ranges, AND/OR/NOT, prefix matching (STARTSWITH), field projection, cursor pagination and historical reads at a block. It does NOT have joins, aggregations, GROUP BY, server-side ORDER BY, or an inequality operator. All of this should be treated as 'exposed in an SDK' rather than 'benchmarked at scale' until engineering confirms which is which.",
+      "unit": "capability",
+      "scope": "PROVISIONAL. Taken from an internal feature matrix, not from a benchmark.",
+      "source": {
+        "label": "internal feature matrix, 2026-08-11",
+        "url": ""
+      },
+      "tags": [
+        "arkiv",
+        "query",
+        "capability",
+        "joins",
+        "order by",
+        "startswith"
+      ],
+      "short": "the Arkiv query surface"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "arkiv.mapping_proposal",
+      "statement": "The proposed mapping is not a row-for-row copy: Arkiv has no joins, so a faithful copy would need multiple round trips per lookup. Instead, one denormalised head entity per verified contract keyed by chainId:address, carrying the indexed attributes people filter on (chain, address, match type, compiler, version, language, contract name, code hashes, verified timestamp) plus hash references to the heavy artifacts. At ~44M head entities of ~600-800 bytes that is roughly 30 GB of entity payload; the remaining ~1,216 GB stays content-addressed exactly as Sourcify already stores it.",
+      "unit": "design proposal",
+      "scope": "OUR PROPOSAL, not a measurement and not agreed with Sourcify",
+      "source": {
+        "label": "argot briefing, Schema and fit",
+        "url": ""
+      },
+      "tags": [
+        "mapping",
+        "design",
+        "proposal",
+        "entity",
+        "schema",
+        "arkiv",
+        "architecture"
+      ],
+      "short": "our head-entity mapping"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.read_workload",
+      "statement": "We do not know Sourcify's route-level read workload: the request mix per endpoint, peak requests per second, p95/p99 latency, or cache-hit ratio. A dataset snapshot is an inventory, not a workload, and none of this is in the public export.",
+      "unit": "unknown",
+      "scope": "Only Sourcify can answer. Unit of the answer: requests/day per route, peak RPS, p95/p99 ms, cache-hit %. An existing dashboard screenshot would do.",
+      "source": {
+        "label": "open question 9 to Kaan",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "read",
+        "workload",
+        "rps",
+        "latency",
+        "traffic"
+      ],
+      "short": "their read workload (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.arkiv_read_capacity",
+      "statement": "We have no benchmark of Arkiv's concurrent read capacity. The public endpoint's 50 requests/hour/IP is a gateway quota, which is policy rather than a measurement of the read engine, and our latency samples were periodic single reads rather than load. Any claim about serving Sourcify's traffic is unsupported until this is measured.",
+      "unit": "unknown",
+      "scope": "Arkiv engineering owns this. Unit of the answer: sustained requests/second at a given entity count and p99 latency under concurrent load.",
+      "source": {
+        "label": "open question to Arkiv engineering",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "arkiv",
+        "read",
+        "capacity",
+        "benchmark",
+        "rps",
+        "blocker"
+      ],
+      "short": "Arkiv read capacity (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.own_node",
+      "statement": "It is not yet decided whether Sourcify would query a public Arkiv endpoint or run their own Arkiv node or indexer and read locally. This changes the proposal fundamentally: a self-hosted read replica sidesteps the gateway quota entirely and speaks directly to their egress problem.",
+      "unit": "unknown",
+      "scope": "Arkiv engineering, infra and core. This is arguably the highest-leverage open question in the whole design.",
+      "source": {
+        "label": "open question to Arkiv engineering",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "node",
+        "self-host",
+        "architecture",
+        "egress",
+        "indexer"
+      ],
+      "short": "whether they run their own node (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.max_object",
+      "statement": "We do not know the true maximum object sizes. Parquet footers give averages and per-block averages, not maxima, because Parquet statistics store min/max VALUES rather than value lengths. The largest single source file, metadata blob and per-contract footprint have to come from Sourcify as three MAX(length()) queries.",
+      "unit": "unknown",
+      "scope": "Only Sourcify can answer. Unit: bytes for max(length(sources.content)), max(length(code.code)), max(length(sourcify_matches.metadata)).",
+      "source": {
+        "label": "open question 5 to Kaan",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "max",
+        "size",
+        "object",
+        "ceiling",
+        "storage design"
+      ],
+      "short": "true max object sizes (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.mutability",
+      "statement": "We do not know Sourcify's insert vs update vs delete rates per relation. Their analysis says 75-80% of the database is immutable content-addressed blobs, but sourcify_matches.metadata is updated in place, and there is an open issue about deleting sources from pinning. This decides whether an append-oriented model fits their data at all.",
+      "unit": "unknown",
+      "scope": "Only Sourcify can answer. Unit: rows inserted / updated / deleted per day per relation.",
+      "source": {
+        "label": "open question 10 to Kaan",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "mutable",
+        "update",
+        "delete",
+        "append-only",
+        "model fit"
+      ],
+      "short": "their mutability profile (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "unknown",
+      "id": "unknown.index_share",
+      "statement": "We do not know how much of the 949.6 GB is indexes rather than rows. We have per-table pg_total_relation_size totals from their export stats but not the split, and measuring it on our own copy would reflect our index choices and none of their history.",
+      "unit": "unknown",
+      "scope": "Only Sourcify can answer. Unit: pg_table_size and pg_indexes_size per table -- ten rows from one read-only query.",
+      "source": {
+        "label": "open question 8 to Kaan",
+        "url": ""
+      },
+      "tags": [
+        "unknown",
+        "index",
+        "split",
+        "storage",
+        "queryability"
+      ],
+      "short": "their index share (unknown)"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "poc.shape",
+      "statement": "The September POC should be one demo, not two experiments: a Sourcify-compatible endpoint backed by Arkiv, answering real queries about real contracts, with a parity panel comparing our answers to theirs byte for byte, plus a write path showing a new verification landing and becoming queryable. It is built along two axes of evidence -- correctness (100k stratified verification heads plus a 10k subset carried with its full dependency closure) and capacity (one hot read route chosen by Sourcify) -- but those are how it gets built, not two things to show. No production cutover.",
+      "unit": "plan",
+      "scope": "OUR PROPOSAL for Monday, not agreed with Sourcify",
+      "source": {
+        "label": "argot briefing, The POC",
+        "url": ""
+      },
+      "tags": [
+        "poc",
+        "september",
+        "plan",
+        "demo",
+        "scope",
+        "tracks"
+      ],
+      "short": "the proposed September POC"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "poc.gates",
+      "statement": "Proposed gates: 100% hash parity on the lossless subcorpus, idempotent re-import with no duplicates, resume from cursor after a crash, and for the capacity axis a replay at 2x Sourcify's measured peak with latency and error thresholds set by them rather than invented by us. The meeting should end with five named outputs: pilot surface chosen by Sourcify, their data owner, our technical owner, agreed success gates, and a date for the first replay.",
+      "unit": "plan",
+      "scope": "OUR PROPOSAL",
+      "source": {
+        "label": "argot briefing, The POC",
+        "url": ""
+      },
+      "tags": [
+        "gates",
+        "success",
+        "criteria",
+        "poc",
+        "outputs",
+        "monday"
+      ],
+      "short": "the proposed gates"
+    }
+  ]
+}

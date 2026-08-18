@@ -1,0 +1,12 @@
+/*
+!/app
+!/lib
+!/kb
+!/public
+!/scripts
+!/package.json
+!/package-lock.json
+!/next.config.ts
+!/postcss.config.mjs
+!/tsconfig.json
+!/proxy.ts
