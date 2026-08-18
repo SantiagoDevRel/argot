@@ -1,82 +1,93 @@
-# Questions for Kaan — 2026-08-18
+# Message to Kaan — 2026-08-18
 
-Paste-ready. Written to be sent today, ahead of the joint Arkiv × Sourcify meeting on Monday.
+Paste-ready, to send today ahead of the joint Arkiv x Sourcify meeting on Monday.
 
-**Design principle:** every question we could answer ourselves from public data, we already answered
-(see `sourcify-arkiv-briefing.html` and `sourcify-lab/measure.py`). What is left is only what the public
-dataset structurally cannot tell us. Saying that out loud is what makes these read as engineering rather
-than discovery.
+**Design principle:** anything derivable from public data, we derived. What is left is either a
+number only Sourcify holds, or a figure of theirs that we want confirmed. Asking him to *verify*
+costs a minute per item; asking him to *analyse* costs an afternoon he does not have.
+
+Rendered version with the full supporting data: `sourcify-arkiv-briefing.html`.
+Everything below is reproducible via `sourcify-lab/measure.py` and `sourcify-lab/exact_rows.py`.
 
 ---
 
 ## The message
 
-> Hi Kaan — before Monday I went through the public dataset properly so we would not waste your time on
-> things we can measure ourselves.
+> Hi Kaan — ahead of Monday I went through the public dataset properly so we would not spend your time
+> on anything we can measure ourselves. Most of this is me asking you to sanity-check numbers I derived
+> rather than to produce new ones.
 >
-> From `stats.sourcify.dev/data.json` and the Parquet export stats I have: 43.78M verified contracts as of
-> today (29.1% exact / 70.9% partial) across 377 chains, ~34k new verifications/day organically over the
-> last 30 days, 949.6 GB live database of which the ten exported tables are 692.9 GB, 170.4 GB of Parquet,
-> and a ~7.7x compilation reuse factor. So none of that is a question.
+> **1. Are these right?** From `stats.sourcify.dev/data.json`, the Parquet export stats and the Parquet
+> file footers, as of 18 Aug: **43,781,389** verified contracts (29.1% exact / 70.9% partial),
+> **267** supported chains of 420 configured, **949.6 GB** live database, **170.4 GB** of Parquet across
+> 2,687 files, and roughly **34k** new verifications/day over the last 30 days excluding bulk imports.
+> _source: your public stats + export stats.json — effort: eyeball it_
 >
-> What I cannot get from public data is below. Most of it is a single read-only query or a dashboard export
-> on your side.
+> **2. Your 4byte counter looks stale.** `api.4byte.sourcify.dev/signature-database/v1/stats` returns
+> 9,340,765 signatures with `refreshed_at: 2026-07-06`. Counting the Parquet footers today I get
+> **9,920,797**. Is that view just on a slow refresh?
+> _source: your /stats endpoint vs signatures/*.parquet — effort: one minute_
 >
-> **1. Read workload.** This is the one that actually decides everything. What does the request mix look
-> like — requests/day per endpoint, cache-hit rate, peak requests/second, p99 latency? A snapshot of the
-> dataset is an inventory; it says nothing about how it is served.
+> **3. The export keeps superseded rows — can you confirm?** The v2 export is append-only, so I read
+> **74,196,213** rows in `sourcify_matches` against the **42,733,948** you measured live in issue #2924.
+> I read that as ~31.5M superseded versions retained in older files, mostly from `metadata` updates.
+> `compiled_contracts` shows the same pattern at 9.7%. If that is right, anyone building off the export
+> has to deduplicate by primary key first — probably worth a line in the docs.
+> _source: parquet footers vs your issue #2924 — effort: confirm or correct_
 >
-> **2. Index vs content split.** How much of the 949 GB is indexes rather than rows? I know the
-> `pg_total_relation_size` totals per table from your export stats, but not the split. It is one read-only
-> query returning ten rows (`pg_table_size` / `pg_indexes_size` / `pg_total_relation_size`). I did not want
-> to measure this on a copy — a fresh copy has our index choices and none of your bloat, so the number
-> would be wrong and too low.
+> **4. Which "15M requests/day" is the real one?** The 2025 recap says over 15M/day across *all* Sourcify
+> APIs, with 4byte alone above 7M. The May 2026 v1-brownout post says v2 is "already serving 15M+
+> requests/day", which reads as the contract API on its own. Those imply very different targets and I
+> would rather not quote it wrong on Monday.
+> _source: your two blog posts — effort: one line_
 >
-> **3. The 27% that never gets exported.** The ten exported tables are 692.9 GB against a
-> `pg_database_size` of 949.6 GB, so ~257 GB never leaves. I know the signature stats materialized view
-> and the verification jobs tables are in there, but that does not account for the whole gap. What else is
-> in it — and how much of it is bloat rather than data?
+> **5. Growth cause.** 11M at end-2025, 38.5M by July, 43.78M now. How much of that is organic
+> verification versus your similarity-import backfills? I can see a **+2,774,661 single day on 17 July**
+> in the stats data, so I assume the backfills are a large share.
+> _source: your stats data.json — effort: one line_
 >
-> **4. Egress composition.** Marco's conclusion in #2866 was that moving the database only pays if egress
-> drops by roughly 95%, which he described as redesigning how contracts are served. To even reason about
-> that: of the 13.6 TB/month, what is the split by endpoint and by field — sources vs bytecode vs metadata?
+> **6. What is in the other 27%?** The ten exported tables are 692.9 GB against a `pg_database_size` of
+> 949.6 GB, so ~257 GB is outside them. I know that includes other relations and catalogs, but I do not
+> want to guess how much is real data versus bloat.
+> _unit: GB per non-exported relation + dead-tuple estimate — effort: one query_
 >
-> **5. What is actually mutable.** The analysis says 75–80% of the database is immutable content-addressed
-> blobs and JSON, but `sourcify_matches.metadata` is updated in place and re-verifications overwrite. Rows
-> updated per day vs inserted per day? And separately — do you have a real deletion requirement, given
-> #2605 on removing sources from Filebase pinning?
+> **7. Index versus content.** How much of the 949.6 GB is indexes rather than rows? `pg_total_relation_size`
+> gives me the totals but not the split, and measuring it on our own copy would reflect our index choices
+> and none of your history.
+> _unit: pg_table_size / pg_indexes_size per table — ten rows — effort: one query_
 >
-> **6. The 15M requests/day figure.** Reading the 2025 recap I take it as all Sourcify APIs combined, with
-> 4byte alone above 7M of it. Your summary doc reads as if `sourcify.dev/server` serves the 15M on its own.
-> Which is it? It changes the target by roughly a factor of two and I would rather not quote it wrong on
-> Monday.
+> **8. The read workload — the one thing the dataset cannot show.** A snapshot is an inventory, not a
+> workload. Whatever you already have would be plenty: requests/day by route, peak RPS, p95/p99,
+> cache-hit ratio, response bytes. An existing dashboard screenshot beats a custom analysis.
+> _unit: route-level counts + peaks — effort: export what exists_
 >
-> **7. The export row counter.** File ranges in the v2 export imply ~74.2M rows in `sourcify_matches`, but
-> #2924 measures 42.7M live. Same pattern on `compiled_contracts` (5.72M implied vs 5.16M measured). I
-> assume superseded rows stay in the append-only files — can you confirm? It matters because it means the
-> export cannot be replayed as a backfill without de-duplicating by primary key first.
+> **9. What is actually mutable.** Your own analysis says 75–80% of the database is immutable
+> content-addressed blobs, but `sourcify_matches.metadata` is updated in place. Roughly what is the split
+> of inserts versus updates versus deletes per day? And do you have a real deletion requirement, given
+> the open issue on removing sources from Filebase pinning?
+> _unit: rows inserted / updated / deleted per day — effort: rough answer is fine_
 >
-> **8. ERC-7730 direction.** When we spoke in July you said the intention was to move the registry on-chain
-> and make it permissionless, with trust coming from attestations. Reading the Clear Signing launch post,
-> the shipped design is EAS attestations over a mirrorable off-chain registry — descriptors stay in the
-> GitHub repo. Has the direction changed, or are those two stages of the same plan?
+> Two framing questions so we do not waste Monday: what would a useful September test look like from your
+> side — and would you be open to a shadow run with no production cutover, where we mirror a slice and
+> compare our answers against yours?
 
 ---
 
 ## Notes for Santiago, not for Kaan
 
-- **Q1, Q4 and Q5 are the ones that matter.** Q1 decides whether any serving proposition is possible at
-  all; Q4 is the bar Marco himself set (~95% egress reduction); Q5 decides whether an append-oriented
-  model fits their data at all.
-- **Q6 is a correction dressed as a question.** His own summary is loose here. Do not frame it as a
-  correction — the doc's warning that 15M must never be read as contract lookups is right, and it is worth
-  being right quietly.
-- **Q8 changed under us.** The July conversation on file says "move it on-chain". The shipped May 2026
-  design is attestations over an off-chain mirrorable registry. Do not walk into Monday assuming an
-  on-chain descriptor registry is a committed roadmap item.
-- **Do not ask about cost.** They ran that evaluation in July (#2866) and concluded don't migrate. Kaan
-  closed it himself with "it seems still too expensive to me… can be opened later". That sentence is the
-  opening; asking him to re-litigate the decision is not.
-- **The thing to keep in reserve for Monday:** #2924 — 139 GB of duplicated metadata they cannot normalise
-  because the Verifier Alliance schema has no slot for it. It is a content-addressing problem written in
-  their own issue tracker eight days ago. Raise it as a question, never as a pitch.
+- **Q1, Q8 and Q9 are the ones that matter.** Q8 decides whether any serving proposition is possible at
+  all; Q9 decides whether an append-oriented model fits their data; Q1 is the cheap credibility opener.
+- **Q2 and Q3 are gifts.** Both are things wrong or undocumented on *their* side that we found by doing
+  the work. They cost him nothing and they establish that we read the dataset properly.
+- **Q4 is a correction dressed as a question.** Their own two posts disagree. Ask, do not correct.
+- **Do not ask about cost.** They ran that evaluation in July (#2866) and concluded don't migrate — but
+  note that review compared *hosted Postgres providers*, not Arkiv. Kaan closed it himself with "it seems
+  still too expensive to me... can be opened later". That sentence is the opening; re-litigating the
+  decision is not.
+- **ERC-7730 is deliberately not in this message.** The shipped Clear Signing design is attestations over
+  a mirrorable off-chain registry, which differs from the on-chain permissionless registry he described
+  in July. Worth resolving, but it is adjacent to the database conversation and asking now costs focus.
+  Send it as a separate follow-up after Monday.
+- **Keep in reserve for Monday:** issue #2924 — compiler metadata duplicated ~8.5 times, roughly 139 GB,
+  unfixable because the shared Verifier Alliance schema has no slot for it. Raise it as a question about
+  their cost, never as a pitch.

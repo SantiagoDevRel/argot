@@ -1,0 +1,17 @@
+{
+  "source": "gs://sourcify-production-parquet-export/v2 parquet footers (num_rows)",
+  "files_read": 2687,
+  "failed": 0,
+  "rows": {
+    "compiled_contracts_signatures": 175489918,
+    "sourcify_matches": 74196213,
+    "verified_contracts": 44391604,
+    "contract_deployments": 44303315,
+    "code": 40163166,
+    "compiled_contracts_sources": 36586086,
+    "contracts": 24662400,
+    "signatures": 9920797,
+    "sources": 6329026,
+    "compiled_contracts": 5716510
+  }
+}

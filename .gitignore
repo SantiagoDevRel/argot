@@ -14,3 +14,7 @@ Thumbs.db
 
 # Node app artifacts are ignored by erc7730-poc/.gitignore (node_modules, .next, .vercel);
 # eval generated data by erc7730-poc/eval/.gitignore.
+
+# Python bytecode from sourcify-lab scripts
+__pycache__/
+*.pyc
