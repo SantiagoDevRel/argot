@@ -16,19 +16,17 @@
   --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --sans:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
-@media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --paper:#0B0C1C; --surface:#14162E; --sunk:#1B1D38;
-    --ink:#EDEDF6; --slate:#A7ABC8; --faint:#787D9C;
-    --line:#2A2D4E; --hair:#222542;
-    --blue:#8B92FF; --blue-soft:#1D2050;
-    --orange:#FF8A61; --orange-soft:#3A2117;
-    --ok:#5FD1A8; --ok-soft:#0F2E25;
-    --warn:#E0B25F; --warn-soft:#332609;
-    --stop:#FF8095; --stop-soft:#38131C;
-    --tipbg:#EDEDF6; --tipfg:#0B0C1C;
-  }
-}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#0B0C1C; --surface:#14162E; --sunk:#1B1D38;
+  --ink:#EDEDF6; --slate:#A7ABC8; --faint:#787D9C;
+  --line:#2A2D4E; --hair:#222542;
+  --blue:#8B92FF; --blue-soft:#1D2050;
+  --orange:#FF8A61; --orange-soft:#3A2117;
+  --ok:#5FD1A8; --ok-soft:#0F2E25;
+  --warn:#E0B25F; --warn-soft:#332609;
+  --stop:#FF8095; --stop-soft:#38131C;
+  --tipbg:#EDEDF6; --tipfg:#0B0C1C;
+}}
 :root[data-theme="dark"]{
   --paper:#0B0C1C; --surface:#14162E; --sunk:#1B1D38;
   --ink:#EDEDF6; --slate:#A7ABC8; --faint:#787D9C;
@@ -41,702 +39,741 @@
   --tipbg:#EDEDF6; --tipfg:#0B0C1C;
 }
 *{box-sizing:border-box}
-/* the page must never scroll sideways; `clip` (unlike `hidden`) creates no scroll container */
 html{overflow-x:clip}
-body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); overflow-x:clip;
-  font-size:16px; line-height:1.6; -webkit-font-smoothing:antialiased}
-.wrap{max-width:1120px; margin:0 auto; padding:0 28px 96px}
-h1,h2,h3,.lbl,.num,table,code,.pill,.tag{font-family:var(--mono)}
+body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+  font-size:16px; line-height:1.6; overflow-x:clip; -webkit-font-smoothing:antialiased}
+.wrap{max-width:1120px; margin:0 auto; padding:0 28px 90px}
+h1,h2,h3,.lbl,.num,table,code,.pill,.tag,.tabs button{font-family:var(--mono)}
 a{color:var(--blue)}
-a:focus-visible,summary:focus-visible,.tt:focus-visible{outline:2px solid var(--orange); outline-offset:3px; border-radius:2px}
+a:focus-visible,summary:focus-visible,.tt:focus-visible,.tabs button:focus-visible{
+  outline:2px solid var(--orange); outline-offset:3px; border-radius:2px}
 code{font-size:.92em; background:var(--sunk); padding:1px 4px; border-radius:2px}
 
 /* ---------- tooltip ---------- */
-.tt{
-  border-bottom:1px dotted var(--blue); cursor:help; position:relative;
-  text-decoration:none; color:inherit;
-}
-/* display toggle, not visibility: a visibility:hidden box still occupies layout
-   and its width leaks into document scrollWidth, scrolling the page sideways. */
+.tt{border-bottom:1px dotted var(--blue); cursor:help; position:relative; color:inherit}
 .tt::after{
   content:attr(data-tip); display:none; position:absolute; left:0; top:calc(100% + 8px); z-index:60;
   width:max-content; max-width:min(360px,calc(100vw - 44px)); padding:9px 12px;
   background:var(--tipbg); color:var(--tipfg); font-family:var(--sans); font-size:13px;
-  font-weight:400; line-height:1.45; border-radius:3px; text-align:left;
-  pointer-events:none; box-shadow:0 6px 22px rgba(0,0,0,.28);
+  font-weight:400; line-height:1.45; border-radius:3px; text-align:left; pointer-events:none;
+  box-shadow:0 6px 22px rgba(0,0,0,.28); white-space:normal;
 }
 .tt:hover::after{display:block}
 .tt:focus::after{display:block}
-.tt:focus-within::after{display:block}
-.tt.r::after{left:auto; right:0}
-/* On narrow screens anchor the tooltip to its block, not to the word: a term late in
-   a line would otherwise run off the right edge. Full-width under the paragraph. */
 @media(max-width:760px){
-  .standfirst,.prose,.kpi{position:relative}
+  .standfirst,.prose,.kpi,li{position:relative}
   .tt{position:static}
   .tt::after{left:0; right:0; width:auto; max-width:none; top:calc(100% + 6px)}
 }
 
 /* ---------- masthead ---------- */
-header{border-bottom:2px solid var(--ink); padding:44px 0 22px; margin-bottom:14px}
+header{border-bottom:2px solid var(--ink); padding:38px 0 20px}
 .eyebrow{font-family:var(--mono); font-size:12px; font-weight:600; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--blue); display:flex; gap:12px; flex-wrap:wrap;
-  align-items:center; margin-bottom:20px}
+  text-transform:uppercase; color:var(--blue); display:flex; gap:11px; flex-wrap:wrap;
+  align-items:center; margin-bottom:16px}
 .eyebrow .sep{color:var(--faint)}
-h1{font-size:clamp(30px,5vw,46px); font-weight:600; line-height:1.1; margin:0 0 14px;
+h1{font-size:clamp(27px,4.4vw,40px); font-weight:600; line-height:1.12; margin:0 0 12px;
   letter-spacing:-.02em; text-wrap:balance}
-.standfirst{font-size:17px; color:var(--slate); max-width:66ch; margin:0}
-.stamp{margin-top:22px; font-family:var(--mono); font-size:12px; color:var(--faint);
-  display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+.standfirst{font-size:16.5px; color:var(--slate); max-width:68ch; margin:0}
+.stamp{margin-top:18px; font-family:var(--mono); font-size:11.5px; color:var(--faint);
+  display:flex; gap:9px; flex-wrap:wrap}
 .stamp b{color:var(--slate); font-weight:500}
 
-/* ---------- nav ---------- */
-nav{display:flex; gap:0; flex-wrap:wrap; border-bottom:1px solid var(--line); margin-bottom:40px}
-nav a{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.07em;
-  text-transform:uppercase; padding:13px 16px 12px; color:var(--slate); text-decoration:none;
-  border-bottom:2px solid transparent; margin-bottom:-1px}
-nav a:hover{color:var(--blue); border-bottom-color:var(--blue)}
-nav a:first-child{padding-left:0}
+/* ---------- tabs ---------- */
+.tabs{display:flex; flex-wrap:wrap; gap:0; border-bottom:1px solid var(--line);
+  margin:0 0 34px; position:sticky; top:0; background:var(--paper); z-index:40}
+.tabs button{
+  appearance:none; background:none; border:0; border-bottom:2px solid transparent;
+  font-size:11.5px; font-weight:600; letter-spacing:.07em; text-transform:uppercase;
+  padding:14px 15px 12px; color:var(--slate); cursor:pointer; margin-bottom:-1px;
+  display:flex; align-items:center; gap:7px;
+}
+.tabs button:first-child{padding-left:0}
+.tabs button:hover{color:var(--ink)}
+.tabs button[aria-selected="true"]{color:var(--blue); border-bottom-color:var(--blue)}
+.tabs .when{font-family:var(--mono); font-size:9.5px; font-weight:500; letter-spacing:.09em;
+  padding:2px 6px; border-radius:2px; background:var(--sunk); color:var(--faint)}
+.tabs button[aria-selected="true"] .when{background:var(--blue-soft); color:var(--blue)}
+.panel[hidden]{display:none}
+/* the tab bar wraps to 3 rows on a phone; sticky would eat 15% of the screen */
+@media(max-width:760px){.tabs{position:static}
+  .tabs button{padding:11px 11px 9px; font-size:11px}}
 
-/* ---------- sections ---------- */
-section{margin:60px 0 0; scroll-margin-top:16px}
-.shead{display:flex; align-items:baseline; gap:14px; border-bottom:1px solid var(--line);
-  padding-bottom:10px; margin-bottom:22px; flex-wrap:wrap}
-.shead h2{font-size:19px; font-weight:600; margin:0; letter-spacing:-.01em}
-.shead .note{font-family:var(--sans); font-size:13.5px; color:var(--faint); margin-left:auto}
-h3.sub{font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:.06em;
-  text-transform:uppercase; color:var(--slate); margin:34px 0 12px}
-.prose{max-width:70ch; color:var(--slate); font-size:15.5px}
+/* ---------- blocks ---------- */
+h2.ph{font-size:20px; font-weight:600; margin:0 0 6px; letter-spacing:-.015em}
+.plead{color:var(--slate); font-size:15.5px; max-width:72ch; margin:0 0 26px}
+h3.sub{font-family:var(--mono); font-size:12.5px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--slate); margin:36px 0 14px;
+  padding-bottom:8px; border-bottom:1px solid var(--line)}
+h3.sub:first-of-type{margin-top:26px}
+.prose{max-width:72ch; color:var(--slate); font-size:15px; margin:0 0 12px}
 .prose strong{color:var(--ink); font-weight:600}
-.prose + .prose{margin-top:12px}
 
-/* audience tags */
-.tag{display:inline-block; font-size:10px; font-weight:600; letter-spacing:.11em;
-  text-transform:uppercase; padding:3px 8px; border-radius:2px; vertical-align:middle}
-.t-int{background:var(--stop-soft); color:var(--stop)}
-.t-ext{background:var(--ok-soft); color:var(--ok)}
+/* fact bullets */
+ul.facts{list-style:none; margin:0 0 18px; padding:0}
+ul.facts li{position:relative; padding-left:19px; margin-bottom:9px; font-size:15px;
+  color:var(--slate); line-height:1.55; max-width:78ch}
+ul.facts li::before{content:""; position:absolute; left:0; top:9px; width:6px; height:6px;
+  background:var(--blue); border-radius:1px}
+ul.facts li b{color:var(--ink); font-weight:600}
+ul.facts li .m{font-family:var(--mono); font-variant-numeric:tabular-nums; color:var(--ink); font-weight:500}
+ul.facts li.warn::before{background:var(--orange)}
+ul.facts ul{list-style:none; margin:7px 0 0; padding:0}
+ul.facts ul li{padding-left:15px; margin-bottom:5px; font-size:14px}
+ul.facts ul li::before{width:4px; height:4px; top:9px; background:var(--faint)}
 
-/* ---------- KPI ---------- */
-.kpis{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line); border:1px solid var(--line)}
+/* KPI */
+.kpis{display:grid; grid-template-columns:repeat(2,1fr); gap:1px; background:var(--line);
+  border:1px solid var(--line); margin-bottom:22px}
 @media(max-width:479px){.kpis{grid-template-columns:1fr}}
 @media(min-width:900px){.kpis{grid-template-columns:repeat(4,1fr)}}
-.kpi{background:var(--surface); padding:17px 16px 15px}
-.kpi .lbl{display:block; font-family:var(--mono); font-size:10.5px; font-weight:500;
-  letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin-bottom:8px; line-height:1.4}
-.kpi .num{display:block; font-size:24px; font-weight:600; letter-spacing:-.02em;
+.kpi{background:var(--surface); padding:16px 15px 14px}
+.kpi .lbl{display:block; font-family:var(--mono); font-size:10px; font-weight:500;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin-bottom:7px; line-height:1.4}
+.kpi .num{display:block; font-size:23px; font-weight:600; letter-spacing:-.02em;
   font-variant-numeric:tabular-nums; line-height:1.15}
-.kpi .u{font-size:14px; font-weight:500}
-.kpi .sub{display:block; font-size:12.5px; color:var(--slate); margin-top:5px; line-height:1.45}
+.kpi .u{font-size:13.5px; font-weight:500}
+.kpi .sub{display:block; font-size:12px; color:var(--slate); margin-top:5px; line-height:1.45}
 .kpi.hero .num{color:var(--blue)}
 .kpi.gap{background:var(--orange-soft)} .kpi.gap .num{color:var(--orange)}
 
-/* ---------- tables ---------- */
-.scroll{overflow-x:auto; border:1px solid var(--line); background:var(--surface)}
-table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:620px}
-th{text-align:left; font-size:10.5px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
-  color:var(--faint); padding:11px 14px; border-bottom:1px solid var(--line); white-space:nowrap; background:var(--sunk)}
-td{padding:11px 14px; border-bottom:1px solid var(--hair); vertical-align:top; font-family:var(--sans); line-height:1.5}
+/* tables */
+.scroll{overflow-x:auto; border:1px solid var(--line); background:var(--surface); margin-bottom:18px}
+table{border-collapse:collapse; width:100%; font-size:13.5px; min-width:600px}
+th{text-align:left; font-size:10px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); padding:10px 13px; border-bottom:1px solid var(--line);
+  white-space:nowrap; background:var(--sunk)}
+th.r{text-align:right}
+td{padding:10px 13px; border-bottom:1px solid var(--hair); vertical-align:top;
+  font-family:var(--sans); line-height:1.5}
 tr:last-child td{border-bottom:none}
 td.m{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap; text-align:right}
 td.k{font-family:var(--mono); font-weight:500; color:var(--ink); white-space:nowrap}
 td.ask{color:var(--orange); font-weight:500}
-th.r{text-align:right}
 tbody tr:hover{background:var(--sunk)}
 
-/* ---------- pills ---------- */
-.pill{display:inline-block; font-size:10px; font-weight:600; letter-spacing:.09em;
-  text-transform:uppercase; padding:3px 8px; border-radius:2px; white-space:nowrap}
+/* pills */
+.pill{display:inline-block; font-size:9.5px; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; padding:3px 7px; border-radius:2px; white-space:nowrap}
 .p-ok{background:var(--ok-soft); color:var(--ok)}
 .p-warn{background:var(--warn-soft); color:var(--warn)}
 .p-stop{background:var(--stop-soft); color:var(--stop)}
 .p-blue{background:var(--blue-soft); color:var(--blue)}
 .p-gap{background:var(--orange-soft); color:var(--orange)}
+.tag{display:inline-block; font-family:var(--mono); font-size:9.5px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; padding:3px 8px; border-radius:2px}
+.t-int{background:var(--stop-soft); color:var(--stop)}
+.t-ext{background:var(--ok-soft); color:var(--ok)}
 
-/* ---------- findings ---------- */
-.finding{border:1px solid var(--line); background:var(--surface); padding:16px 18px; margin-bottom:-1px}
-.finding > summary{cursor:pointer; list-style:none; display:flex; gap:12px; align-items:flex-start}
-.finding > summary::-webkit-details-marker{display:none}
-.finding .fid{font-family:var(--mono); font-size:11px; font-weight:600; color:var(--faint); padding-top:3px; min-width:26px}
-.finding .ftitle{font-family:var(--sans); font-size:15px; font-weight:600; flex:1; line-height:1.45}
-.finding .body{margin:12px 0 0 38px; font-size:14px; color:var(--slate); max-width:70ch}
-.finding .body p{margin:0 0 9px} .finding .body p:last-child{margin-bottom:0}
-.finding .body em{color:var(--ink); font-style:normal; font-weight:600}
-@media(max-width:720px){.finding .body{margin-left:0}}
-
-/* ---------- message block ---------- */
+/* message */
 .msg{border:1px solid var(--line); border-left:3px solid var(--blue); background:var(--surface);
-  padding:20px 22px; font-size:14.5px; line-height:1.62}
-.msg p{margin:0 0 13px} .msg p:last-child{margin-bottom:0}
+  padding:19px 21px; font-size:14.5px; line-height:1.6; margin-bottom:18px}
+.msg p{margin:0 0 12px} .msg p:last-child{margin-bottom:0}
 .msg .q{font-weight:600; color:var(--ink)}
-.msg .ev{font-family:var(--mono); font-size:12.5px; color:var(--slate); display:block; margin-top:3px}
+.msg .ev{font-family:var(--mono); font-size:12px; color:var(--faint); display:block; margin-top:3px}
 
-/* ---------- callout ---------- */
-.callout{border:1px solid var(--orange); background:var(--orange-soft); padding:18px 20px; margin:22px 0}
+/* callout */
+.callout{border:1px solid var(--orange); background:var(--orange-soft); padding:17px 19px; margin:20px 0}
 .callout.blue{border-color:var(--blue); background:var(--blue-soft)}
-.callout .lbl{font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.13em;
-  text-transform:uppercase; color:var(--orange); display:block; margin-bottom:8px}
+.callout .lbl{font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--orange); display:block; margin-bottom:7px}
 .callout.blue .lbl{color:var(--blue)}
-.callout p{margin:0 0 8px; font-size:14.5px; color:var(--ink); max-width:72ch}
+.callout p{margin:0 0 7px; font-size:14.5px; color:var(--ink); max-width:74ch}
 .callout p:last-child{margin-bottom:0}
 
-/* ---------- checklist ---------- */
-ol.q{margin:0; padding-left:0; list-style:none; counter-reset:q}
-ol.q li{counter-increment:q; position:relative; padding-left:32px; margin-bottom:14px; font-size:14.5px; line-height:1.55}
-ol.q li::before{content:counter(q); position:absolute; left:0; top:0;
-  font-family:var(--mono); font-size:11px; font-weight:600; color:var(--blue);
-  border:1px solid var(--line); width:20px; height:20px; display:flex;
-  align-items:center; justify-content:center; border-radius:2px}
+/* numbered */
+ol.q{margin:0 0 18px; padding-left:0; list-style:none; counter-reset:q}
+ol.q li{counter-increment:q; position:relative; padding-left:31px; margin-bottom:14px;
+  font-size:14.5px; line-height:1.55; color:var(--slate); max-width:76ch}
+ol.q li b{color:var(--ink)}
+ol.q li::before{content:counter(q); position:absolute; left:0; top:1px; font-family:var(--mono);
+  font-size:10.5px; font-weight:600; color:var(--blue); border:1px solid var(--line);
+  width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:2px}
 ol.q li .unit{display:block; font-family:var(--mono); font-size:11.5px; color:var(--faint); margin-top:4px}
 
-.src{columns:2; column-gap:34px; font-size:12.5px; color:var(--slate); font-family:var(--mono); line-height:1.75}
-.src div{break-inside:avoid; margin-bottom:5px}
-@media(max-width:720px){.src{columns:1} .wrap{padding:0 18px 64px}}
-footer{margin-top:64px; padding-top:20px; border-top:1px solid var(--line);
-  font-family:var(--mono); font-size:11.5px; color:var(--faint); line-height:1.7}
+.src{columns:2; column-gap:32px; font-size:12px; color:var(--slate); font-family:var(--mono); line-height:1.7}
+.src div{break-inside:avoid; margin-bottom:4px}
+@media(max-width:720px){.src{columns:1} .wrap{padding:0 18px 60px}}
+footer{margin-top:56px; padding-top:18px; border-top:1px solid var(--line);
+  font-family:var(--mono); font-size:11px; color:var(--faint); line-height:1.7}
 </style>
 
 <div class="wrap">
 
 <header>
   <div class="eyebrow"><span>[ ARKIV ]</span><span class="sep">&times;</span><span>Sourcify</span>
-    <span class="sep">/</span><span>Go-to resource</span><span class="sep">/</span><span>v2</span></div>
-  <h1>Everything we know about Sourcify, and what to do with it</h1>
+    <span class="sep">/</span><span>Working file</span><span class="sep">/</span><span>v3</span></div>
+  <h1>Sourcify, measured &mdash; and what we do with it</h1>
   <p class="standfirst">
-    All Sourcify figures below are exact and measured today from public endpoints &mdash; no database access,
-    no dataset download. Row counts come from reading the Parquet
-    <span class="tt" tabindex="0" data-tip="Every Parquet file ends with a metadata block that records exactly how many rows it holds. You can fetch just those few kilobytes over HTTP instead of the whole file.">file footers</span>
-    directly. Arkiv-side numbers are deliberately marked provisional: that network is still being built,
-    so it is not what this document is for.
+    Every Sourcify figure here is exact, measured on 18 Aug 2026 from public endpoints: no database
+    access, no dataset download. Row counts and per-column byte sizes come from reading the Parquet
+    <span class="tt" tabindex="0" data-tip="Every Parquet file ends with a metadata block recording how many rows and how many bytes each column holds. You can fetch just those few kilobytes over HTTP instead of the whole file.">file footers</span>
+    directly. Arkiv-side figures are marked provisional throughout &mdash; that network is still being built.
   </p>
   <div class="stamp">
     <span><b>Measured</b> 2026-08-18</span><span class="sep">&middot;</span>
-    <span><b>Reproduce</b> <code>sourcify-lab/measure.py</code> + <code>exact_rows.py</code></span><span class="sep">&middot;</span>
-    <span><b>Figures move daily</b> &mdash; always restate the date</span>
+    <span><b>Reproduce</b> <code>sourcify-lab/</code>: measure.py &middot; exact_rows.py &middot; column_sizes.py</span>
   </div>
 </header>
 
-<nav>
-  <a href="#now">Start here</a>
-  <a href="#numbers">The exact numbers</a>
-  <a href="#wrong">What we got wrong</a>
-  <a href="#kaan">Message to Kaan</a>
-  <a href="#eng">Tomorrow: eng</a>
-  <a href="#monday">Monday: joint</a>
-  <a href="#open">Still unknown</a>
-</nav>
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true"  aria-controls="p-facts"  id="t-facts">Facts</button>
+  <button role="tab" aria-selected="false" aria-controls="p-fit"    id="t-fit">Schema &amp; fit</button>
+  <button role="tab" aria-selected="false" aria-controls="p-eng"    id="t-eng">Engineering <span class="when">TOMORROW</span></button>
+  <button role="tab" aria-selected="false" aria-controls="p-poc"    id="t-poc">The POC <span class="when">MONDAY</span></button>
+  <button role="tab" aria-selected="false" aria-controls="p-kaan"   id="t-kaan">Ask Kaan <span class="when">TODAY</span></button>
+  <button role="tab" aria-selected="false" aria-controls="p-ctx"    id="t-ctx">My context</button>
+</div>
 
-<!-- ============================================================ -->
-<section id="now" style="margin-top:0">
-  <div class="shead"><h2>Start here &mdash; the three-minute version</h2></div>
-  <p class="prose">
-    Sourcify is <strong>much bigger than any of our documents said</strong>: 43.78 million verified contracts,
-    not the ~11M we had on file. It grew roughly <strong>4&times; in under eight months</strong>. Their database is
-    949.6 GB and growing at about <strong>25 GiB/month</strong> organically &mdash; not the 189 GiB/month figure that
-    has been circulating, which came from a window containing a one-time bulk import.
-  </p>
-  <p class="prose">
-    The strategically important finding is that <strong>we can already build a representative migration corpus
-    from public data alone</strong>. What we genuinely cannot see is how Sourcify is <em>used</em> &mdash; the request
-    mix, the peaks, what gets updated versus written once. That is the entire content of the message to Kaan.
-  </p>
-  <div class="callout blue">
-    <span class="lbl">The one-line strategy</span>
-    <p>We are not proposing another lift-and-shift to a different hosted Postgres &mdash; they evaluated that in July
-    and correctly said no. We are asking whether a decentralized, queryable serving and ownership layer changes
-    the model. September should be a <b>measurable shadow test with no production cutover</b>, sized to produce
-    the evidence a real migration would need.</p>
-  </div>
-  <h3 class="sub">Your three deadlines</h3>
-  <div class="scroll">
-    <table>
-      <thead><tr><th>When</th><th>Who</th><th>What you actually need out of it</th><th>Where</th></tr></thead>
-      <tbody>
-        <tr><td class="k">Today</td><td>Kaan</td>
-          <td>Nine questions, each attached to a number we already derived, phrased as
-            "we measured X from Y &mdash; is that right?". Verification is a cheap ask; analysis is not.</td>
-          <td class="k"><a href="#kaan">&darr; Message</a></td></tr>
-        <tr><td class="k">Tomorrow</td><td>Arkiv engineering</td>
-          <td>Not a demo. A list of what engineering must answer before we can promise Sourcify anything,
-            plus an honest correction of our own load claims.</td>
-          <td class="k"><a href="#eng">&darr; Agenda</a></td></tr>
-        <tr><td class="k">Monday</td><td>+ Pawel, Matthias, Sourcify</td>
-          <td>Five named outputs: pilot surface, their data owner, our technical owner, success gates,
-            date of the first replay.</td>
-          <td class="k"><a href="#monday">&darr; Agenda</a></td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<section id="numbers">
-  <div class="shead"><h2>The exact Sourcify numbers</h2>
-    <span class="note">measured 2026-08-18 &middot; public endpoints only</span></div>
+<!-- ==================== FACTS ==================== -->
+<div class="panel" id="p-facts" role="tabpanel" aria-labelledby="t-facts">
+  <h2 class="ph">The exact numbers</h2>
+  <p class="plead">All measured 2026-08-18 from public endpoints. Figures move daily &mdash; restate the date
+    whenever you quote them.</p>
 
   <div class="kpis">
     <div class="kpi hero"><span class="lbl">Verified contracts</span><span class="num">43,781,389</span>
-      <span class="sub">Their own dashboard. 29.1% <span class="tt" tabindex="0" data-tip="The compiler embeds a hash of the compilation metadata into the bytecode. When that matches too, the source is proven byte-for-byte identical, down to comments and whitespace.">exact match</span> / 70.9% partial</span></div>
+      <span class="sub">29.1% exact / 70.9% partial match</span></div>
     <div class="kpi hero"><span class="lbl">Growth</span><span class="num">~4&times;<span class="u"> in 8 months</span></span>
-      <span class="sub">11M end-2025 &rarr; 38.5M on 1 Jul &rarr; 43.78M today. All three are their published figures.</span></div>
+      <span class="sub">11M end-2025 &rarr; 38.5M on 1 Jul &rarr; 43.78M today</span></div>
     <div class="kpi hero"><span class="lbl">Organic writes</span><span class="num">~34k<span class="u">/day</span></span>
-      <span class="sub">7d avg 34,639 &middot; 30d avg 37,545. Bulk imports are separate and much larger.</span></div>
-    <div class="kpi hero"><span class="lbl">Chains</span><span class="num">267<span class="u"> / 420</span></span>
-      <span class="sub">267 currently supported of 420 configured; 377 appear historically in their stats data</span></div>
-    <div class="kpi"><span class="lbl">Live database</span><span class="num">949.6<span class="u"> GB</span></span>
-      <span class="sub"><span class="tt" tabindex="0" data-tip="A Postgres function returning the total disk footprint of the whole database, including indexes, catalogs and free space.">pg_database_size</span>, whole database</span></div>
-    <div class="kpi"><span class="lbl">Organic DB growth</span><span class="num">~25<span class="u"> GiB/mo</span></span>
-      <span class="sub">Three readings across 11 days. The widely quoted 189 GiB/mo is 7.7&times; higher.</span></div>
-    <div class="kpi"><span class="lbl">Parquet export</span><span class="num">170.4<span class="u"> GB</span></span>
-      <span class="sub">2,687 files, <span class="tt" tabindex="0" data-tip="A columnar file format, compressed with zstd. You can query it directly with DuckDB or pandas without loading it into a database.">Parquet</span> &middot; 4.07&times; smaller than the ten exported tables</span></div>
-    <div class="kpi"><span class="lbl">Compilation reuse</span><span class="num">7.66&times;</span>
-      <span class="sub">43.78M contracts resolve to 5,716,510 distinct compilations</span></div>
+      <span class="sub">Bulk imports are separate and far larger</span></div>
+    <div class="kpi hero"><span class="lbl">Index-shaped data</span><span class="num">4.1<span class="u">%</span></span>
+      <span class="sub">Only 52.7 GB of 1,269 GB raw is small-row data. The rest is blobs.</span></div>
   </div>
 
-  <h3 class="sub">Every table, exactly</h3>
-  <p class="prose" style="margin-bottom:16px">
-    Byte figures are the <em>live</em> database (<span class="tt" tabindex="0" data-tip="Per-table Postgres function: the table plus its indexes plus its out-of-line large-value storage. This is why the numbers are bigger than the raw data.">pg_total_relation_size</span>,
-    which already includes indexes and
-    <span class="tt" tabindex="0" data-tip="TOAST = The Oversized-Attribute Storage Technique. Postgres moves large column values into a side table; those bytes are counted here.">TOAST</span>).
-    Row figures are the <em>export</em>, read from the Parquet footers. Tables marked
-    <span class="tt" tabindex="0" data-tip="One row per unique content hash. The same bytecode deployed a thousand times costs a single row -- which is why code and sources are far smaller than 43.78M contracts would suggest.">content-addressed</span>
-    store one row per unique content hash. <strong>These two are not the same
-    population</strong>, which is the point of the last column.
+  <h3 class="sub">Size &mdash; the same data has three legitimate numbers</h3>
+  <ul class="facts">
+    <li><b class="m">1,269 GB</b> &mdash; raw uncompressed content, summing every column in the export.
+      This is what the data actually <em>is</em>.</li>
+    <li><b class="m">949.6 GB</b> &mdash; the live Postgres database
+      (<span class="tt" tabindex="0" data-tip="A Postgres function returning the total disk footprint of the whole database: table rows, all indexes, out-of-line large values, system catalogs, and space freed by past updates that was never returned to the OS.">pg_database_size</span>).
+      Lower than raw because Postgres compresses large values, higher in other respects because it adds
+      indexes, row overhead and dead space.</li>
+    <li><b class="m">170.4 GB</b> &mdash; the public Parquet export, columnar and zstd-compressed
+      (<b class="m">7.45&times;</b> smaller than raw). 2,687 files.</li>
+    <li>So <b>"compressed vs full" is not a choice between two copies of the truth</b>. The Parquet holds
+      the same rows as the ten exported tables; it is only stored more efficiently. What it does
+      <em>not</em> carry is the indexes, the operational tables, and the dead space &mdash; none of which are
+      content you would migrate.</li>
+  </ul>
+
+  <h3 class="sub">Chains &mdash; three different numbers, all correct</h3>
+  <ul class="facts">
+    <li><b class="m">267</b> chains <b>currently supported</b> &mdash; <code>supported: true</code> on the live
+      <code>/chains</code> endpoint. This is the one Kaan's summary calls "~265 EVM chains".</li>
+    <li><b class="m">420</b> chains <b>configured</b> &mdash; total entries in <code>/chains</code>, including
+      153 currently switched off.</li>
+    <li><b class="m">377</b> chains with <b>at least one verified contract</b>, ever &mdash; from their stats
+      dataset. <b>Kaan's doc says 370; that was 7 August and it is the same metric.</b> There is no
+      contradiction between his number and ours &mdash; only between three metrics that must not be mixed.</li>
+  </ul>
+
+  <h3 class="sub">Write load</h3>
+  <ul class="facts">
+    <li>Organic verifications: <b class="m">34,639/day</b> (7-day average), <b class="m">37,545/day</b> (30-day).</li>
+    <li>Bulk backfills are a different regime entirely: <b class="m">+2,774,661 contracts on 17 July alone</b>,
+      which their own issue attributes to a similarity-import job.</li>
+    <li>This is why any trailing average that spans July is misleading: the 90-day mean is 166k/day, the
+      30-day mean is 37.5k/day. <b>The steady state is the 30-day figure.</b></li>
+  </ul>
+
+  <h3 class="sub">Database growth</h3>
+  <ul class="facts">
+    <li>Three readings of <code>pg_database_size</code>: <span class="m">939.9 GB</span> (7 Aug),
+      <span class="m">942.3 GB</span> (10 Aug), <span class="m">949.6 GB</span> (18 Aug).</li>
+    <li>That is <b class="m">+9.05 GiB in 11 days = ~24.7 GiB/month</b>, or about
+      <b class="m">26.5 GB/month</b> in decimal units.
+      <span class="tt" tabindex="0" data-tip="GiB is binary: 1 GiB = 1024 x 1024 x 1024 bytes. GB is decimal: 1 GB = 1,000,000,000 bytes. A GiB is ~7.4% larger. Both are used here because Sourcify's own issue quotes GiB while their export stats are in bytes.">GiB and GB are not the same unit</span>
+      &mdash; a GiB is 7.4% bigger.</li>
+    <li class="warn">The widely quoted <b>189 GiB/month is 7.7&times; too high</b>. At the observed
+      25.5 KiB per verification it would need ~259,000 verifications/day; the real figure is 33,878.
+      It was measured across a window containing the July bulk import.</li>
+  </ul>
+
+  <h3 class="sub">Traffic &mdash; unresolved, and it matters</h3>
+  <ul class="facts">
+    <li>Dec 2025 recap: <em>"over 15 Million requests per day (all Sourcify APIs)"</em>, with
+      <em>"[4byte] serves over 7 Million requests per day"</em>.</li>
+    <li>May 2026 post: <em>"[v2] is already serving 15M+ requests/day"</em> &mdash; which reads as the contract
+      API on its own.</li>
+    <li class="warn">Both are Sourcify's own words and they cannot both describe the same thing. The
+      difference is <b>a factor of two on any capacity target</b>. Treated as a question, not a fact.</li>
+  </ul>
+</div>
+
+<!-- ==================== SCHEMA & FIT ==================== -->
+<div class="panel" id="p-fit" role="tabpanel" aria-labelledby="t-fit" hidden>
+  <h2 class="ph">Their schema, and what actually fits in Arkiv</h2>
+  <p class="plead">
+    This is the question that decides the whole architecture, and it is now answered with measured
+    per-column byte sizes rather than intuition. Live schema diagram:
+    <a href="https://dbdiagram.io/d/Sourcify-DB-67fcf5ee9cea640381a217d2" target="_blank" rel="noopener">dbdiagram.io</a>.
   </p>
+
+  <h3 class="sub">Why the diagram shows more tables than the export</h3>
+  <ul class="facts">
+    <li>The schema is the <b>Verifier Alliance</b> base &mdash; shared with Blockscout and Routescan &mdash; plus
+      Sourcify's own additions.</li>
+    <li><b>7 Verifier Alliance tables:</b> <code>code</code>, <code>contracts</code>,
+      <code>contract_deployments</code>, <code>compiled_contracts</code>,
+      <code>compiled_contracts_sources</code>, <code>sources</code>, <code>verified_contracts</code>.</li>
+    <li><b>3 Sourcify tables:</b> <code>sourcify_matches</code>, <code>signatures</code>,
+      <code>compiled_contracts_signatures</code>. <b>Those ten are what gets exported.</b></li>
+    <li><b>The rest are operational and never exported:</b> <code>verification_jobs</code> and
+      <code>verification_jobs_ephemeral</code> (in-flight verification state), a signature-stats
+      materialized view, and the migration bookkeeping table. Two more &mdash; <code>session</code> and
+      <code>sourcify_sync</code> &mdash; were <b>dropped</b> in March and July 2026, so a diagram showing them
+      is out of date.</li>
+    <li>The 75-byte similarity search is served by an <b>expression index on <code>code</code></b>
+      (<code>substring(code FROM 1 FOR 75)</code>), not by a separate table.</li>
+  </ul>
+
+  <div class="callout blue">
+    <span class="lbl">The number that decides the architecture</span>
+    <p>Of <b>1,269 GB</b> of raw content, only <b>52.7 GB (4.1%)</b> is small-row, index-shaped data.
+    The other <b>1,216 GB (95.9%)</b> is a handful of very large columns.</p>
+    <p>So the answer to "what goes in Arkiv and what goes elsewhere" is not a judgement call. Arkiv holds
+    the <b>4%</b> that is queryable identity and relationships. The <b>96%</b> is content-addressed blobs
+    that belong in storage addressed by hash, with only that hash in the entity.</p>
+  </div>
+
+  <h3 class="sub">Per-column measurement &mdash; the fat columns</h3>
   <div class="scroll">
     <table>
-      <thead><tr><th>Table</th><th>What it holds</th><th class="r">Live bytes</th><th class="r">Parquet</th>
-        <th class="r">Export rows (exact)</th><th>Note</th></tr></thead>
+      <thead><tr><th>Column</th><th class="r">Avg / value</th><th class="r">Heaviest block</th>
+        <th class="r">Total raw</th><th>Verdict</th></tr></thead>
       <tbody>
-        <tr><td class="k">code</td><td>Deduplicated bytecode, keyed by hash</td><td class="m">212.5 GB</td><td class="m">38.1 GB</td><td class="m">40,163,166</td><td>content-addressed</td></tr>
-        <tr><td class="k">sourcify_matches</td><td>Match records + Solidity metadata</td><td class="m">196.1 GB</td><td class="m">56.4 GB</td><td class="m">74,196,213</td><td><span class="pill p-stop">42.4% superseded</span></td></tr>
-        <tr><td class="k">compiled_contracts</td><td>One row per compilation: settings, ABI, artifacts</td><td class="m">98.2 GB</td><td class="m">38.7 GB</td><td class="m">5,716,510</td><td><span class="pill p-warn">9.7% superseded</span></td></tr>
-        <tr><td class="k">compiled_contracts_signatures</td><td>Which signatures appear in which compilation</td><td class="m">51.9 GB</td><td class="m">5.9 GB</td><td class="m">175,489,918</td><td>largest row count</td></tr>
-        <tr><td class="k">verified_contracts</td><td>Joins a deployment to a compilation + transformations</td><td class="m">46.5 GB</td><td class="m">4.1 GB</td><td class="m">44,391,604</td><td>vs 43.78M distinct</td></tr>
-        <tr><td class="k">sources</td><td>Deduplicated source files, keyed by hash</td><td class="m">35.7 GB</td><td class="m">17.5 GB</td><td class="m">6,329,026</td><td>content-addressed</td></tr>
-        <tr><td class="k">contract_deployments</td><td>Chain, address, tx hash, block, deployer</td><td class="m">22.6 GB</td><td class="m">5.2 GB</td><td class="m">44,303,315</td><td>&mdash;</td></tr>
-        <tr><td class="k">compiled_contracts_sources</td><td>Which sources belong to which compilation, at what path</td><td class="m">13.4 GB</td><td class="m">2.0 GB</td><td class="m">36,586,086</td><td>join table</td></tr>
-        <tr><td class="k">contracts</td><td>A contract's creation + runtime code hashes</td><td class="m">13.2 GB</td><td class="m">2.1 GB</td><td class="m">24,662,400</td><td>&mdash;</td></tr>
-        <tr><td class="k">signatures</td><td>Function, event and error signature text + hashes</td><td class="m">2.8 GB</td><td class="m">0.5 GB</td><td class="m">9,920,797</td><td><span class="pill p-blue">4byte</span></td></tr>
-        <tr><td class="k">TOTAL (10 exported)</td><td>&mdash;</td><td class="m">692.9 GB</td><td class="m">170.4 GB</td><td class="m">461,858,986</td><td>73.0% of the database</td></tr>
-        <tr><td class="k">Residual</td><td>Everything the ten tables are not</td><td class="m">256.7 GB</td><td class="m">&mdash;</td><td class="m">&mdash;</td><td class="ask">unexplained &mdash; ask Kaan</td></tr>
+        <tr><td class="k">sourcify_matches.metadata</td><td class="m">8,090 B</td><td class="m">189,538 B</td>
+          <td class="m">600.3 GB</td><td><span class="pill p-stop">off-chain</span> exceeds a whole Arkiv transaction at the tail</td></tr>
+        <tr><td class="k">code.code</td><td class="m">7,898 B</td><td class="m">18,219 B</td>
+          <td class="m">317.2 GB</td><td><span class="pill p-warn">bounded</span> EIP-170 caps runtime at 24,576 B, so it always fits</td></tr>
+        <tr><td class="k">sources.content</td><td class="m">16,427 B</td><td class="m">41,440 B</td>
+          <td class="m">104.0 GB</td><td><span class="pill p-stop">off-chain</span> no protocol cap; flattened files reach MBs</td></tr>
+        <tr><td class="k">compiled_contracts.runtime_code_artifacts</td><td class="m">17,653 B</td><td class="m">33,365 B</td>
+          <td class="m">100.9 GB</td><td><span class="pill p-stop">off-chain</span> source maps, storage layout</td></tr>
+        <tr><td class="k">compiled_contracts.compilation_artifacts</td><td class="m">12,152 B</td><td class="m">27,457 B</td>
+          <td class="m">69.5 GB</td><td><span class="pill p-stop">off-chain</span> ABI, NatSpec</td></tr>
+        <tr><td class="k">compiled_contracts.creation_code_artifacts</td><td class="m">2,854 B</td><td class="m">17,523 B</td>
+          <td class="m">16.3 GB</td><td><span class="pill p-warn">borderline</span></td></tr>
+        <tr><td class="k">verified_contracts.creation_values</td><td class="m">234 B</td><td class="m">539 B</td>
+          <td class="m">10.4 GB</td><td><span class="pill p-ok">fits</span> constructor args, transformations</td></tr>
       </tbody>
     </table>
   </div>
-  <p class="prose" style="margin-top:14px">
-    On that last row, precision matters: 256.7 GB is simply <code>pg_database_size</code> minus the ten tables.
-    It is a <strong>physical footprint not explained by the exported relations</strong> &mdash; which could be other tables,
-    materialized views, system catalogs, or
-    <span class="tt" tabindex="0" data-tip="Space inside a Postgres table that was freed by updates and deletes but not returned to the operating system. On a database updated in place for years it can be a large share of the footprint.">bloat</span>.
-    We cannot call it "unexported data" without a relation inventory from them.
-  </p>
 
-  <div class="callout">
-    <span class="lbl">The finding that changes how a migration would work</span>
-    <p>The Parquet export is <b>append-only</b>: once a file is full it is never rewritten. So when a row is
-    updated or replaced, the export keeps both versions. Measured today:</p>
-    <p><code>sourcify_matches</code> holds <b>74,196,213</b> rows in the export against <b>42,733,948</b> that
-    Sourcify measured live on 10 August &mdash; roughly <b>31.5 million superseded rows, 42.4% of the export</b>.
-    <code>compiled_contracts</code> shows the same pattern at 9.7%.</p>
-    <p>Consequence: <b>the export cannot be replayed as a backfill</b>. Anything reading it must deduplicate by
-    primary key and keep the latest version, or we would write tens of millions of dead entities. It also means
-    every "row count" taken from the export is an upper bound on live data, not a measurement of it.</p>
-  </div>
-</section>
-
-<!-- ============================================================ -->
-<section id="wrong">
-  <div class="shead"><h2>What we got wrong, and what is now corrected</h2>
-    <span class="note">independent review + our own re-measurement</span></div>
-  <p class="prose" style="margin-bottom:20px">
-    A second technical review challenged the first version of this document. Most of it held up; several items
-    did not. Everything below has been re-measured rather than argued.
-  </p>
-
-  <details class="finding" open>
-    <summary><span class="fid">C1</span>
-      <span class="ftitle">Chain counts were wrong. Three different metrics were being used interchangeably.</span>
-      <span class="pill p-stop">corrected</span></summary>
-    <div class="body">
-      <p>We published "497 configured". The live <code>/chains</code> endpoint returns <b>420 entries, of which
-      267 have <code>supported: true</code></b>. Separately, <b>377</b> chains appear in their historical stats
-      dataset with at least one verified contract.</p>
-      <p>All three are real and none is a substitute for the others. Kaan's own summary says "~265 EVM chains",
-      which matches the 267 supported figure.</p>
-    </div>
-  </details>
-
-  <details class="finding" open>
-    <summary><span class="fid">C2</span>
-      <span class="ftitle">The 4byte signature count we published was a stale counter.</span>
-      <span class="pill p-stop">corrected</span></summary>
-    <div class="body">
-      <p>We quoted 9,340,765 from the live <code>/stats</code> endpoint. That endpoint reports its own
-      <code>refreshed_at: 2026-07-06</code> &mdash; the counter is six weeks old.</p>
-      <p>Exact count from the Parquet footers today: <b>9,920,797</b>. The public counter understates by
-      580,032 (5.8%). Worth telling Kaan, since their own dashboard is the thing that is stale.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C3</span>
-      <span class="ftitle">"We lost the migration argument" was wrong and it weakened our position.</span>
-      <span class="pill p-stop">corrected</span></summary>
-    <div class="body">
-      <p>Sourcify's July cost review compared <em>conventional hosted Postgres providers</em> &mdash; Neon, Supabase,
-      Crunchy, Aiven, Hetzner, Scaleway. <b>It never evaluated Arkiv.</b> Saying we lost concedes an argument
-      that was never had.</p>
-      <p>Correct framing: we are not proposing another hosted-Postgres lift-and-shift; we are testing whether a
-      decentralized queryable serving and ownership layer changes the technical and economic model. Their review
-      is still useful &mdash; it tells us the bar &mdash; but it is not a verdict on us.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C4</span>
-      <span class="ftitle">We attributed growth to Foundry and Hardhat without a source.</span>
-      <span class="pill p-warn">removed</span></summary>
-    <div class="body">
-      <p>Their mid-2026 recap does say Foundry and Hardhat now verify to both Sourcify and Etherscan by default.
-      It does <em>not</em> attribute the contract growth to that. We stated the causality anyway.</p>
-      <p>What is safely sourced: <b>11M at end-2025, 38.5M on ~1 July 2026, 43.78M today.</b> State the numbers,
-      let Kaan supply the cause &mdash; it is a good question to ask him rather than a claim to make at him.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C5</span>
-      <span class="ftitle">Our own daily curve is reliable for rates, not for historical absolute levels.</span>
-      <span class="pill p-blue">qualified</span></summary>
-    <div class="body">
-      <p>Validated against their published figures: our curve gives 43,408,733 on 2026-08-07 against Kaan's
-      43,367,321 &mdash; <b>+0.1%</b>. But at 2025-12-31 it gives 12.40M against their stated 11M (+12.7%), and
-      39.56M on 1 July against 38.5M (+2.7%).</p>
-      <p>The divergence comes from how we forward-fill chains that report sparsely. <b>Day-over-day deltas are
-      unaffected</b>, so the write-rate figures stand. Historical totals should be quoted from Sourcify, not from us.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C6</span>
-      <span class="ftitle">The "15M requests/day" figure has two conflicting official scopes.</span>
-      <span class="pill p-gap">open question</span></summary>
-    <div class="body">
-      <p>Their December 2025 recap: <em>"Our APIs serve over 15 Million requests per day (all Sourcify APIs)"</em>
-      plus <em>"[4byte] serves over 7 Million requests per day"</em>.</p>
-      <p>Their May 2026 post on retiring API v1: <em>"[v2] is already serving 15M+ requests/day"</em> &mdash; which
-      reads as the contract API alone.</p>
-      <p>Both are Sourcify's own words, eight months apart, and they cannot both describe the same thing. The
-      difference is roughly a factor of two on any capacity target. This is now a question, not a claim.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C7</span>
-      <span class="ftitle">We overstated our own load evidence. Corrected in the engineering section.</span>
-      <span class="pill p-warn">corrected</span></summary>
-    <div class="body">
-      <p>Three problems with how we presented the Arkiv test: we compared verifications/day against entities/second
-      as if they were the same unit; we reported "zero failures" while omitting that a large share of submissions
-      were turned away under queue pressure; and we treated a public gateway quota as if it measured the read
-      engine's capacity.</p>
-      <p>All three are fixed in the <a href="#eng">engineering section</a>, which now separates what is measured
-      from what is assumed. This matters more for our credibility than for the plan.</p>
-    </div>
-  </details>
-
-  <details class="finding">
-    <summary><span class="fid">C8</span>
-      <span class="ftitle">Held up: the growth-rate correction, the append-only export finding, and the CDN point.</span>
-      <span class="pill p-ok">confirmed</span></summary>
-    <div class="body">
-      <p><b>Growth.</b> The 189 GiB/month figure comes from a July issue and was measured across a window
-      containing a bulk import &mdash; our curve shows <b>+2,774,661 contracts on 2026-07-17 alone</b>, and the issue
-      itself attributes the spike to their similarity-import job. Three readings of
-      <code>pg_database_size</code> across 11 days give <b>~24.7 GiB/month</b>. Sustaining 189 would need about
-      259,000 verifications/day against an observed 33,878.</p>
-      <p><b>Append-only export.</b> Now confirmed with exact counts, above.</p>
-      <p><b>CDN.</b> Their CDN is switched off while 88.6% of successful GETs are repeat URLs, costing roughly
-      $700/month. Any serving proposal has to acknowledge that turning it on is their cheapest option &mdash; though
-      it buys none of decentralized ownership, independent replication, or queryability.</p>
-    </div>
-  </details>
-</section>
-
-<!-- ============================================================ -->
-<section id="kaan">
-  <div class="shead"><h2>Today &mdash; the message to Kaan</h2>
-    <span class="tag t-ext">Safe to send</span></div>
-  <p class="prose" style="margin-bottom:18px">
-    The shape you asked for: <strong>lead with the data we already derived and ask him to confirm it</strong>. It costs
-    him a minute per item instead of an afternoon, it proves we did the work, and a correction from him is worth
-    more than an answer to an open-ended question. Only the last three need real effort, and each says which
-    existing dashboard would do.
-  </p>
-
-  <div class="msg">
-    <p>Hi Kaan &mdash; ahead of Monday I went through the public dataset properly so we would not spend your time on
-    anything we can measure ourselves. Most of this is me asking you to sanity-check numbers I derived, not to
-    produce new ones.</p>
-
-    <p><span class="q">1. Are these right?</span> From <code>stats.sourcify.dev/data.json</code>, the Parquet export
-    stats and the file footers, as of 18 Aug: <b>43,781,389</b> verified contracts (29.1% exact / 70.9% partial),
-    <b>267</b> supported chains of 420 configured, <b>949.6 GB</b> live database, <b>170.4 GB</b> of Parquet, and
-    roughly <b>34k</b> new verifications/day over the last 30 days excluding bulk imports.
-    <span class="ev">source: your public stats + export stats.json &middot; effort: eyeball it</span></p>
-
-    <p><span class="q">2. Your 4byte counter looks stale.</span> <code>api.4byte.sourcify.dev/.../stats</code> reports
-    9,340,765 signatures with <code>refreshed_at: 2026-07-06</code>. Counting the Parquet footers today I get
-    <b>9,920,797</b>. Is the stats view just on a slow refresh?
-    <span class="ev">source: your /stats endpoint vs signatures/*.parquet &middot; effort: one minute</span></p>
-
-    <p><span class="q">3. The export keeps superseded rows &mdash; can you confirm?</span> The v2 export is append-only,
-    so I read <b>74,196,213</b> rows in <code>sourcify_matches</code> against the <b>42,733,948</b> you measured
-    live in issue #2924. I read that as ~31.5M superseded versions retained in old files, mostly from
-    <code>metadata</code> updates. If so, anyone building off the export has to dedupe by primary key first &mdash;
-    worth documenting.
-    <span class="ev">source: parquet footers vs your issue #2924 &middot; effort: confirm or correct</span></p>
-
-    <p><span class="q">4. Which "15M requests/day" is the real one?</span> The 2025 recap says over 15M/day across
-    <em>all</em> Sourcify APIs with 4byte alone above 7M. The May 2026 v1-brownout post says v2 is
-    "already serving 15M+ requests/day", which reads as the contract API on its own. Those imply very different
-    targets and I would rather not quote it wrong.
-    <span class="ev">source: your two blog posts &middot; effort: one line</span></p>
-
-    <p><span class="q">5. Growth cause.</span> 11M at end-2025, 38.5M by July, 43.78M now. How much of that is
-    organic verification versus your similarity-import backfills? I can see a <b>+2.77M single day on 17 July</b> in
-    the stats data, so I assume the backfills are a big share.
-    <span class="ev">source: your stats data.json &middot; effort: one line</span></p>
-
-    <p><span class="q">6. What is in the other 27%?</span> The ten exported tables are 692.9 GB against a
-    <code>pg_database_size</code> of 949.6 GB. I know the difference includes other relations and catalogs, but I
-    do not want to guess how much of it is real data versus bloat.
-    <span class="ev">unit: GB per non-exported relation + dead-tuple estimate &middot; effort: one query</span></p>
-
-    <p><span class="q">7. Index versus content.</span> How much of the 949.6 GB is indexes rather than rows?
-    <code>pg_total_relation_size</code> gives me the totals but not the split, and measuring it on our own copy
-    would reflect our index choices and none of your history.
-    <span class="ev">unit: pg_table_size / pg_indexes_size per table &mdash; ten rows &middot; effort: one query</span></p>
-
-    <p><span class="q">8. The read workload &mdash; the one thing the dataset cannot show.</span> A snapshot is an
-    inventory, not a workload. Whatever you already have would be plenty: requests/day by route, peak RPS,
-    p95/p99, cache-hit ratio, response bytes. An existing dashboard screenshot beats a custom analysis.
-    <span class="ev">unit: route-level counts + peaks &middot; effort: export what exists</span></p>
-
-    <p><span class="q">9. What is actually mutable.</span> Your own analysis says 75&ndash;80% of the database is
-    immutable content-addressed blobs, but <code>sourcify_matches.metadata</code> is updated in place. Roughly
-    what is the split of inserts versus updates versus deletes per day? And do you have a real deletion
-    requirement, given the open issue on removing sources from pinning?
-    <span class="ev">unit: rows inserted / updated / deleted per day &middot; effort: rough answer is fine</span></p>
-
-    <p>Two framing questions for Monday, so we do not waste the room: what would a useful September test look like
-    from your side &mdash; and would you be open to a shadow run with no production cutover, where we mirror a slice
-    and compare answers against yours?</p>
+  <h3 class="sub">Per-row measurement &mdash; the index-shaped tables</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Table</th><th class="r">Rows (exact)</th><th class="r">Raw bytes</th>
+        <th class="r">Bytes / row</th><th>Role in an Arkiv model</th></tr></thead>
+      <tbody>
+        <tr><td class="k">verified_contracts</td><td class="m">44,391,604</td><td class="m">27.51 GB</td><td class="m">620</td>
+          <td>The head record. Deployment &harr; compilation link + transformations.</td></tr>
+        <tr><td class="k">contract_deployments</td><td class="m">44,303,315</td><td class="m">7.38 GB</td><td class="m">167</td>
+          <td>chain, address, tx hash, block, deployer &mdash; the primary lookup key.</td></tr>
+        <tr><td class="k">compiled_contracts_signatures</td><td class="m">175,489,918</td><td class="m">10.12 GB</td><td class="m">58</td>
+          <td>Join table. Largest row count, tiny rows.</td></tr>
+        <tr><td class="k">compiled_contracts_sources</td><td class="m">36,586,086</td><td class="m">3.95 GB</td><td class="m">108</td>
+          <td>Which source files belong to which compilation.</td></tr>
+        <tr><td class="k">contracts</td><td class="m">24,662,400</td><td class="m">2.84 GB</td><td class="m">115</td>
+          <td>Creation + runtime code hash pair.</td></tr>
+        <tr><td class="k">signatures</td><td class="m">9,920,797</td><td class="m">0.84 GB</td><td class="m">85</td>
+          <td>4byte. Smallest, self-contained, highest traffic per byte.</td></tr>
+        <tr><td class="k">TOTAL</td><td class="m">335,354,120</td><td class="m">52.65 GB</td><td class="m">157</td>
+          <td><b>4.1% of raw bytes. This is the Arkiv-shaped part.</b></td></tr>
+      </tbody>
+    </table>
   </div>
 
-  <div class="callout">
-    <span class="lbl">Deliberately left out</span>
-    <p>ERC-7730 has moved since you last spoke &mdash; the shipped Clear Signing design is attestations over a
-    mirrorable off-chain registry, not the on-chain permissionless registry he described in July. That is worth
-    resolving, but it is <b>adjacent to the database conversation</b> and asking it now costs you focus on Monday.
-    Send it as a separate follow-up after the meeting.</p>
-  </div>
-</section>
+  <h3 class="sub">So can we replicate their schema?</h3>
+  <ul class="facts">
+    <li><b>Not row-for-row, and we should not want to.</b> Their schema is normalised for a relational
+      engine with joins. Arkiv has no joins, so a faithful copy would need multiple round trips per
+      lookup.</li>
+    <li><b>The shape that fits is a denormalised head entity.</b> One Arkiv entity per verified contract,
+      keyed by <code>chainId:address</code>, carrying the indexed attributes people actually filter on
+      &mdash; chain, address, match type, compiler, compiler version, language, contract name, the code
+      hashes, verification timestamp &mdash; plus <b>hash references</b> to the heavy artifacts.</li>
+    <li>At <b class="m">~44M</b> head entities and roughly <b class="m">600-800 bytes</b> each, that is
+      <b class="m">~30 GB</b> of entity payload. The remaining <b>1,216 GB stays content-addressed</b>,
+      which is exactly how Sourcify already stores it &mdash; keyed by hash, deduplicated across chains.</li>
+    <li><b>The dedup is already in our favour:</b> 43.78M verified contracts resolve to only
+      <b class="m">5,716,510</b> distinct compilations and <b class="m">6,329,026</b> distinct source
+      files. Blob storage scales with the small number, not the large one.</li>
+    <li class="warn"><b>The open question is not "can it fit" but "what is the per-entity ceiling".</b>
+      We know a whole Arkiv transaction is capped at 128 KB. We do <em>not</em> have a documented
+      per-entity payload limit, and <code>sourcify_matches.metadata</code> reaches ~186 KB in its
+      heaviest block &mdash; past that cap on its own. That is an engineering question, not a Sourcify one.</li>
+  </ul>
+</div>
 
-<!-- ============================================================ -->
-<section id="eng">
-  <div class="shead"><h2>Tomorrow &mdash; Arkiv engineering</h2>
-    <span class="tag t-int">Internal only</span></div>
-  <p class="prose">
-    Framing: <strong>we are not here to show numbers about our own network</strong>. It is a testnet under
-    construction and any figure we quote today will be stale by September. We are here to (a) correct three
-    claims we made that our own evidence does not support, and (b) leave with owners for six questions that
-    gate everything we can promise Sourcify.
+<!-- ==================== ENGINEERING ==================== -->
+<div class="panel" id="p-eng" role="tabpanel" aria-labelledby="t-eng" hidden>
+  <h2 class="ph">Tomorrow &mdash; Arkiv engineering <span class="tag t-int">Internal only</span></h2>
+  <p class="plead">
+    Not a demo. Two jobs: correct three claims of ours the evidence does not support, and leave with a
+    named owner for each open capability question. Everything Sourcify-facing on Monday depends on
+    these answers.
   </p>
 
   <h3 class="sub">First: three corrections to our own load story</h3>
   <div class="scroll">
     <table>
-      <thead><tr><th>What we said</th><th>What the evidence actually supports</th></tr></thead>
+      <thead><tr><th>What we said</th><th>What the evidence supports</th></tr></thead>
       <tbody>
         <tr><td>"Their write load is 0.4 entities/s against our 107/s &mdash; solved."</td>
-          <td><b>Unit mismatch.</b> ~34k <em>verifications</em>/day is not ~34k <em>entities</em>/day: one verification
-            fans out across several relations, and any Arkiv mapping produces multiple entities per contract.
-            The honest statement is that the headroom looks large and is <b>unproven until replayed with real
-            Sourcify-shaped records</b>.</td></tr>
+          <td><b>Unit mismatch.</b> 34k <em>verifications</em>/day is not 34k <em>entities</em>/day: each
+            verification touches several relations, and a denormalised mapping still writes multiple
+            entities. Headroom looks large but is <b>unproven until replayed with real records</b>.</td></tr>
         <tr><td>"107 entities/s sustained, zero failures."</td>
-          <td><b>Incomplete in our favour.</b> Zero failures among <em>included</em> writes, while a large share of
-            submissions were turned away under queue pressure. We must report attempted / admitted / included /
-            rejected separately, or the number is not honest.</td></tr>
+          <td><b>Incomplete in our favour.</b> Zero failures among <em>included</em> writes, while a large
+            share of submissions were turned away under queue pressure. Report attempted / admitted /
+            included / rejected separately or the number is not honest.</td></tr>
         <tr><td>"The read gap is 5,800&times;."</td>
-          <td><b>Category error.</b> That compares Sourcify's workload to a <em>public gateway quota</em>, which is a
-            policy, not a measurement of the read engine. The real position: <b>no read-capacity benchmark
-            exists</b>, and the public quota makes it untestable. That is a missing benchmark and an access
-            problem, not a proven 5,800&times; deficit.</td></tr>
+          <td><b>Category error.</b> That compares Sourcify's workload to a <em>public gateway quota</em>,
+            which is policy, not engine capacity. The honest position: <b>no read benchmark exists</b>,
+            and the public quota makes it untestable.</td></tr>
       </tbody>
     </table>
   </div>
 
-  <h3 class="sub">Then: six questions, each with an owner</h3>
-  <ol class="q">
-    <li><b>Read path and read benchmark.</b> What read access exists for a named design partner on the September
-      public testnet, and can we get a concurrent-read benchmark rather than periodic samples? Everything else is
-      downstream of this.
-      <span class="unit">blocker &middot; owner: whoever owns API keys and metering</span></li>
-    <li><b>Query capability, stated conservatively.</b> For each of prefix matching, inequality, ordering,
-      projection, cursor stability and page limits: is it <em>exposed in the SDK</em>, <em>implemented</em>,
-      <em>verified on the deployed build</em>, or <em>planned</em>? We have been treating a feature matrix as if it
-      were a benchmark.
-      <span class="unit">owner: core protocol</span></li>
-    <li><b>Does prefix search actually fit the similarity use case?</b> Sourcify searches by the first 75 bytes of
-      runtime bytecode. Prefix matching existing in the API is not proof it fits the attribute size and type
-      constraints, or that it performs at tens of millions of entities.
-      <span class="unit">owner: core protocol &middot; needs a test, not an opinion</span></li>
-    <li><b>Ownership.</b> Contract-account or multisig ownership that can still update, delete and extend.
-      An EF-funded non-profit cannot put a public good behind a single private key. This is a governance
-      blocker, not a preference.
-      <span class="unit">owner: core protocol / product</span></li>
-    <li><b>Durability guarantees, not API semantics.</b> Permanent expiry now exists in the API. Separately we need
-      disk retention, snapshot and restore, full-sync reconstruction, and behaviour across network resets and
-      releases.
-      <span class="unit">owner: infra</span></li>
-    <li><b>Payload ceiling and fan-out.</b> Hard per-entity payload limit and per-transaction input limit. Their
-      compilations average tens of KB and some source bundles are far larger.
-      <span class="unit">owner: core protocol</span></li>
-  </ol>
+  <h3 class="sub">The capability matrix &mdash; who owns each answer</h3>
+  <p class="prose">Ask each owner one question rather than asking the room everything. Every row is a
+    thing we cannot promise Sourcify until someone here says yes.</p>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Question</th><th>Owner</th><th>Why it blocks Monday</th></tr></thead>
+      <tbody>
+        <tr><td><b>Read capacity.</b> If a million users query a contract, what serves that? What is the
+          real ceiling in requests/second &mdash; not the public quota, the engine.</td>
+          <td class="k">Gateway / API keys<br><span style="color:var(--faint)">+ infra</span></td>
+          <td class="ask">Their target is 15M req/day. We have no benchmark at all. This is the single
+            biggest unknown.</td></tr>
+        <tr><td><b>Would Sourcify run their own node?</b> Is the model "query our public endpoint" or
+          "run an Arkiv node / indexer and read locally"? Their whole cost argument turns on this.</td>
+          <td class="k">Infra + core</td>
+          <td class="ask">Changes the proposal fundamentally. A self-hosted read replica sidesteps the
+            gateway quota entirely and answers their egress problem.</td></tr>
+        <tr><td><b>Per-entity payload ceiling.</b> We know a transaction caps at 128 KB. What is the
+          limit for one entity, and what is the chunking story above it?</td>
+          <td class="k">Core protocol</td>
+          <td>Their heaviest metadata blocks average ~186 KB. We need the number before we design.</td></tr>
+        <tr><td><b>Does prefix matching fit 75-byte bytecode search?</b> Sourcify does this with a Postgres
+          expression index. Is our prefix operator index-backed, and does it hold at 40M+ entities?</td>
+          <td class="k">Core protocol</td>
+          <td>Decides whether we can serve similarity search or only exact lookup.</td></tr>
+        <tr><td><b>Query surface, stated conservatively.</b> For prefix, inequality, ordering, projection,
+          cursor stability, page limits &mdash; is each <em>in the SDK</em>, <em>implemented</em>,
+          <em>verified on the deployed build</em>, or <em>planned</em>?</td>
+          <td class="k">Core protocol</td>
+          <td>We have been treating a feature matrix as if it were a benchmark.</td></tr>
+        <tr><td><b>Ownership.</b> Contract-account or multisig ownership that can still update, delete and
+          extend.</td>
+          <td class="k">Core + product</td>
+          <td>An EF-funded non-profit cannot put a public good behind one private key. Governance
+            blocker, not a preference.</td></tr>
+        <tr><td><b>Durability, not API semantics.</b> Disk retention, snapshot and restore, full-sync
+          reconstruction, behaviour across resets and releases.</td>
+          <td class="k">Infra</td>
+          <td>Sourcify must be told this before they invest, not after.</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <div class="callout">
-    <span class="lbl">The ask that unlocks September</span>
-    <p>One named technical owner on our side for the Sourcify POC, and a commitment to a <b>staged benchmark:
-    100k representative entities first, then 1M</b>, before anyone quotes a number for the full 43.8M corpus.
-    Extrapolating a short synthetic test to a multi-day migration is exactly the mistake we just had to correct.</p>
+    <span class="lbl">What to ask for, concretely</span>
+    <p><b>One named technical owner</b> for the Sourcify POC, and agreement on a <b>staged benchmark:
+    100k representative entities, then 1M</b>, before anyone quotes a number for the full corpus.
+    Extrapolating a short synthetic test to a multi-day migration is exactly the mistake above.</p>
+    <p>Also useful to say out loud: <b>the data model work is not blocked</b>. We can build the corpus,
+    the mapping and the adapter from public data today. What is blocked is any promise about read
+    capacity.</p>
   </div>
-</section>
+</div>
 
-<!-- ============================================================ -->
-<section id="monday">
-  <div class="shead"><h2>Monday &mdash; the joint meeting</h2>
-    <span class="tag t-ext">Sourcify in the room</span></div>
-  <p class="prose">
-    Pawel, Matthias, Kaan and one more from Sourcify. Keep internal network history, codenames and any timeline
-    beyond "the September public testnet" out of the room entirely.
+<!-- ==================== THE POC ==================== -->
+<div class="panel" id="p-poc" role="tabpanel" aria-labelledby="t-poc" hidden>
+  <h2 class="ph">Monday &mdash; the POC proposal <span class="tag t-ext">Sourcify in the room</span></h2>
+  <p class="plead">
+    Kaan does not want to see two experiments. He wants to see <b>Sourcify working, on Arkiv</b>. So the
+    POC is <b>one demo</b>: a Sourcify-compatible endpoint backed by Arkiv, answering real queries about
+    real contracts, side by side with theirs. The two tracks below are how we <em>build</em> it, not two
+    things we show.
   </p>
 
-  <h3 class="sub">Running order</h3>
+  <h3 class="sub">What he sees: one working thing</h3>
+  <ul class="facts">
+    <li>A URL that speaks <b>their API shape</b> &mdash; <code>/v2/contract/{chainId}/{address}</code> with
+      field selection &mdash; and returns the same answer their production API does, read from Arkiv.</li>
+    <li>Beside it, a <b>parity panel</b>: for N contracts, our answer vs theirs, byte-for-byte, with the
+      mismatch count visible and honest.</li>
+    <li>A <b>write path</b>: a new verification landing in Arkiv and becoming queryable, with the
+      transaction visible.</li>
+    <li>The scope stated plainly on the page: which slice, how many contracts, what is not covered.</li>
+  </ul>
+
+  <h3 class="sub">How it gets built &mdash; two axes of evidence</h3>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Axis</th><th>What it is</th><th>What it proves</th><th>Gate</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Correctness</td>
+          <td>100k current verification heads, stratified by chain, match type, compiler and payload size,
+            plus a 10k subset carried with its full dependency closure &mdash; every source file and artifact,
+            not just pointers.</td>
+          <td>That the data model survives real records.</td>
+          <td class="m">100% hash parity on the closure; idempotent re-import; resume after a crash</td></tr>
+        <tr><td class="k">Capacity</td>
+          <td>One hot read route, chosen <b>by Sourcify</b>. Replayed against their real route mix once
+            they share it.</td>
+          <td>Whether the read path carries a real workload.</td>
+          <td class="m">replay at 2&times; their measured peak; thresholds set by them</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3 class="sub">The candidate slice</h3>
+  <ul class="facts">
+    <li><b>4byte signatures</b> is the strongest first surface: <b class="m">9,920,797</b> rows,
+      <b class="m">85 bytes</b> each, <b class="m">0.84 GB</b> raw &mdash; and it carries a large share of
+      their traffic. It is self-contained, has no blob problem at all, and is a pure lookup: the shape
+      Arkiv serves best.</li>
+    <li class="warn">But it proves <em>serving</em>, not <em>migration</em>. And their search endpoint
+      supports wildcard semantics that simple prefix matching does not reproduce, so we offer
+      <b>exact lookup only</b> and claim nothing about search until it is proven.</li>
+    <li><b>Therefore pair it</b> with a contract-lookup slice: a few hundred thousand verification heads
+      across the top chains, which is what actually demonstrates "Sourcify on Arkiv".</li>
+  </ul>
+
+  <h3 class="sub">Running order for the meeting</h3>
   <ol class="q">
-    <li><b>Open with what we measured, not what we want.</b> Every Sourcify figure in this document came from their
-      public endpoints without asking. That establishes us as engineers working on their problem.</li>
-    <li><b>Say the thing they already decided, before they have to.</b> They evaluated hosted-Postgres alternatives
-      in July and said no. We are not reopening that, and we are not proposing the same move.</li>
-    <li><b>Name the real opening in their words.</b> Their own conclusion was that a move only pays if database
-      egress drops by roughly 95%, which they described as redesigning how contracts are served. Acknowledge that
-      enabling their CDN is the cheaper first move &mdash; and that it buys none of ownership, replication or
-      queryability.</li>
-    <li><b>Raise their normalization pain as a question.</b> Their open issue #2924 describes compiler metadata
-      duplicated about 8.5 times, roughly 139 GB, unfixable because the shared Verifier Alliance schema has no
-      slot for it. Ask whether that is a real cost to them &mdash; do not pitch it.</li>
-    <li><b>Propose the two-track September test</b> (below), explicitly with no production cutover.</li>
-    <li><b>Close on the five outputs.</b> Do not leave without them.</li>
+    <li><b>Open with what we measured, not what we want.</b> Every figure in the Facts tab came from their
+      public endpoints without asking. That establishes us as engineers on their problem.</li>
+    <li><b>Say the thing they already decided, before they do.</b> They evaluated hosted-Postgres
+      alternatives in July and said no. We are not reopening that, and we are not proposing the same move.</li>
+    <li><b>Name the opening in their own words:</b> a move only pays if database egress drops ~95%, which
+      they described as redesigning how contracts are served. Acknowledge that turning their CDN on is
+      the cheaper first step &mdash; and that it buys none of ownership, replication or queryability.</li>
+    <li><b>Show the 4%/96% split.</b> It reframes the conversation from "move your database" to "keep your
+      blobs where they are, put the queryable layer somewhere it can be owned and replicated".</li>
+    <li><b>Raise their own normalisation pain as a question,</b> never a pitch: issue #2924 describes
+      compiler metadata duplicated ~8.5&times;, roughly 139 GB, unfixable because the shared Verifier
+      Alliance schema has no slot for it. Our own measurement confirms it &mdash;
+      <code>sourcify_matches.metadata</code> is <b>600 GB of the 1,269 GB</b>, 99.6% of that table.</li>
+    <li><b>Propose the September POC</b> above, explicitly with no production cutover.</li>
   </ol>
 
-  <h3 class="sub">The two-track proposal</h3>
-  <p class="prose" style="margin-bottom:16px">
-    A single 4byte pilot proves a <em>serving</em> path but says nothing about whether a <em>migration</em> works.
-    Two narrow tracks answer both, and both are sized so failure is cheap.
-  </p>
-  <div class="scroll">
-    <table>
-      <thead><tr><th>Track</th><th>What it is</th><th>What it proves</th><th>Gate to pass</th></tr></thead>
-      <tbody>
-        <tr><td class="k">Functional</td>
-          <td>100k current verification heads, stratified by chain, match type, compiler and payload size, plus a
-            10k subset carried losslessly
-            with its full dependency closure. Adapter speaks their API shape; answers compared automatically
-            against theirs.</td>
-          <td>That the data model survives contact with real records, not that it is fast.</td>
-          <td class="m">100% hash parity on the lossless subset; idempotent re-import; resume from cursor after a crash</td></tr>
-        <tr><td class="k">Capacity</td>
-          <td>One hot read route chosen <em>by Sourcify</em>. 4byte exact lookup is our candidate; they may prefer
-            another. Replay against their real route mix once they share it.</td>
-          <td>Whether the read path can carry a real workload at all.</td>
-          <td class="m">replay at 2&times; their measured peak; latency and error thresholds set by them, not by us</td></tr>
-      </tbody>
-    </table>
-  </div>
-  <p class="prose" style="margin-top:14px">
-    Carrying a slice <span class="tt" tabindex="0" data-tip="Not a pointer to data held elsewhere: the full dependency closure travels with each record -- every source file, bytecode blob and compilation artifact it needs to stand on its own.">losslessly</span>
-    means the full dependency closure travels with each record, so the test exercises a real migration rather
-    than a pointer.
-    On 4byte specifically: it is an attractive first surface &mdash; <strong>54.7 GB, 5.8% of their database, carrying a
-    large share of their traffic</strong>. But their search endpoint supports wildcard semantics that simple prefix
-    matching does not reproduce, so we should offer <strong>exact lookup only</strong> and make no claim about search
-    until it is proven.
-  </p>
-
   <div class="callout blue">
-    <span class="lbl">The five outputs &mdash; do not close without these</span>
+    <span class="lbl">Do not close without these five</span>
     <p><b>1.</b> The pilot surface, chosen by Sourcify. &nbsp; <b>2.</b> Their named data/workload owner. &nbsp;
-    <b>3.</b> Our named technical owner. &nbsp; <b>4.</b> Success gates agreed by both sides, not invented by us. &nbsp;
+    <b>3.</b> Our named technical owner. &nbsp; <b>4.</b> Success gates agreed by both sides. &nbsp;
     <b>5.</b> A date for the first replay.</p>
   </div>
-</section>
+</div>
 
-<!-- ============================================================ -->
-<section id="open">
-  <div class="shead"><h2>Still genuinely unknown</h2>
-    <span class="note">do not fill these with guesses</span></div>
+<!-- ==================== KAAN ==================== -->
+<div class="panel" id="p-kaan" role="tabpanel" aria-labelledby="t-kaan" hidden>
+  <h2 class="ph">Today &mdash; the message to Kaan <span class="tag t-ext">Safe to send</span></h2>
+  <p class="plead">
+    Lead with data we already derived and ask him to confirm it. A correction from him is worth more than
+    an answer to an open question, and verification costs him a minute per item instead of an afternoon.
+    Only the last four need real effort, and each names an existing dashboard that would do.
+  </p>
+
+  <div class="msg">
+    <p>Hi Kaan &mdash; ahead of Monday I went through the public dataset properly so we would not spend your
+    time on anything we can measure ourselves. Most of this is me asking you to sanity-check numbers I
+    derived rather than to produce new ones.</p>
+
+    <p><span class="q">1. Are these right?</span> As of 18 Aug: <b>43,781,389</b> verified contracts
+    (29.1% exact / 70.9% partial), <b>267</b> supported chains of 420 configured, <b>949.6 GB</b> live
+    database, <b>170.4 GB</b> of Parquet across 2,687 files, and ~<b>34k</b> new verifications/day over
+    the last 30 days excluding bulk imports.
+    <span class="ev">source: your stats + export stats.json &middot; effort: eyeball it</span></p>
+
+    <p><span class="q">2. Your 4byte counter looks stale.</span> The signature-database stats endpoint
+    returns 9,340,765 with <code>refreshed_at: 2026-07-06</code>. Counting the Parquet footers today I get
+    <b>9,920,797</b>. Slow refresh, or am I counting something different?
+    <span class="ev">source: your /stats vs signatures/*.parquet &middot; effort: one minute</span></p>
+
+    <p><span class="q">3. The export keeps superseded rows &mdash; can you confirm?</span> The v2 export is
+    append-only, so I read <b>74,196,213</b> rows in <code>sourcify_matches</code> against the
+    <b>42,733,948</b> you measured live in #2924. I read that as ~31.5M superseded versions retained in
+    older files, mostly from <code>metadata</code> updates. If so, anyone building off the export has to
+    deduplicate by primary key first &mdash; probably worth a line in the docs.
+    <span class="ev">source: parquet footers vs your #2924 &middot; effort: confirm or correct</span></p>
+
+    <p><span class="q">4. Was the growth organic?</span> 11M at end-2025, 38.5M by July, 43.78M now &mdash; 4&times;
+    in eight months. I can see a <b>+2,774,661 single day on 17 July</b> in your stats data, so I assume
+    the similarity-import backfills are a large share. How much of the 4&times; is genuinely new contracts
+    arriving, versus re-verification or import of existing ones? And do you expect that rate to continue?
+    <span class="ev">this is the difference between sizing for 44M and sizing for 100M+ &middot; effort: one line</span></p>
+
+    <p><span class="q">5. What is the biggest single object you store?</span> From the Parquet column
+    metadata I can see averages &mdash; <code>sources.content</code> ~16 KB, <code>code.code</code> ~7.9 KB,
+    <code>sourcify_matches.metadata</code> ~8 KB with blocks averaging 186 KB &mdash; but footers do not give
+    a true maximum. What is the largest single source file, the largest metadata blob, and the largest
+    total footprint for one contract? That upper bound drives our storage design directly.
+    <span class="ev">unit: bytes for the max of sources.content, code.code, sourcify_matches.metadata &middot; effort: three MAX(length()) queries</span></p>
+
+    <p><span class="q">6. Which "15M requests/day" is the real one?</span> The 2025 recap says over 15M/day
+    across <em>all</em> Sourcify APIs with 4byte alone above 7M. The May 2026 v1-brownout post says v2 is
+    "already serving 15M+ requests/day", which reads as the contract API on its own. Those imply very
+    different targets and I would rather not quote it wrong.
+    <span class="ev">source: your two blog posts &middot; effort: one line</span></p>
+
+    <p><span class="q">7. What is in the other 27%?</span> The ten exported tables are 692.9 GB against a
+    <code>pg_database_size</code> of 949.6 GB. I assume verification jobs, the signature stats view and
+    indexes, but I do not want to guess how much is live data versus bloat.
+    <span class="ev">unit: GB per non-exported relation + dead-tuple estimate &middot; effort: one query</span></p>
+
+    <p><span class="q">8. Index versus content.</span> How much of the 949.6 GB is indexes rather than rows?
+    Measuring it on our own copy would reflect our index choices and none of your history.
+    <span class="ev">unit: pg_table_size / pg_indexes_size per table &mdash; ten rows &middot; effort: one query</span></p>
+
+    <p><span class="q">9. The read workload &mdash; the one thing the dataset cannot show.</span> A snapshot is
+    an inventory, not a workload. Whatever you already have is plenty: requests/day by route, peak RPS,
+    p95/p99, cache-hit ratio, response bytes. A dashboard screenshot beats a custom analysis.
+    <span class="ev">unit: route-level counts + peaks &middot; effort: export what exists</span></p>
+
+    <p><span class="q">10. What is actually mutable.</span> Your analysis says 75&ndash;80% of the database is
+    immutable content-addressed blobs, but <code>sourcify_matches.metadata</code> is updated in place.
+    Roughly what is the split of inserts versus updates versus deletes per day? And is there a real
+    deletion requirement, given the open issue on removing sources from pinning?
+    <span class="ev">unit: rows inserted / updated / deleted per day &middot; effort: rough answer is fine</span></p>
+
+    <p>Two framing questions so we do not waste Monday: what would a useful September test look like from
+    your side &mdash; and would you be open to a shadow run with no production cutover, where we mirror a
+    slice and compare our answers against yours?</p>
+  </div>
+
+  <div class="callout">
+    <span class="lbl">Deliberately not asked</span>
+    <p><b>Cost.</b> They ran that evaluation in July and closed it. Note it compared <em>hosted Postgres
+    providers</em> and never evaluated Arkiv &mdash; so nothing was decided about us, but re-litigating their
+    decision wins nothing.</p>
+    <p><b>ERC-7730.</b> Out of scope for this conversation. It is a nice-to-have add-on and it would
+    dilute the database question. First things first.</p>
+  </div>
+</div>
+
+<!-- ==================== MY CONTEXT ==================== -->
+<div class="panel" id="p-ctx" role="tabpanel" aria-labelledby="t-ctx" hidden>
+  <h2 class="ph">My own context</h2>
+  <p class="plead">What changed, what we got wrong, and the vocabulary &mdash; so nothing here surprises you
+    in a meeting.</p>
+
+  <h3 class="sub">Glossary of the terms that keep coming up</h3>
+  <ul class="facts">
+    <li><b>GiB vs GB.</b> GiB is binary (1,073,741,824 bytes), GB is decimal (1,000,000,000). A GiB is
+      7.4% larger. Sourcify's cost issue quotes GiB; their export stats are raw bytes. Our organic growth
+      figure is <b>24.7 GiB/month = 26.5 GB/month</b> &mdash; same thing, two units.</li>
+    <li><b>Raw vs Postgres vs Parquet.</b> Three sizes for one dataset: <b>1,269 GB</b> raw content,
+      <b>949.6 GB</b> on disk in Postgres (adds indexes and dead space, compresses large values), and
+      <b>170.4 GB</b> as zstd Parquet. None is wrong; they measure different things.</li>
+    <li><b>Export rows vs live rows.</b> The Parquet export is <b>append-only</b>: a full file is never
+      rewritten, so updated rows are appended and the old version stays. That is why
+      <code>sourcify_matches</code> shows <b>74.2M</b> rows in the export but <b>42.7M</b> live &mdash;
+      about <b>31.5M superseded versions, 42.4% of the export</b>. Practical consequence: the export
+      cannot be replayed as a backfill without deduplicating by primary key and keeping the newest.</li>
+    <li><b>Index-shaped vs blob-shaped.</b> Our own coinage, but measured: 4.1% of the bytes are small
+      rows you filter on; 95.9% are a handful of large text and JSON columns.</li>
+  </ul>
+
+  <h3 class="sub">Corrections we made to our own earlier work</h3>
+  <ul class="facts">
+    <li><b>Chains.</b> We published "497 configured". It is <b>420 configured, 267 supported</b>, and
+      <b>377</b> with at least one verified contract. Three metrics that were being used
+      interchangeably.</li>
+    <li><b>4byte signatures.</b> We published 9,340,765 from their live stats endpoint, which reports its
+      own <code>refreshed_at</code> of 6 July. Exact today: <b>9,920,797</b>.</li>
+    <li><b>"We lost the migration argument."</b> Wrong and self-defeating: issue #2866 compared hosted
+      Postgres providers and never evaluated Arkiv.</li>
+    <li><b>Growth causality.</b> We attributed the 4&times; to Foundry and Hardhat defaults. Their recap
+      states the defaults but attributes nothing. Removed &mdash; and turned into a question for Kaan.</li>
+    <li><b>Our daily curve.</b> Accurate for <em>rates</em> (+0.1% against Kaan's 7 Aug figure) but drifts
+      on historical <em>totals</em> (+12.7% at end-2025). Quote rates from us, absolute history from them.</li>
+    <li><b>Our own load claims.</b> Three overstatements, corrected in the Engineering tab.</li>
+  </ul>
+
+  <h3 class="sub">Still genuinely unknown</h3>
   <div class="scroll">
     <table>
-      <thead><tr><th>Question</th><th>Who can answer</th><th>Why it matters</th></tr></thead>
+      <thead><tr><th>Question</th><th>Who answers</th><th>Why it matters</th></tr></thead>
       <tbody>
         <tr><td>Route-level read workload: mix, peaks, p95/p99, cache-hit ratio</td><td class="k">Sourcify</td>
-          <td>Decides whether any serving proposition is possible. Nothing in the public dataset contains it.</td></tr>
+          <td>Decides whether any serving proposition is possible. Not in the public dataset.</td></tr>
         <tr><td>Insert vs update vs delete rates per relation</td><td class="k">Sourcify</td>
-          <td>Decides whether an append-oriented model fits their data at all.</td></tr>
+          <td>Decides whether an append-oriented model fits their data.</td></tr>
+        <tr><td>True maximum object sizes</td><td class="k">Sourcify</td>
+          <td>Footers give averages, not maxima. The upper bound drives the storage design.</td></tr>
         <tr><td>Composition of the 256.7 GB residual</td><td class="k">Sourcify</td>
-          <td>If a large share is bloat, their real data footprint is smaller than we have been sizing against.</td></tr>
+          <td>If much of it is bloat, their real footprint is smaller than we are sizing against.</td></tr>
         <tr><td>Index share of the 949.6 GB</td><td class="k">Sourcify</td>
-          <td>It is the direct measure of what a queryable store would be replacing.</td></tr>
-        <tr><td>Which "15M requests/day" is current, and its scope</td><td class="k">Sourcify</td>
-          <td>Factor-of-two difference in any capacity target.</td></tr>
-        <tr><td>Object size distribution of sources and bytecode</td><td class="k">us</td>
-          <td>Computable from the public Parquet, not yet done. Needed to size payload limits honestly.</td></tr>
+          <td>The direct measure of what a queryable store would replace.</td></tr>
         <tr><td>Concurrent read capacity of the Arkiv read path</td><td class="k">Arkiv eng</td>
           <td>Never benchmarked. Current samples were periodic single reads, not load.</td></tr>
-        <tr><td>Whether prefix matching fits 75-byte bytecode search at scale</td><td class="k">Arkiv eng</td>
-          <td>Determines whether we can serve similarity search or only exact lookup.</td></tr>
-        <tr><td>Data survival across network changes, and durability guarantees</td><td class="k">Arkiv eng</td>
-          <td>Sourcify must be told the answer before they invest, not after.</td></tr>
-        <tr><td>Whether the ERC-7730 registry is still headed on-chain</td><td class="k">Sourcify</td>
-          <td>Changed since July. Adjacent to the migration &mdash; follow up after Monday.</td></tr>
+        <tr><td>Per-entity payload ceiling</td><td class="k">Arkiv eng</td>
+          <td>Their heaviest metadata blocks average ~186 KB, past a whole transaction's 128 KB.</td></tr>
+        <tr><td>Whether Sourcify would run their own node</td><td class="k">Arkiv eng</td>
+          <td>Changes the entire proposal and answers their egress problem.</td></tr>
       </tbody>
     </table>
   </div>
-</section>
 
-<section>
-  <div class="shead"><h2>Sources</h2><span class="note">every figure traces to one of these</span></div>
+  <h3 class="sub">Sources</h3>
   <div class="src">
-    <div>stats.sourcify.dev/data.json &mdash; daily per-chain series, lastUpdated 2026-08-18</div>
-    <div>.../sourcify-production-parquet-export/v2/stats.json &mdash; generatedAt 2026-08-18T02:39:55Z</div>
-    <div>Parquet file footers, 2,687 files &mdash; exact num_rows, read over HTTP Range</div>
+    <div>stats.sourcify.dev/data.json &mdash; daily per-chain series</div>
+    <div>.../sourcify-production-parquet-export/v2/stats.json &mdash; 2026-08-18T02:39:55Z</div>
+    <div>Parquet footers, 2,687 files &mdash; exact rows + per-column bytes</div>
     <div>sourcify.dev/server/chains &mdash; 420 entries, 267 supported</div>
-    <div>api.4byte.sourcify.dev/signature-database/v1/stats &mdash; refreshed_at 2026-07-06</div>
-    <div>github.com/argotorg/sourcify/issues/2866 &mdash; cost review, closed, reopenable</div>
-    <div>github.com/argotorg/sourcify/issues/2924 &mdash; metadata duplication + live row counts</div>
-    <div>github.com/argotorg/sourcify/issues/2918 &mdash; runtime-code prefix index</div>
-    <div>docs.sourcify.dev/blog/recap-2025 &mdash; 11M contracts, the 15M and 7M request figures</div>
-    <div>docs.sourcify.dev/blog/recap-2026-h1 &mdash; 38.5M contracts, $180k/yr cost reduction</div>
-    <div>docs.sourcify.dev/blog/api-v1-brownouts &mdash; "v2 already serving 15M+ requests/day", May 2026</div>
-    <div>github.com/sourcifyeth/parquet-export &mdash; pg_total_relation_size, pg_database_size</div>
+    <div>api.4byte.sourcify.dev/.../stats &mdash; refreshed_at 2026-07-06</div>
+    <div>argotorg/sourcify issues #2866, #2924, #2918, #2917</div>
+    <div>argotorg/sourcify services/database/migrations &mdash; table inventory</div>
+    <div>docs.sourcify.dev/blog: recap-2025, recap-2026-h1, api-v1-brownouts</div>
+    <div>dbdiagram.io/d/Sourcify-DB-67fcf5ee9cea640381a217d2 &mdash; live schema</div>
     <div>Kaan Uzdo&#287;an, "Sourcify Summary" &mdash; 43,367,321 contracts, 370 chains @ 2026-08-07</div>
-    <div>argot/sourcify-lab/ &mdash; measure.py, exact_rows.py, exact-row-counts.json</div>
+    <div>argot/sourcify-lab/ &mdash; measure.py, exact_rows.py, column_sizes.py</div>
   </div>
-</section>
+</div>
 
 <footer>
-  Prepared 2026-08-18 &middot; Sourcify figures are exact as of that date and move daily &mdash; restate the date whenever quoted.<br>
-  Arkiv-side figures are provisional and internal: that network is under construction and nothing here should be
-  quoted to Sourcify as a capability commitment.
+  Prepared 2026-08-18 &middot; Sourcify figures exact as of that date and moving daily &mdash; restate the date when quoted.<br>
+  Arkiv-side figures are provisional and internal: that network is under construction and nothing here is a capability commitment.
 </footer>
 
 </div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tabs button'));
+  var panels = tabs.map(function (t) { return document.getElementById(t.getAttribute('aria-controls')); });
+
+  function select(i, focus) {
+    tabs.forEach(function (t, j) {
+      t.setAttribute('aria-selected', j === i ? 'true' : 'false');
+      t.tabIndex = j === i ? 0 : -1;
+      panels[j].hidden = j !== i;
+    });
+    if (focus) tabs[i].focus();
+    if (history.replaceState) history.replaceState(null, '', '#' + tabs[i].id.slice(2));
+    window.scrollTo(0, 0);
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener('click', function () { select(i, false); });
+    t.addEventListener('keydown', function (e) {
+      var d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+      if (d) { e.preventDefault(); select((i + d + tabs.length) % tabs.length, true); }
+      if (e.key === 'Home') { e.preventDefault(); select(0, true); }
+      if (e.key === 'End') { e.preventDefault(); select(tabs.length - 1, true); }
+    });
+  });
+
+  var want = (location.hash || '').replace('#', '');
+  var idx = 0;
+  tabs.forEach(function (t, i) { if (t.id.slice(2) === want) idx = i; });
+  select(idx, false);
+})();
+</script>

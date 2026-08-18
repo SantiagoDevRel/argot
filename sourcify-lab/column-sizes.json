@@ -1,0 +1,654 @@
+{
+  "sourcify_matches": {
+    "uncompressed_bytes": 602887149657,
+    "columns": {
+      "metadata": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 600261094372,
+        "compressed_bytes": 54962912088,
+        "avg_bytes_per_value": 8090.2,
+        "heaviest_rowgroup_avg_bytes": 189537.8
+      },
+      "id": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 724273014,
+        "compressed_bytes": 209530705,
+        "avg_bytes_per_value": 9.8,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "verified_contract_id": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 724273014,
+        "compressed_bytes": 209992268,
+        "avg_bytes_per_value": 9.8,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "created_at": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 724230575,
+        "compressed_bytes": 594824102,
+        "avg_bytes_per_value": 9.8,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "updated_at": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 430594110,
+        "compressed_bytes": 353628685,
+        "avg_bytes_per_value": 5.8,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "creation_match": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 13678048,
+        "compressed_bytes": 11275919,
+        "avg_bytes_per_value": 0.2,
+        "heaviest_rowgroup_avg_bytes": 0.3
+      },
+      "runtime_match": {
+        "num_values": 74196213,
+        "uncompressed_bytes": 9006524,
+        "compressed_bytes": 7443951,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.2
+      }
+    }
+  },
+  "code": {
+    "uncompressed_bytes": 320747410527,
+    "columns": {
+      "code": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 317229514191,
+        "compressed_bytes": 34770038830,
+        "avg_bytes_per_value": 7898.5,
+        "heaviest_rowgroup_avg_bytes": 18219.0
+      },
+      "code_hash": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 1516737094,
+        "compressed_bytes": 1437980576,
+        "avg_bytes_per_value": 37.8,
+        "heaviest_rowgroup_avg_bytes": 37.8
+      },
+      "code_hash_keccak": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 1516737094,
+        "compressed_bytes": 1446490842,
+        "avg_bytes_per_value": 37.8,
+        "heaviest_rowgroup_avg_bytes": 37.8
+      },
+      "created_at": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 241881683,
+        "compressed_bytes": 197033807,
+        "avg_bytes_per_value": 6.0,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "updated_at": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 241881683,
+        "compressed_bytes": 197033807,
+        "avg_bytes_per_value": 6.0,
+        "heaviest_rowgroup_avg_bytes": 9.8
+      },
+      "created_by": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 329391,
+        "compressed_bytes": 401697,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      },
+      "updated_by": {
+        "num_values": 40163166,
+        "uncompressed_bytes": 329391,
+        "compressed_bytes": 401697,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      }
+    }
+  },
+  "compiled_contracts": {
+    "uncompressed_bytes": 188141596240,
+    "columns": {
+      "runtime_code_artifacts": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 100913345902,
+        "compressed_bytes": 27780199262,
+        "avg_bytes_per_value": 17653.0,
+        "heaviest_rowgroup_avg_bytes": 33364.9
+      },
+      "compilation_artifacts": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 69464358366,
+        "compressed_bytes": 6479492419,
+        "avg_bytes_per_value": 12151.5,
+        "heaviest_rowgroup_avg_bytes": 27456.9
+      },
+      "creation_code_artifacts": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 16316043699,
+        "compressed_bytes": 3595522060,
+        "avg_bytes_per_value": 2854.2,
+        "heaviest_rowgroup_avg_bytes": 17523.2
+      },
+      "compiler_settings": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 395154274,
+        "compressed_bytes": 57690509,
+        "avg_bytes_per_value": 69.1,
+        "heaviest_rowgroup_avg_bytes": 443.4
+      },
+      "id": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 236543469,
+        "compressed_bytes": 120191813,
+        "avg_bytes_per_value": 41.4,
+        "heaviest_rowgroup_avg_bytes": 41.4
+      },
+      "runtime_code_hash": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 213617617,
+        "compressed_bytes": 205098305,
+        "avg_bytes_per_value": 37.4,
+        "heaviest_rowgroup_avg_bytes": 37.4
+      },
+      "creation_code_hash": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 213404137,
+        "compressed_bytes": 205077984,
+        "avg_bytes_per_value": 37.3,
+        "heaviest_rowgroup_avg_bytes": 37.4
+      },
+      "fully_qualified_name": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 188809168,
+        "compressed_bytes": 75332207,
+        "avg_bytes_per_value": 33.0,
+        "heaviest_rowgroup_avg_bytes": 118.7
+      },
+      "name": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 79406079,
+        "compressed_bytes": 47184120,
+        "avg_bytes_per_value": 13.9,
+        "heaviest_rowgroup_avg_bytes": 91.3
+      },
+      "created_at": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 53390135,
+        "compressed_bytes": 40298135,
+        "avg_bytes_per_value": 9.3,
+        "heaviest_rowgroup_avg_bytes": 9.3
+      },
+      "updated_at": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 53390135,
+        "compressed_bytes": 40298157,
+        "avg_bytes_per_value": 9.3,
+        "heaviest_rowgroup_avg_bytes": 9.3
+      },
+      "version": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 12150473,
+        "compressed_bytes": 7177061,
+        "avg_bytes_per_value": 2.1,
+        "heaviest_rowgroup_avg_bytes": 3.3
+      },
+      "language": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 476593,
+        "compressed_bytes": 579463,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.2
+      },
+      "created_by": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 451643,
+        "compressed_bytes": 554549,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.2
+      },
+      "updated_by": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 451643,
+        "compressed_bytes": 554549,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.2
+      },
+      "compiler": {
+        "num_values": 5716510,
+        "uncompressed_bytes": 414540,
+        "compressed_bytes": 517410,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.2
+      },
+      "additional_input": {
+        "num_values": 2806510,
+        "uncompressed_bytes": 188367,
+        "compressed_bytes": 238839,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.4
+      }
+    }
+  },
+  "sources": {
+    "uncompressed_bytes": 104526357404,
+    "columns": {
+      "content": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 103967690340,
+        "compressed_bytes": 16967780111,
+        "avg_bytes_per_value": 16427.1,
+        "heaviest_rowgroup_avg_bytes": 41439.7
+      },
+      "source_hash": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 236522128,
+        "compressed_bytes": 222728286,
+        "avg_bytes_per_value": 37.4,
+        "heaviest_rowgroup_avg_bytes": 41.1
+      },
+      "source_hash_keccak": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 236522128,
+        "compressed_bytes": 227300801,
+        "avg_bytes_per_value": 37.4,
+        "heaviest_rowgroup_avg_bytes": 41.1
+      },
+      "created_at": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 42311337,
+        "compressed_bytes": 32926824,
+        "avg_bytes_per_value": 6.7,
+        "heaviest_rowgroup_avg_bytes": 10.5
+      },
+      "updated_at": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 42311337,
+        "compressed_bytes": 32926824,
+        "avg_bytes_per_value": 6.7,
+        "heaviest_rowgroup_avg_bytes": 10.5
+      },
+      "created_by": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 500067,
+        "compressed_bytes": 614007,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 2.9
+      },
+      "updated_by": {
+        "num_values": 6329026,
+        "uncompressed_bytes": 500067,
+        "compressed_bytes": 614007,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 2.9
+      }
+    }
+  },
+  "verified_contracts": {
+    "uncompressed_bytes": 27507921725,
+    "columns": {
+      "creation_values": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 10388282729,
+        "compressed_bytes": 887879354,
+        "avg_bytes_per_value": 234.0,
+        "heaviest_rowgroup_avg_bytes": 539.3
+      },
+      "runtime_transformations": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 6456030197,
+        "compressed_bytes": 207106800,
+        "avg_bytes_per_value": 145.4,
+        "heaviest_rowgroup_avg_bytes": 840.6
+      },
+      "runtime_values": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 6320982459,
+        "compressed_bytes": 878037536,
+        "avg_bytes_per_value": 142.4,
+        "heaviest_rowgroup_avg_bytes": 546.8
+      },
+      "deployment_id": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 1797894724,
+        "compressed_bytes": 898819178,
+        "avg_bytes_per_value": 40.5,
+        "heaviest_rowgroup_avg_bytes": 40.5
+      },
+      "creation_transformations": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 746624137,
+        "compressed_bytes": 77616671,
+        "avg_bytes_per_value": 16.8,
+        "heaviest_rowgroup_avg_bytes": 136.8
+      },
+      "id": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 449595962,
+        "compressed_bytes": 137505552,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "created_at": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 449556114,
+        "compressed_bytes": 385945135,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "updated_at": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 449231285,
+        "compressed_bytes": 389750476,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "compilation_id": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 427373653,
+        "compressed_bytes": 191968093,
+        "avg_bytes_per_value": 9.6,
+        "heaviest_rowgroup_avg_bytes": 40.4
+      },
+      "creation_metadata_match": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 5569597,
+        "compressed_bytes": 3270091,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.1
+      },
+      "runtime_metadata_match": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 5569587,
+        "compressed_bytes": 3287562,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.1
+      },
+      "creation_match": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 5569511,
+        "compressed_bytes": 2835151,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.1
+      },
+      "runtime_match": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 5568954,
+        "compressed_bytes": 31805,
+        "avg_bytes_per_value": 0.1,
+        "heaviest_rowgroup_avg_bytes": 0.1
+      },
+      "created_by": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 36408,
+        "compressed_bytes": 44400,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      },
+      "updated_by": {
+        "num_values": 44391604,
+        "uncompressed_bytes": 36408,
+        "compressed_bytes": 44400,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      }
+    }
+  },
+  "compiled_contracts_signatures": {
+    "uncompressed_bytes": 10122583913,
+    "columns": {
+      "id": {
+        "num_values": 175489918,
+        "uncompressed_bytes": 7108120675,
+        "compressed_bytes": 3489607335,
+        "avg_bytes_per_value": 40.5,
+        "heaviest_rowgroup_avg_bytes": 40.6
+      },
+      "signature_hash_32": {
+        "num_values": 175489918,
+        "uncompressed_bytes": 2567409906,
+        "compressed_bytes": 2140649720,
+        "avg_bytes_per_value": 14.6,
+        "heaviest_rowgroup_avg_bytes": 27.4
+      },
+      "compilation_id": {
+        "num_values": 175489918,
+        "uncompressed_bytes": 361417757,
+        "compressed_bytes": 228989185,
+        "avg_bytes_per_value": 2.1,
+        "heaviest_rowgroup_avg_bytes": 3.5
+      },
+      "signature_type": {
+        "num_values": 175489918,
+        "uncompressed_bytes": 43232549,
+        "compressed_bytes": 25468530,
+        "avg_bytes_per_value": 0.2,
+        "heaviest_rowgroup_avg_bytes": 0.3
+      },
+      "created_at": {
+        "num_values": 175489918,
+        "uncompressed_bytes": 42403026,
+        "compressed_bytes": 35004947,
+        "avg_bytes_per_value": 0.2,
+        "heaviest_rowgroup_avg_bytes": 0.7
+      }
+    }
+  },
+  "contract_deployments": {
+    "uncompressed_bytes": 7380689915,
+    "columns": {
+      "id": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 1794483077,
+        "compressed_bytes": 897316567,
+        "avg_bytes_per_value": 40.5,
+        "heaviest_rowgroup_avg_bytes": 41.5
+      },
+      "transaction_hash": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 1491357651,
+        "compressed_bytes": 1377516099,
+        "avg_bytes_per_value": 33.7,
+        "heaviest_rowgroup_avg_bytes": 36.8
+      },
+      "contract_id": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 1227622294,
+        "compressed_bytes": 536199247,
+        "avg_bytes_per_value": 27.7,
+        "heaviest_rowgroup_avg_bytes": 40.5
+      },
+      "address": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 1098333901,
+        "compressed_bytes": 957969946,
+        "avg_bytes_per_value": 24.8,
+        "heaviest_rowgroup_avg_bytes": 24.9
+      },
+      "created_at": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 448658631,
+        "compressed_bytes": 385052478,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "updated_at": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 448358383,
+        "compressed_bytes": 389567176,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "deployer": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 428654369,
+        "compressed_bytes": 361428544,
+        "avg_bytes_per_value": 9.7,
+        "heaviest_rowgroup_avg_bytes": 23.6
+      },
+      "block_number": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 368075235,
+        "compressed_bytes": 200321534,
+        "avg_bytes_per_value": 8.3,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "transaction_index": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 52880205,
+        "compressed_bytes": 47250879,
+        "avg_bytes_per_value": 1.2,
+        "heaviest_rowgroup_avg_bytes": 1.8
+      },
+      "chain_id": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 22193359,
+        "compressed_bytes": 11350263,
+        "avg_bytes_per_value": 0.5,
+        "heaviest_rowgroup_avg_bytes": 1.0
+      },
+      "created_by": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 36405,
+        "compressed_bytes": 44397,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      },
+      "updated_by": {
+        "num_values": 44303315,
+        "uncompressed_bytes": 36405,
+        "compressed_bytes": 44397,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      }
+    }
+  },
+  "compiled_contracts_sources": {
+    "uncompressed_bytes": 3953694140,
+    "columns": {
+      "id": {
+        "num_values": 36586086,
+        "uncompressed_bytes": 1481904844,
+        "compressed_bytes": 708054425,
+        "avg_bytes_per_value": 40.5,
+        "heaviest_rowgroup_avg_bytes": 40.6
+      },
+      "path": {
+        "num_values": 36586086,
+        "uncompressed_bytes": 909115343,
+        "compressed_bytes": 244021506,
+        "avg_bytes_per_value": 24.8,
+        "heaviest_rowgroup_avg_bytes": 33.8
+      },
+      "compilation_id": {
+        "num_values": 36586086,
+        "uncompressed_bytes": 788314423,
+        "compressed_bytes": 386877271,
+        "avg_bytes_per_value": 21.5,
+        "heaviest_rowgroup_avg_bytes": 40.3
+      },
+      "source_hash": {
+        "num_values": 36586086,
+        "uncompressed_bytes": 735022762,
+        "compressed_bytes": 578138474,
+        "avg_bytes_per_value": 20.1,
+        "heaviest_rowgroup_avg_bytes": 30.1
+      },
+      "created_at": {
+        "num_values": 36586086,
+        "uncompressed_bytes": 39336768,
+        "compressed_bytes": 32362352,
+        "avg_bytes_per_value": 1.1,
+        "heaviest_rowgroup_avg_bytes": 4.3
+      }
+    }
+  },
+  "contracts": {
+    "uncompressed_bytes": 2840709432,
+    "columns": {
+      "id": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 998954815,
+        "compressed_bytes": 499490468,
+        "avg_bytes_per_value": 40.5,
+        "heaviest_rowgroup_avg_bytes": 40.8
+      },
+      "runtime_code_hash": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 675490412,
+        "compressed_bytes": 575602689,
+        "avg_bytes_per_value": 27.4,
+        "heaviest_rowgroup_avg_bytes": 36.5
+      },
+      "creation_code_hash": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 666809973,
+        "compressed_bytes": 581809119,
+        "avg_bytes_per_value": 27.0,
+        "heaviest_rowgroup_avg_bytes": 36.4
+      },
+      "created_at": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 249707366,
+        "compressed_bytes": 214400563,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "updated_at": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 249706358,
+        "compressed_bytes": 214423183,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "created_by": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 20254,
+        "compressed_bytes": 24700,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      },
+      "updated_by": {
+        "num_values": 24662400,
+        "uncompressed_bytes": 20254,
+        "compressed_bytes": 24700,
+        "avg_bytes_per_value": 0.0,
+        "heaviest_rowgroup_avg_bytes": 0.0
+      }
+    }
+  },
+  "signatures": {
+    "uncompressed_bytes": 842848123,
+    "columns": {
+      "signature": {
+        "num_values": 9920797,
+        "uncompressed_bytes": 372301894,
+        "compressed_bytes": 125026649,
+        "avg_bytes_per_value": 37.5,
+        "heaviest_rowgroup_avg_bytes": 50.5
+      },
+      "signature_hash_32": {
+        "num_values": 9920797,
+        "uncompressed_bytes": 362749183,
+        "compressed_bytes": 333440791,
+        "avg_bytes_per_value": 36.6,
+        "heaviest_rowgroup_avg_bytes": 37.9
+      },
+      "signature_hash_4": {
+        "num_values": 9920797,
+        "uncompressed_bytes": 100465775,
+        "compressed_bytes": 60956968,
+        "avg_bytes_per_value": 10.1,
+        "heaviest_rowgroup_avg_bytes": 10.1
+      },
+      "created_at": {
+        "num_values": 9920797,
+        "uncompressed_bytes": 7331271,
+        "compressed_bytes": 6466829,
+        "avg_bytes_per_value": 0.7,
+        "heaviest_rowgroup_avg_bytes": 3.8
+      }
+    }
+  }
+}
