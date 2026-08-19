@@ -1,0 +1,13 @@
+# Deny-all allowlist, same reasoning as the POC: the deploy uploads everything
+# unless told otherwise, and .gitignore has no say in it.
+/*
+!/app
+!/content
+!/public
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/next-env.d.ts
+# The gate itself. Leaving it out of the allowlist silently ships an UNGATED site:
+# the deploy succeeds, the build succeeds, and every page is public. Verified the hard way.
+!/proxy.ts

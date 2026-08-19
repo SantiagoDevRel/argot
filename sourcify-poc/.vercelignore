@@ -1,0 +1,17 @@
+# Deny-all allowlist. The deploy uploads the WHOLE folder unless told otherwise,
+# and .gitignore does not apply to it — .env.local with a funded private key and
+# etl/data with 30 MB of NDJSON both live here. Negations must be anchored (`!/x`);
+# an unanchored `!x/` silently fails to re-include.
+/*
+!/app
+!/lib
+!/public
+!/package.json
+!/package-lock.json
+!/next.config.ts
+!/tsconfig.json
+!/next-env.d.ts
+!/.npmrc
+# The gate itself. Leaving it out of the allowlist silently ships an UNGATED site:
+# the deploy succeeds, the build succeeds, and every page is public. Verified the hard way.
+!/proxy.ts

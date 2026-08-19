@@ -18,3 +18,7 @@ Thumbs.db
 # Python bytecode from sourcify-lab scripts
 __pycache__/
 *.pyc
+
+# Playwright screenshots taken during the render-inspect loop
+explainer-*.png
+poc-*.png

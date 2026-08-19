@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sourcify on Arkiv</title>
+<meta name="description" content="How Sourcify's ten Postgres tables translate into Arkiv entities, what fits, and what does not.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --blue:#4c53f0; --blue-deep:#181EA9; --orange:#FE7446;
+  --ink:#0a0b0f; --panel:#13151c; --panel2:#1a1d26; --line:#282c38;
+  --text:#e8eaf0; --muted:#939aab; --ok:#3ddc97; --bad:#ff5f6d; --warn:#ffc857;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--ink);color:var(--text);font-family:var(--sans);font-size:15.5px;line-height:1.6;overflow-x:clip}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 90px}
+a{color:var(--blue)}
+header.hero{padding:52px 0 26px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--orange)}
+h1{font-family:var(--mono);font-size:clamp(27px,4.4vw,40px);font-weight:600;margin:12px 0 10px;letter-spacing:-.01em;text-wrap:balance}
+.lede{color:var(--muted);max-width:72ch;font-size:17px;margin:0}
+nav.toc{position:sticky;top:0;background:rgba(10,11,15,.93);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);z-index:20;margin-bottom:34px}
+nav.toc ul{list-style:none;display:flex;gap:4px;margin:0;padding:9px 0;overflow-x:auto;max-width:1080px;margin:0 auto}
+nav.toc a{font-family:var(--mono);font-size:12px;color:var(--muted);text-decoration:none;padding:6px 11px;border-radius:6px;white-space:nowrap;border:1px solid transparent}
+nav.toc a:hover{color:var(--text);border-color:var(--line);background:var(--panel)}
+section{margin-bottom:56px;scroll-margin-top:60px}
+h2{font-family:var(--mono);font-size:23px;font-weight:600;margin:0 0 6px;letter-spacing:-.01em}
+h2 .n{color:var(--orange);margin-right:10px}
+h3{font-family:var(--mono);font-size:16px;font-weight:600;margin:30px 0 8px}
+.sub{color:var(--muted);margin:0 0 22px;max-width:72ch}
+p{max-width:72ch}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:20px 22px;margin:18px 0}
+.card.accent{border-left:3px solid var(--orange)}
+.card.good{border-left:3px solid var(--ok)}
+.two{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:860px){.two{grid-template-columns:1fr 1fr}}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:500}
+td.mono,th.mono{font-family:var(--mono);font-size:12.5px}
+td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.scroll{overflow-x:auto}
+code{font-family:var(--mono);font-size:.87em;background:var(--panel2);padding:1.5px 6px;border-radius:4px;color:#cdd3e6}
+pre{font-family:var(--mono);font-size:12.5px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:14px;overflow-x:auto;line-height:1.55;margin:12px 0}
+pre .c{color:var(--muted)}
+pre .k{color:var(--orange)}
+pre .s{color:var(--ok)}
+.yes{color:var(--ok);font-weight:600}
+.no{color:var(--bad);font-weight:600}
+.partial{color:var(--warn);font-weight:600}
+figure{margin:22px 0}
+figcaption{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-top:9px}
+svg{max-width:100%;height:auto;display:block}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin:18px 0}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr)}}
+.kpi{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:13px}
+.kpi .k{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.kpi .v{font-family:var(--mono);font-size:21px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums}
+.kpi .f{font-size:11.5px;color:var(--muted);margin-top:3px}
+.bar{height:26px;background:var(--panel2);border:1px solid var(--line);border-radius:5px;overflow:hidden;position:relative;margin:5px 0 3px}
+.bar span{display:block;height:100%;background:linear-gradient(90deg,var(--blue-deep),var(--blue))}
+.bar.over span{background:linear-gradient(90deg,#8f2230,var(--bad))}
+.barlabel{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:9px;padding:13px 16px;margin:12px 0;background:var(--panel)}
+summary{cursor:pointer;font-family:var(--mono);font-size:13.5px;font-weight:600}
+summary:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
+.tag{font-family:var(--mono);font-size:10px;padding:2.5px 8px;border-radius:99px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tag.hot{border-color:var(--orange);color:var(--orange)}
+.tag.cold{border-color:var(--blue);color:#8f95ff}
+.tag.off{border-color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font-size:13px}
+.srcnote{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-top:8px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">[ ARKIV ] × Sourcify</div>
+  <h1>Sourcify on Arkiv</h1>
+  <p class="lede">What Sourcify&rsquo;s database actually is, what Arkiv actually is, and what happens
+  when you try to put one inside the other. Every number here was measured against the live systems on
+  19 August 2026 &mdash; none of it is quoted from a deck.</p>
+</header>
+</div>
+
+<nav class="toc"><ul>
+  <li><a href="#shapes">1 · Two shapes of database</a></li>
+  <li><a href="#tables">2 · Sourcify&rsquo;s ten tables</a></li>
+  <li><a href="#entity">3 · What an Arkiv entity is</a></li>
+  <li><a href="#translate">4 · The translation</a></li>
+  <li><a href="#wall">5 · The size wall</a></li>
+  <li><a href="#scope">6 · POC scope</a></li>
+  <li><a href="#ask">7 · Ask to engineering</a></li>
+  <li><a href="#open">8 · What this does not answer</a></li>
+</ul></nav>
+
+<div class="wrap">
+
+<!-- ============================================================ 1 -->
+<section id="shapes">
+  <h2><span class="n">1</span>Two shapes of database</h2>
+  <p class="sub">Sourcify runs on PostgreSQL. Arkiv is not a slower Postgres &mdash; it is a different
+  shape of storage, and knowing which shape is what lets you tell a real blocker from a detail.</p>
+
+  <h3>Relational, which is what Sourcify has</h3>
+  <p>A relational database keeps data in <strong>tables</strong>. A table has fixed, typed columns, and
+  every row has exactly that shape. Rows in different tables are linked by <strong>foreign keys</strong>:
+  a row in <code>verified_contracts</code> holds the <em>id</em> of a row in <code>compiled_contracts</code>.</p>
+  <p>The thing that makes it powerful is the <strong>JOIN</strong>. You write one query naming several
+  tables and the engine walks the links for you, in one round trip:</p>
+<pre><span class="c">-- one question, five tables, one round trip. The engine does the walking.</span>
+<span class="k">SELECT</span> cd.address, cc.version, s.content
+<span class="k">FROM</span> contract_deployments cd
+<span class="k">JOIN</span> verified_contracts vc <span class="k">ON</span> vc.deployment_id = cd.id
+<span class="k">JOIN</span> compiled_contracts cc <span class="k">ON</span> cc.id = vc.compilation_id
+<span class="k">JOIN</span> compiled_contracts_sources ccs <span class="k">ON</span> ccs.compilation_id = cc.id
+<span class="k">JOIN</span> sources s <span class="k">ON</span> s.source_hash = ccs.source_hash
+<span class="k">WHERE</span> cd.chain_id = <span class="s">130</span> <span class="k">AND</span> cd.address = <span class="s">'\x61d6…'</span>
+<span class="k">ORDER BY</span> vc.created_at <span class="k">DESC</span> <span class="k">LIMIT</span> <span class="s">50</span>;</pre>
+  <p>SQL also gives you <code>ORDER BY</code>, <code>COUNT</code>, <code>GROUP BY</code>, and transactions
+  that either fully happen or fully do not. All of it is one server you own and pay for.</p>
+
+  <h3>Arkiv, which is a key&ndash;value store with searchable labels</h3>
+  <p>Arkiv has no tables. It has <strong>entities</strong>. One entity is:</p>
+  <ul>
+    <li>a <strong>key</strong> &mdash; the address of the record,</li>
+    <li>a <strong>payload</strong> &mdash; arbitrary bytes, up to 128 KiB, opaque to the database,</li>
+    <li>up to <strong>32 typed attributes</strong> &mdash; the searchable labels,</li>
+    <li>an <strong>owner</strong> &mdash; a cryptographic address, not a database role,</li>
+    <li>an <strong>expiry</strong> &mdash; entities die unless somebody extends them.</li>
+  </ul>
+  <p>The closest familiar thing is an object store where the tags are genuinely queryable: the payload is a
+  blob the database will hand back but never look inside, and the attributes are the only part it can search
+  on. Two entities need not have the same attributes at all.</p>
+  <p>You query by naming predicates over attributes. There is no <code>JOIN</code>: if a record points at
+  another record, <em>you</em> follow the pointer with a second query.</p>
+<pre><span class="c">// the same lookup against Arkiv — predicates over attributes, then follow the ref</span>
+<span class="k">await</span> arkiv.select({ payload: <span class="s">true</span> })
+  .where(eq(<span class="s">"ds"</span>, <span class="s">"sourcify"</span>), eq(<span class="s">"kind"</span>, <span class="s">"verified_contract"</span>),
+         eq(<span class="s">"chainId"</span>, <span class="s">130n</span>), eq(<span class="s">"address"</span>, <span class="s">"0x61d6…"</span>))
+  .limit(<span class="s">50</span>).fetch()
+<span class="c">// sources are NOT in here. A second fetch, by content hash, off-chain. See §5.</span></pre>
+
+  <h3>Side by side &mdash; the table that tells you what is a blocker</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th></th><th>PostgreSQL &mdash; Sourcify today</th><th>Arkiv</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">unit of storage</td><td>row in a typed table</td><td>entity: payload + labels</td></tr>
+      <tr><td class="mono">schema</td><td>fixed, enforced, migrated</td><td>none &mdash; every entity free-form</td></tr>
+      <tr><td class="mono">max size of one record</td><td class="yes">~1 GB per field</td><td class="no">131,072 bytes payload</td></tr>
+      <tr><td class="mono">filterable on</td><td class="yes">any column, any expression</td><td class="partial">attributes only, 12 operators</td></tr>
+      <tr><td class="mono">how records link</td><td class="yes">JOIN, resolved by the engine</td><td class="partial"><code>key</code> attribute, followed by the caller</td></tr>
+      <tr><td class="mono">sorting</td><td class="yes">ORDER BY on anything</td><td class="no">not implemented &mdash; sort client-side</td></tr>
+      <tr><td class="mono">aggregation</td><td class="yes">COUNT, SUM, GROUP BY</td><td class="no">none</td></tr>
+      <tr><td class="mono">pagination</td><td class="yes">LIMIT / OFFSET, any size</td><td class="partial">cursor, max 200 per page</td></tr>
+      <tr><td class="mono">text search</td><td class="yes">LIKE, regex, full-text, trigram</td><td class="partial"><code>startsWith</code> only</td></tr>
+      <tr><td class="mono">lifetime</td><td class="yes">until deleted</td><td class="no">expires; must be extended to survive</td></tr>
+      <tr><td class="mono">who can read</td><td>whoever you grant</td><td class="partial">everyone, always</td></tr>
+      <tr><td class="mono">who can write</td><td>DB roles and grants</td><td>holder of the owning private key</td></tr>
+      <tr><td class="mono">authenticity</td><td>trust the server</td><td class="yes">signed; check the owner address</td></tr>
+      <tr><td class="mono">who operates it</td><td>Sourcify, on Google Cloud</td><td>the network &mdash; but
+      you still run the adapter, the blob tier, a CDN, an indexer and chain monitoring. Ops does not
+      disappear, it changes shape.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card accent">
+    <p style="margin:0 0 10px"><strong>The one sentence to carry into the room.</strong> Postgres is a
+    query engine that also stores things; Arkiv is a store that also answers filters. Every red cell above
+    is a job that moves out of the database and into an adapter in front of it.</p>
+    <p style="margin:0"><strong>And two of those jobs the adapter cannot actually do.</strong> Ordering and
+    counting are not relocatable: to answer <code>GET /v2/contracts/{chain}?sort=desc&amp;limit=50</code> over
+    44 M records with 200-per-page unordered reads, an adapter has to pull <em>every page</em> and sort in
+    memory. That is not moved, that is broken &mdash; see &sect;7 ask 1. The honest reading of the table is
+    that the point lookup relocates cleanly and the listing path does not.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 2 -->
+<section id="tables">
+  <h2><span class="n">2</span>Sourcify&rsquo;s ten tables</h2>
+  <p class="sub">Seven come from the <a href="https://verifieralliance.org" target="_blank" rel="noopener">Verifier
+  Alliance</a> schema shared with Blockscout and Routescan; three are Sourcify&rsquo;s own. The whole design
+  turns on one idea: <strong>a verified contract is not a row, it is a link</strong> between something
+  deployed on a chain and something a compiler produced.</p>
+
+  <figure>
+  <svg viewBox="0 0 900 340" role="img" aria-label="Sourcify's ten tables, with verified_contracts joining a deployment to a compilation">
+    <defs>
+      <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#939aab"/>
+      </marker>
+      <style>
+        .b{fill:#1a1d26;stroke:#282c38;rx:7}
+        .bh{fill:#171b2e;stroke:#4c53f0}
+        .bo{fill:#241a17;stroke:#FE7446}
+        .t{font-family:'IBM Plex Mono',monospace;font-size:11.5px;fill:#e8eaf0}
+        .tm{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:#939aab}
+        .ln{stroke:#939aab;stroke-width:1.3;fill:none;marker-end:url(#ar)}
+      </style>
+    </defs>
+
+    <rect class="b bh" x="14" y="128" width="176" height="56"/>
+    <text class="t" x="26" y="150">contract_deployments</text>
+    <text class="tm" x="26" y="167">chain_id, address, tx, deployer</text>
+
+    <rect class="b bo" x="352" y="122" width="176" height="68"/>
+    <text class="t" x="364" y="145">verified_contracts</text>
+    <text class="tm" x="364" y="161">the LINK + transformations</text>
+    <text class="tm" x="364" y="176">creation_match, runtime_match</text>
+
+    <rect class="b bh" x="690" y="128" width="196" height="56"/>
+    <text class="t" x="702" y="150">compiled_contracts</text>
+    <text class="tm" x="702" y="167">compiler, version, settings, ABI</text>
+
+    <rect class="b" x="352" y="16" width="176" height="48"/>
+    <text class="t" x="364" y="38">sourcify_matches</text>
+    <text class="tm" x="364" y="54">matchId, metadata, verifiedAt</text>
+
+    <rect class="b" x="14" y="248" width="176" height="48"/>
+    <text class="t" x="26" y="270">code</text>
+    <text class="tm" x="26" y="286">bytecode, deduped by hash</text>
+
+    <rect class="b" x="690" y="248" width="196" height="48"/>
+    <text class="t" x="702" y="270">sources</text>
+    <text class="tm" x="702" y="286">file content, deduped by hash</text>
+
+    <rect class="b" x="475" y="248" width="176" height="48"/>
+    <text class="t" x="487" y="270">compiled_contracts_sources</text>
+    <text class="tm" x="487" y="286">which files, at which paths</text>
+
+    <rect class="b" x="238" y="248" width="176" height="48"/>
+    <text class="t" x="250" y="270">signatures + …_signatures</text>
+    <text class="tm" x="250" y="286">4-byte selectors, 9.9 M rows</text>
+
+    <path class="ln" d="M190,156 L346,156"/>
+    <path class="ln" d="M528,156 L684,156"/>
+    <path class="ln" d="M440,122 L440,70"/>
+    <path class="ln" d="M788,248 L788,190"/>
+    <path class="ln" d="M563,248 L563,196"/>
+    <path class="ln" d="M102,248 L102,190"/>
+    <text class="tm" x="212" y="148">deployment_id</text>
+    <text class="tm" x="556" y="148">compilation_id</text>
+  </svg>
+  <figcaption>The join at the centre is the whole model. Everything at the bottom row is content-addressed
+  and shared: 87% of verifications add no new compilation and no new source file.</figcaption>
+  </figure>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>table</th><th class="num">rows in the export</th><th>what it holds</th><th>where it goes</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">compiled_contracts_signatures</td><td class="num">175,489,918</td><td>selector &rarr; compilation</td><td><span class="tag off">out of scope</span></td></tr>
+      <tr><td class="mono">sourcify_matches</td><td class="num">74,196,213</td><td>matchId, metadata, verifiedAt</td><td><span class="tag hot">attributes</span></td></tr>
+      <tr><td class="mono">verified_contracts</td><td class="num">44,391,604</td><td>the link + transformations</td><td><span class="tag hot">the entity itself</span></td></tr>
+      <tr><td class="mono">contract_deployments</td><td class="num">44,303,315</td><td>chain, address, deployer</td><td><span class="tag hot">attributes</span></td></tr>
+      <tr><td class="mono">code</td><td class="num">40,163,166</td><td>bytecode blobs</td><td><span class="tag off">off-chain</span></td></tr>
+      <tr><td class="mono">compiled_contracts_sources</td><td class="num">36,586,086</td><td>compilation &rarr; file paths</td><td><span class="tag off">off-chain</span></td></tr>
+      <tr><td class="mono">contracts</td><td class="num">24,662,400</td><td>identity of a deployed contract</td><td><span class="tag hot">folded in</span></td></tr>
+      <tr><td class="mono">signatures</td><td class="num">9,920,797</td><td>4-byte selector dictionary</td><td><span class="tag off">out of scope</span></td></tr>
+      <tr><td class="mono">sources</td><td class="num">6,329,026</td><td>Solidity file contents</td><td><span class="tag off">off-chain</span></td></tr>
+      <tr><td class="mono">compiled_contracts</td><td class="num">5,716,510</td><td>compiler, settings, artifacts</td><td><span class="tag cold">second entity type</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="srcnote">The chain feed returned 2,988 rows for 2,801 distinct addresses: 187 contracts
+  have been verified more than once, the same phenomenon that leaves 42% of
+  <code>sourcify_matches</code> rows in the export superseded. An entity keyed by (chain, address)
+  collapses them; a naive replay of the export would not.<br><br>Row counts read directly from the Parquet footers of the public export
+  (2,687 files, storage.googleapis.com/sourcify-production-parquet-export), 18 Aug 2026.</p>
+</section>
+
+<!-- ============================================================ 3 -->
+<section id="entity">
+  <h2><span class="n">3</span>What an Arkiv entity is, exactly</h2>
+  <p class="sub">Not from the docs &mdash; these constants are exported by the SDK itself
+  (<code>@arkiv-network/sdk@0.8.0-advanced.2</code>), which is what the Cheesecake devnet enforces.</p>
+
+  <div class="kpis">
+    <div class="kpi"><div class="k">MAX_PAYLOAD_BYTES</div><div class="v">131,072</div><div class="f">128 KiB, the blob</div></div>
+    <div class="kpi"><div class="k">MAX_ATTRIBUTES</div><div class="v">32</div><div class="f">searchable labels</div></div>
+    <div class="kpi"><div class="k">MAX_STRING_BYTES</div><div class="v">128</div><div class="f">per string value</div></div>
+    <div class="kpi"><div class="k">MAX_LIMIT</div><div class="v">200</div><div class="f">results per page</div></div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h3 style="margin-top:0">Attribute types</h3>
+      <p style="margin:0 0 8px">A typed attribute is the reason a filter can be a range and not just an
+      equality. <code>chainId</code> stored as <code>u64</code> supports <code>gte</code>; stored as text it
+      would not.</p>
+      <p class="mono" style="font-family:var(--mono);font-size:12.5px;margin:0">
+      <code>bool</code> <code>i32</code> <code>u64</code> <code>u256</code> <code>dec</code>
+      <code>str</code> <code>addr</code> <code>bytes32</code> <code>key</code></p>
+      <p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><code>key</code> is the interesting one:
+      it points at another entity. That is how a foreign key survives the move &mdash; but nothing resolves
+      it for you.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Query operators &mdash; all of them</h3>
+      <p class="mono" style="font-family:var(--mono);font-size:12.5px;margin:0 0 10px">
+      <code>eq</code> <code>ne</code> <code>gt</code> <code>gte</code> <code>lt</code> <code>lte</code>
+      <code>startsWith</code> <code>exists</code> <code>hasType</code> <code>not</code> <code>and</code> <code>or</code></p>
+      <p style="margin:0;font-size:13.5px;color:var(--muted)">Twelve. That is the entire filter language.
+      No <code>LIKE '%x%'</code>, no regex, no <code>ORDER BY</code>, no <code>COUNT</code>. The SDK marks
+      server-side ordering deprecated in so many words: <em>&ldquo;not supported by the network&rdquo;</em>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 -->
+<section id="translate">
+  <h2><span class="n">4</span>The translation: ten tables, two entity types</h2>
+  <p class="sub">The tempting move is ten tables &rarr; ten entity types. It is the wrong move, because
+  without JOIN each extra type is another network round trip on the hot path. The right question is not
+  &ldquo;how do I mirror the schema&rdquo; but &ldquo;what does one lookup need to answer in one query&rdquo;.</p>
+
+  <figure>
+  <svg viewBox="0 0 900 300" role="img" aria-label="Ten Postgres tables collapsing into two Arkiv entity types plus an off-chain blob tier">
+    <defs>
+      <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+        <path d="M0,0 L9,4.5 L0,9 z" fill="#FE7446"/>
+      </marker>
+      <style>
+        .p{fill:#1a1d26;stroke:#282c38;rx:5}
+        .e{fill:#171b2e;stroke:#4c53f0;stroke-width:1.6;rx:8}
+        .o{fill:#1c1a17;stroke:#5a5148;stroke-dasharray:4 3;rx:8}
+        .tt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;fill:#e8eaf0}
+        .tl{font-family:'IBM Plex Mono',monospace;font-size:12.5px;fill:#e8eaf0;font-weight:600}
+        .tg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:#939aab}
+        .fl{stroke:#FE7446;stroke-width:1.4;fill:none;marker-end:url(#ar2);opacity:.75}
+      </style>
+    </defs>
+    <text class="tg" x="14" y="16">POSTGRES — 10 TABLES</text>
+    <text class="tg" x="420" y="16">ARKIV — 2 ENTITY TYPES</text>
+    <text class="tg" x="705" y="16">CONTENT-ADDRESSED, OFF-CHAIN</text>
+
+    <rect class="p" x="14" y="28" width="182" height="21"/><text class="tt" x="22" y="43">contract_deployments</text>
+    <rect class="p" x="14" y="54" width="182" height="21"/><text class="tt" x="22" y="69">verified_contracts</text>
+    <rect class="p" x="14" y="80" width="182" height="21"/><text class="tt" x="22" y="95">sourcify_matches</text>
+    <rect class="p" x="14" y="106" width="182" height="21"/><text class="tt" x="22" y="121">contracts</text>
+    <rect class="p" x="14" y="140" width="182" height="21"/><text class="tt" x="22" y="155">compiled_contracts</text>
+    <rect class="p" x="14" y="182" width="182" height="21"/><text class="tt" x="22" y="197">sources</text>
+    <rect class="p" x="14" y="208" width="182" height="21"/><text class="tt" x="22" y="223">code</text>
+    <rect class="p" x="14" y="234" width="182" height="21"/><text class="tt" x="22" y="249">compiled_contracts_sources</text>
+    <rect class="p" x="14" y="264" width="182" height="21"/><text class="tt" x="22" y="279">signatures ×2</text>
+
+    <rect class="e" x="330" y="34" width="222" height="88"/>
+    <text class="tl" x="344" y="55">verified_contract</text>
+    <text class="tg" x="344" y="72">25 typed attributes — the index</text>
+    <text class="tg" x="344" y="87">payload = the v2 lookup answer</text>
+    <text class="tg" x="344" y="102">p50 1.0 KB · p95 10.7 KB</text>
+    <text class="tg" x="344" y="115">one per (chain, address)</text>
+
+    <rect class="e" x="330" y="140" width="222" height="62"/>
+    <text class="tl" x="344" y="161">compilation</text>
+    <text class="tg" x="344" y="177">deduped, as Postgres dedupes it</text>
+    <text class="tg" x="344" y="192">referenced by a `key` attribute</text>
+
+    <rect class="o" x="640" y="182" width="246" height="73"/>
+    <text class="tl" x="654" y="203">source bundles + bytecode</text>
+    <text class="tg" x="654" y="220">~307 KB median per contract</text>
+    <text class="tg" x="654" y="235">2.3× over MAX_PAYLOAD_BYTES</text>
+    <text class="tg" x="654" y="249">referenced by hash, never inlined</text>
+
+    <path class="fl" d="M200,66 C265,66 275,72 326,74"/>
+    <path class="fl" d="M200,150 C260,150 280,164 326,168"/>
+    <path class="fl" d="M200,214 C300,214 480,214 636,214"/>
+    <path class="fl" d="M441,124 L441,136"/>
+    <text class="tg" x="450" y="134">key ref</text>
+    <text class="tg" x="560" y="278">signatures: a separate service, out of scope</text>
+  </svg>
+  <figcaption>Four tables collapse into the entity that answers the lookup, one becomes a deduplicated
+  second type, three become content-addressed blobs, and the two signature tables belong to a different
+  service entirely.</figcaption>
+  </figure>
+
+  <h3>Attribute budget &mdash; 25 of the 32 spent</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>attribute</th><th>type</th><th>from</th><th>what it buys you</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">ds, kind</td><td class="mono">str</td><td>&mdash;</td><td>dataset marker; with <code>owner</code> this is the authenticity gate</td></tr>
+      <tr><td class="mono">chainId</td><td class="mono">u64</td><td>contract_deployments</td><td>numeric, so ranges work</td></tr>
+      <tr><td class="mono">address, deployer</td><td class="mono">addr</td><td>contract_deployments</td><td>the primary lookup, and &ldquo;everything this deployer shipped&rdquo;</td></tr>
+      <tr><td class="mono">chainAddr</td><td class="mono">str</td><td>derived</td><td>one-predicate composite lookup</td></tr>
+      <tr><td class="mono">match, creationMatch, runtimeMatch</td><td class="mono">str</td><td>sourcify_matches</td><td>exact vs partial filtering</td></tr>
+      <tr><td class="mono">compiler, compilerVersion, language</td><td class="mono">str</td><td>compiled_contracts</td><td><code>startsWith('0.8.')</code> across a whole minor line</td></tr>
+      <tr><td class="mono">name</td><td class="mono">str</td><td>compiled_contracts</td><td>prefix search on contract name</td></tr>
+      <tr><td class="mono">verifiedAt, matchId, blockNumber</td><td class="mono">u64</td><td>sourcify_matches</td><td>time and sequence ranges</td></tr>
+      <tr><td class="mono">isProxy, proxyType</td><td class="mono">bool / str</td><td>computed on read today</td><td>a filter Sourcify itself cannot offer</td></tr>
+      <tr><td class="mono">abiHash</td><td class="mono">str</td><td>derived</td><td>find every contract with an identical ABI</td></tr>
+      <tr><td class="mono">fnCount, evtCount</td><td class="mono">i32</td><td>derived from ABI</td><td>range queries on contract surface</td></tr>
+      <tr><td class="mono">optimizer, optimizerRuns, evmVersion</td><td class="mono">bool / i32 / str</td><td>compiler_settings</td><td>settings become first-class filters</td></tr>
+      <tr><td class="mono">compilationRef</td><td class="mono">key</td><td>compilation_id</td><td>the foreign key, as a native pointer</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card accent">
+    <p style="margin:0"><strong>Note what happened here.</strong> Half those attributes are not columns
+    Sourcify has &mdash; <code>fnCount</code>, <code>abiHash</code>, <code>isProxy</code> are derived at index
+    time. Moving to Arkiv is not a copy; it is a decision about what you want to be able to ask. That is the
+    upside hiding behind the constraints.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 5 -->
+<section id="wall">
+  <h2><span class="n">5</span>The size wall &mdash; why the split is not a preference</h2>
+  <p class="sub">Measured over real Unichain contracts pulled live from sourcify.dev on 19 Aug 2026.
+  The bar is <code>MAX_PAYLOAD_BYTES</code> = 131,072.</p>
+
+  <div class="card">
+    <div class="barlabel"><span>minimal lookup response &mdash; what 70% of traffic asks for</span><span>192 B</span></div>
+    <div class="bar"><span style="width:0.15%"></span></div>
+
+    <div class="barlabel"><span>our index payload: ABI + compilation + deployment</span><span>10,130 B</span></div>
+    <div class="bar"><span style="width:7.7%"></span></div>
+
+    <div class="barlabel"><span>metadata alone</span><span>32,295 B</span></div>
+    <div class="bar"><span style="width:24.6%"></span></div>
+
+    <div class="barlabel"><span style="color:var(--bad)">sources alone</span><span style="color:var(--bad)">306,979 B &mdash; 2.3× over</span></div>
+    <div class="bar over"><span style="width:100%"></span></div>
+
+    <div class="barlabel"><span style="color:var(--bad)"><code>fields=all</code>, the complete record</span><span style="color:var(--bad)">958,252 B &mdash; 7.3× over</span></div>
+    <div class="bar over"><span style="width:100%"></span></div>
+    <p class="srcnote">Medians over 12 sampled Unichain contracts; the largest in the sample was
+    2,448,070 B. Across the full 2,801-contract index actually built, the largest payload written is
+    62,952 B &mdash; 48% of the limit.</p>
+  </div>
+
+  <p>So &ldquo;keep the sources in Arkiv too&rdquo; is not a design debate that a preference settles. A median
+  contract&rsquo;s source bundle does not fit in an entity, and the largest is nineteen times over. Even if the
+  limit were lifted, the second wall arrives immediately: calldata costs 16 gas per byte and a Cheesecake block
+  holds 36,000,000 gas, so one 958 KB record is <strong>42% of an entire block</strong>.</p>
+
+  <div class="two">
+    <div class="card good">
+      <h3 style="margin-top:0">What fits comfortably</h3>
+      <p style="margin:0">The complete index for Unichain, measured by encoding every real batch
+      locally without sending it &mdash; payload p50 1,738 B, p95 17,062 B, largest 62,952 B, none over
+      the limit:</p>
+      <table style="margin:12px 0 0">
+        <tr><td>contracts</td><td class="num">2,801</td></tr>
+        <tr><td>+ deduped compilations</td><td class="num">1,127</td></tr>
+        <tr><td>calldata</td><td class="num">33.42 MB</td></tr>
+        <tr><td>gas</td><td class="num">534,796,992</td></tr>
+        <tr><td>cost at 7 wei</td><td class="num">3.74 &times; 10<sup>&minus;9</sup> GLM</td></tr>
+        <tr><td>transactions</td><td class="num">115</td></tr>
+        <tr><td>chain time at 2 s blocks</td><td class="num">~30 s</td></tr>
+      </table>
+      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">At this scale gas is not the
+      constraint. Scroll on before quoting that sentence &mdash; it stops being true.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">What the blob tier should be</h3>
+      <p style="margin:0 0 10px">Ranked, honestly:</p>
+      <ol style="margin:0;padding-left:20px;font-size:14px">
+        <li><strong>Content-addressed object storage + CDN.</strong> Sourcify already runs this &mdash; 242 GiB of Parquet for about $5/month.</li>
+        <li><strong>IPFS</strong> as the open mirror. Already pinned via Filebase.</li>
+        <li><strong>A decentralised blob layer</strong> (Walrus, Filecoin). The genuinely undecided option, and the one worth discussing.</li>
+        <li><span class="no">Not Arkiv</span> &mdash; a source bundle is fetched by hash and never filtered on. Paying an index to hold it buys nothing.</li>
+        <li><span class="no">Not Postgres</span> &mdash; that is the status quo generating the egress bill.</li>
+      </ol>
+      <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">The hash is what makes this tier swappable
+      later. If someone calls it &ldquo;just a cache&rdquo;: a cache is keyed by location, this is keyed by content.</p>
+    </div>
+  </div>
+  <h3>And at Sourcify&rsquo;s real scale, which is the number that matters</h3>
+  <p>The POC covers <strong>0.006%</strong> of Sourcify. Extrapolating the measured per-record cost linearly
+  to all <strong>44,391,604</strong> verified contracts and <strong>5,716,510</strong> compilations:</p>
+  <div class="card" style="border-left:3px solid var(--bad)">
+    <div class="scroll">
+    <table style="margin:0">
+      <thead><tr><th></th><th class="num">Unichain (measured)</th><th class="num">all of Sourcify (extrapolated)</th></tr></thead>
+      <tbody>
+        <tr><td>records</td><td class="num">3,928</td><td class="num">50,108,114</td></tr>
+        <tr><td>calldata</td><td class="num">33.4 MB</td><td class="num">~484 GB</td></tr>
+        <tr><td>gas</td><td class="num">535 M</td><td class="num">~7.74 &times; 10<sup>12</sup></td></tr>
+        <tr><td>transactions</td><td class="num">115</td><td class="num">~1,617,000</td></tr>
+        <tr><td>block time at 100% utilisation</td><td class="num">~30 s</td><td class="num"><strong>~119 hours (5 days)</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin:14px 0 0;font-size:14px">Five days of a chain doing nothing but this, and that is the
+    <em>initial</em> backfill. Two more things the POC&rsquo;s 30 seconds does not show:</p>
+    <ul style="margin:8px 0 0;font-size:14px">
+      <li><strong>7 wei is a devnet price.</strong> Every GLM figure here is a devnet artefact and should be
+      re-derived against a real fee market before it is used in any argument.</li>
+      <li><strong>Entities expire.</strong> At the POC&rsquo;s 30-day lifetime, keeping 50 M entities alive is
+      ~12 renewals each per year &mdash; roughly <strong>19 hours per year of full block utilisation, forever</strong>,
+      paid by a funded always-on process holding a key. Cost of ownership, not cost of one write.</li>
+    </ul>
+  </div>
+
+  <div class="card accent">
+    <p style="margin:0 0 8px"><strong>The lever nobody has pulled yet: the ABI.</strong></p>
+    <p style="margin:0">The median ABI is 8,113 B of a 10,130 B index payload &mdash; <strong>80% of everything
+    we write</strong>. Move it to the content-addressed tier alongside sources and the whole backfill drops to
+    roughly <strong>102 GB, about 4.5&times; smaller</strong>. Keeping the ABI inline is a product choice (wallets
+    want it in one round trip), not a requirement. It is the single biggest dial on this page and it deserves a
+    decision rather than a default.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 6 -->
+<section id="scope">
+  <h2><span class="n">6</span>What the POC actually does</h2>
+  <p class="sub">Deliberately narrow, so that everything claimed is real rather than mocked.</p>
+  <div class="two">
+    <div class="card good">
+      <h3 style="margin-top:0">In scope &mdash; real</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li><strong>One complete chain.</strong> Unichain (130), all 2,801 verified contracts &mdash; every one, not a sample.</li>
+        <li><strong>Real Sourcify data</strong>, pulled from the live v2 API.</li>
+        <li><strong>Real writes</strong> to the Cheesecake devnet, batched.</li>
+        <li><strong><code>GET /v2/contract/{chain}/{address}</code></strong> served from Arkiv, with the
+          <code>fields</code> / <code>omit</code> projection Sourcify offers.</li>
+        <li><strong>A live parity diff</strong> against sourcify.dev, field by field, that is allowed to fail.</li>
+        <li><strong>Queries Sourcify cannot answer</strong> &mdash; the actual argument for the move.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Out of scope &mdash; and why</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li><strong>Compiling and matching bytecode.</strong> That is Sourcify&rsquo;s verifier and it is not
+          the thing under question. The question is whether Arkiv can be the database behind it.</li>
+        <li><strong>Sources and stdJsonOutput on-chain.</strong> They do not fit. §5.</li>
+        <li><strong>The 4-byte signature service.</strong> Separate service, separate traffic.</li>
+        <li><strong>Write path <code>POST /v2/verify</code>.</strong> The migration plan is dual-write behind
+          the existing verifier, not a replacement of it.</li>
+        <li><strong>Permanence.</strong> Entities expire. The POC writes a 30-day lifetime and that is a
+          product question, not something a demo can settle.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 7 -->
+<section id="ask">
+  <h2><span class="n">7</span>What we would ask engineering to change</h2>
+  <p class="sub">Ordered by how much it unlocks, with what breaks without it. Each one is a number, not a wish.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>#</th><th>parameter</th><th>today</th><th>needed</th><th>what stays broken otherwise</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td><td class="mono">server-side ordering</td>
+        <td class="no">not implemented</td><td>ORDER BY on a numeric attribute</td>
+        <td>Explorer sync feeds. <code>GET /v2/contracts/{chain}?sort=desc</code> is cursor-paginated by
+        <code>matchId</code>; without ordering the adapter must pull every page and sort locally, which does not
+        scale past one small chain. <strong>This blocks the listing endpoint, not the lookup.</strong></td>
+      </tr>
+      <tr>
+        <td>2</td><td class="mono">aggregate count</td>
+        <td class="no">none</td><td><code>COUNT</code> on a predicate</td>
+        <td>Every &ldquo;how many contracts on chain X&rdquo; number has to be produced by walking pages.
+        Sourcify&rsquo;s own stats page is exactly this query.</td>
+      </tr>
+      <tr>
+        <td>3</td><td class="mono">MAX_STRING_BYTES</td>
+        <td class="no">128</td><td>~512</td>
+        <td><code>fullyQualifiedName</code> and long contract names exceed 128 bytes on deeply nested
+        paths and get truncated. <strong>Observed, not hypothetical: 2 of 2,801 on Unichain alone.</strong>
+        A chain with deeper import trees will be worse.</td>
+      </tr>
+      <tr>
+        <td>4</td><td class="mono">MAX_ATTRIBUTES</td>
+        <td class="partial">32</td><td>48 would be comfortable</td>
+        <td>Nothing today &mdash; we use 25. But every new filter costs one, and the second a product
+        conversation adds three more the budget is real.</td>
+      </tr>
+      <tr>
+        <td>5</td><td class="mono">MAX_PAYLOAD_BYTES</td>
+        <td>131,072</td><td class="partial">leave it</td>
+        <td><strong>We are not asking for this one.</strong> Raising it to hold sources would need ~1 MB for
+        the median and ~2.5 MB for the tail, and at 16 gas per byte that is 42% of a block per record. The
+        limit is not what is stopping sources going on-chain; the economics are. Worth saying out loud so the
+        team does not spend effort on the wrong lever.</td>
+      </tr>
+      <tr>
+        <td>6</td><td class="mono">read metering</td>
+        <td class="no">50 req/hour anonymous</td><td>a key with headroom</td>
+        <td>One page-load of the POC exhausts the anonymous budget. Fine with an API key, but it means the
+        public-good read pattern &mdash; anyone querying the verification registry without an account &mdash;
+        is not yet served.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="card accent">
+    <p style="margin:0 0 8px"><strong>The honest summary for the room.</strong></p>
+    <p style="margin:0 0 10px">The point lookup &mdash; roughly 70% of Sourcify&rsquo;s contract traffic &mdash;
+    works on Arkiv today and answers filters the current API cannot. The listing path does not work, and the
+    blocker is ordering, not size or money. Permanence, key custody and atomic ingest are decisions no demo
+    can settle.</p>
+    <p style="margin:0"><strong>And the framing matters more than any of it.</strong> Pitched as a replacement
+    for the transactional registry, this loses: the queries Sourcify&rsquo;s own consumers depend on
+    (<code>sort=desc</code>, paginated listings, <code>COUNT</code> for the stats page) are precisely the ones
+    Arkiv cannot serve, while the filters we add are ones nobody is currently asking for. Pitched as a
+    <em>queryable, verifiable mirror</em> &mdash; the layer people go to BigQuery, Dune and the Parquet export
+    for &mdash; the same evidence reads as a strong fit. Same POC, and only one of those two conversations
+    survives contact with the person who operates the database.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 8 -->
+<section id="open">
+  <h2><span class="n">8</span>What this does not answer</h2>
+  <p class="sub">Written after handing the document to a reviewer briefed to argue against it as
+  Sourcify&rsquo;s own engineer. These are the questions that came back, unresolved. They belong on the page
+  rather than in a follow-up, because they are what a real operator asks first.</p>
+
+  <div class="two">
+    <div class="card">
+      <h3 style="margin-top:0">Ingest</h3>
+      <p style="margin:0 0 10px"><strong>There is no transaction across tiers.</strong> One verification is
+      today an all-or-nothing write across seven Postgres tables. Here it is two entity writes plus blob puts
+      in a different system, with no rollback. What happens when the blob lands and the entity reverts? Who
+      retries? What happens when two verifiers race the same <code>(chain, address)</code>?</p>
+      <p style="margin:0"><strong>Dual-write is the classic trap.</strong> &ldquo;Postgres stays canonical, we
+      mirror to Arkiv&rdquo; sounds free until the two disagree and there is no two-phase commit to appeal to.
+      The parity endpoint in the POC is a detector for exactly this, not a solution to it.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">History</h3>
+      <p style="margin:0">Keying one entity per <code>(chain, address)</code> collapses re-verifications &mdash;
+      187 of them on Unichain alone, and about 42% of <code>sourcify_matches</code> rows across the export.
+      Postgres keeps that history. Is a re-verification an overwrite, or a new version? Explorers that want
+      &ldquo;what did this look like before&rdquo; get a worse answer than they have now, and nothing in this
+      design has decided which it should be.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Who holds the key</h3>
+      <p style="margin:0">Entities survive only while someone extends them, and only the owner can. If Sourcify
+      holds that key, one compromise rewrites the public verification registry. If it is distributed, a lost key
+      silently deletes verified contracts when the lifetime runs out. Neither is a demo problem and the POC
+      picked 30 days by default rather than by argument.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Two tiers, one dangling reference</h3>
+      <p style="margin:0">The entity holds a hash; the bytes live elsewhere with a different lifetime. If the
+      blob is garbage-collected the entity points at nothing; if the entity expires the blob is orphaned. Who
+      runs the reconciler, and what does a consumer see in the window where the two disagree?</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Reads as a public good</h3>
+      <p style="margin:0">Sourcify is queried without an API key by every explorer, wallet and bot on the
+      network. Anonymous reads here are metered at 50 per hour per IP &mdash; one page-load of the POC exhausts
+      it. Serving Sourcify&rsquo;s read pattern means either an economics answer or a CDN in front, and
+      &ldquo;put an API key on the public verification registry&rdquo; is not an answer anyone will accept.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">Schema evolution</h3>
+      <p style="margin:0">Postgres migrates a schema; Arkiv has none to migrate. Adding attribute 26 across 50 M
+      already-written entities means rewriting them, at the gas in &sect;5. Free-form storage makes the first
+      write easy and the fifth change expensive, which is the opposite of the trade Postgres offers.</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--warn)">
+    <p style="margin:0"><strong>One scope note that is not a question but an omission.</strong>
+    <code>compiled_contracts_signatures</code> holds 175,489,918 rows &mdash; four times
+    <code>verified_contracts</code>, the largest table in the export. This document calls it &ldquo;a separate
+    service&rdquo;, which is true of how it is served and not true of the database somebody has to operate.
+    Any total-cost conversation that leaves it out is understating the problem by more than half the rows.</p>
+  </div>
+</section>
+
+<footer>
+  <p style="margin:0">Measured 19 Aug 2026 against sourcify.dev v2, the Sourcify Parquet export, and the Arkiv
+  Cheesecake devnet (chain 7733102, block ~254,070). Limits read from
+  <code>@arkiv-network/sdk@0.8.0-advanced.2</code>. Numbers move; re-measure before quoting.</p>
+</footer>
+
+</div>
+</body>
+</html>
