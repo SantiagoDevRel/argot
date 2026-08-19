@@ -6,7 +6,7 @@
     "kb": "node scripts/build-kb.mjs && node scripts/build-context.mjs   # run locally, then commit kb/",
     "dev": "next dev -p 3007",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3007",
     "lint": "eslint"
   },
   "dependencies": {

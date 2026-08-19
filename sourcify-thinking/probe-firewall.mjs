@@ -80,7 +80,7 @@ for (const [name, input, shouldMark] of CASES) {
 // Substring checks would false-positive on escaped text like "&lt;img ... onerror=...&gt;",
 // which renders as literal characters, not an element. What matters is which REAL tags
 // survive: only the ones this module injects itself.
-const ALLOWED_TAGS = new Set(["span", "/span", "b", "/b"]);
+const ALLOWED_TAGS = new Set(["span", "/span", "b", "/b", "sup", "/sup"]);
 const xssPayloads = [
   '<script>alert(1)</script>',
   '<img src=x onerror="a()">',

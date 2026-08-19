@@ -112,12 +112,18 @@ export function ground(markdown: string): Grounded {
       unknownIds.push(id);
       return `<span class="bad">[unknown fact: ${escapeHtml(id)}]</span>`;
     }
-    if (!used.some((u) => u.id === f.id)) used.push(f);
-    const shown =
-      f.value !== undefined
-        ? `${fmt(f.value)}${f.unit ? (f.unit.startsWith("%") ? f.unit : ` ${f.unit}`) : ""}`
-        : (f.short ?? f.id);
+    let idx = used.findIndex((u) => u.id === f.id);
+    if (idx < 0) idx = used.push(f) - 1;
     const tip = `${f.statement}${f.scope ? `\n\nScope: ${f.scope}` : ""}${f.asOf ? `\nAs of: ${f.asOf}` : ""}`;
+
+    // A fact WITH a value is a quantity: substitute it inline, which is the whole
+    // point of the firewall. A fact WITHOUT one is a claim or a definition --
+    // inlining its label mid-sentence produced garbage like "reads out of Postgres
+    // blobs live in Postgres today", so those render as a footnote marker instead.
+    if (f.value === undefined) {
+      return `<sup class="cite" data-fact="${escapeHtml(f.id)}" title="${escapeHtml(tip)}">${idx + 1}</sup>`;
+    }
+    const shown = `${fmt(f.value)}${f.unit ? (f.unit.startsWith("%") ? f.unit : ` ${f.unit}`) : ""}`;
     return `<b class="fact" data-fact="${escapeHtml(f.id)}" title="${escapeHtml(tip)}">${escapeHtml(shown)}</b>`;
   });
 

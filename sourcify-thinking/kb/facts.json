@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-08-18",
-  "count": 62,
+  "count": 82,
   "facts": [
     {
       "asOf": "2026-08-18",
@@ -1278,6 +1278,441 @@
         "monday"
       ],
       "short": "the proposed gates"
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "def.verification",
+      "statement": "Contracts are deployed as bytecode, which is unreadable. Verification proves a given source compiles to exactly that bytecode: you submit the sources plus the exact compiler version and settings, Sourcify recompiles, and compares the result against what is actually on chain.",
+      "unit": "definition",
+      "scope": "the core operation Sourcify performs",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "what verification is",
+      "tags": [
+        "verification",
+        "definition",
+        "basics",
+        "how it works",
+        "101"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "def.transformations",
+      "statement": "A recompile never matches the chain byte for byte, because some differences are legitimate. Sourcify applies transformations to account for them: constructor arguments appended at deploy time, library addresses linked in, immutable values written at construction, the metadata hash itself, and library call protection. If what remains matches, the contract is verified.",
+      "unit": "definition",
+      "scope": "why verified_contracts stores creation/runtime transformations and values",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "the transformations step",
+      "tags": [
+        "transformations",
+        "verification",
+        "basics",
+        "101",
+        "immutables",
+        "constructor"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "def.schema_core",
+      "statement": "The central idea of the schema: a verified contract is a LINK between something deployed and something compiled. contract_deployments describes what is on chain, compiled_contracts describes a compilation, and verified_contracts joins the two and records the transformations needed to get from one to the other.",
+      "unit": "definition",
+      "scope": "the shape any replacement data model has to reproduce",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "the link-not-row schema idea",
+      "tags": [
+        "schema",
+        "model",
+        "basics",
+        "101",
+        "join",
+        "design"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "def.content_addressing",
+      "statement": "Bytecode and source files are deduplicated across all chains and keyed by hash: ERC20.sol is stored once no matter how many contracts include it. That is why the code and sources tables are far smaller than 43.78M contracts would suggest, and why the join tables exist at all.",
+      "unit": "definition",
+      "scope": "already content-addressed by Sourcify today -- the part that maps cleanly onto hash-addressed storage",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "their content addressing",
+      "tags": [
+        "dedup",
+        "content-addressed",
+        "hash",
+        "basics",
+        "101",
+        "storage"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.what_is_stored",
+      "statement": "Sourcify stores far more than source and ABI. Per contract: the source files and the standard JSON input, compiler and every setting, ABI, NatSpec userdoc and devdoc, storage layout and transient storage layout, creation and runtime bytecode both as compiled and as deployed, source maps, link references, immutable references, CBOR auxdata positions, the exact transformations applied, deployment details (chain, address, tx hash, block, deployer), and the function, event and error signatures extracted from the ABI.",
+      "unit": "inventory",
+      "scope": "the full compilation output, which is why the average contract costs ~25.5 KiB",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "what they store per contract",
+      "tags": [
+        "storage",
+        "fields",
+        "basics",
+        "101",
+        "abi",
+        "natspec",
+        "artifacts"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.ingest",
+      "statement": "Data arrives three ways: direct verification requests from developers and tools; the Monitor, which watches selected chains for new deployments, reads the metadata hash out of the bytecode and fetches sources from IPFS; and bulk similarity-import jobs that verify contracts by matching bytecode against already-verified ones.",
+      "unit": "ingest paths",
+      "scope": "why organic and bulk write regimes look so different",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "how data gets in",
+      "tags": [
+        "ingest",
+        "monitor",
+        "ipfs",
+        "write",
+        "basics",
+        "101",
+        "pipeline"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.distribution",
+      "statement": "There are four ways to consume the data: the Parquet bulk export at export.sourcify.dev (S3-compatible, daily, append-only), a BigQuery mirror published through Google Cloud Analytics Hub, the API at sourcify.dev/server for one contract at a time, and the browser UI at repo.sourcify.dev.",
+      "unit": "channels",
+      "scope": "any replacement has to serve or replace all four",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "their four distribution channels",
+      "tags": [
+        "distribution",
+        "parquet",
+        "bigquery",
+        "api",
+        "channels",
+        "101"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.ecosystem",
+      "statement": "Sourcify is not isolated. It shares the Verifier Alliance database schema with Blockscout and Routescan, forwards every verification it makes to Blockscout, Routescan and Etherscan, is Foundry's default verifier when no Etherscan key is set, and Hardhat v3 verifies everywhere by default. It also runs the 4byte signature service, having taken over openchain.xyz and merged it with 4byte.directory.",
+      "unit": "ecosystem",
+      "scope": "this is why they cannot unilaterally change the schema, and why their write volume is growing",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "their ecosystem position",
+      "tags": [
+        "ecosystem",
+        "verifier alliance",
+        "foundry",
+        "hardhat",
+        "blockscout",
+        "101"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.governance",
+      "statement": "Sourcify is a non-profit. It started inside the Ethereum Foundation and spun out into the Argot Collective in 2025, alongside the Solidity project. It is open source and open data: you can run your own instance, and every verified contract is published daily as a downloadable dataset.",
+      "unit": "governance",
+      "scope": "relevant to the ownership question: a public good cannot sit behind one private key",
+      "source": {
+        "label": "Kaan Uzdogan, \"Sourcify Summary\"",
+        "url": "https://docs.sourcify.dev"
+      },
+      "short": "who runs Sourcify",
+      "tags": [
+        "governance",
+        "argot",
+        "ef",
+        "non-profit",
+        "open source",
+        "101"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "sourcify.infra",
+      "statement": "Sourcify runs entirely on Google Cloud: the server and monitor on Cloud Run, Postgres on Cloud SQL in europe-west1, BigQuery fed by Datastream change-data-capture off that database, Parquet on GCS, and IPFS pinning via Filebase. The Datastream dependency is the hidden lock-in: its supported-source list is closed, so moving the database off Cloud SQL breaks their analytics pipeline.",
+      "unit": "infrastructure",
+      "scope": "from their own July cost review",
+      "source": {
+        "label": "Sourcify issue #2866 + repo deploy config",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "short": "their infra stack",
+      "tags": [
+        "infra",
+        "gcp",
+        "cloudsql",
+        "datastream",
+        "bigquery",
+        "lock-in",
+        "101"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.writes_per_second",
+      "statement": "Sourcify's organic write load is 0.40 verifications per second, which lands about 4.2 rows per second and 10.2 KiB/s of sustained new data (roughly 904 MB/day).",
+      "value": "0.40",
+      "unit": "verifications/second",
+      "scope": "organic steady state, derived from the measured 34,639/day; bulk imports are a separate regime",
+      "source": {
+        "label": "derived from measured rates (sourcify-lab)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "short": "0.40 verifications/second",
+      "tags": [
+        "write",
+        "load",
+        "per second",
+        "rate",
+        "throughput",
+        "engineering"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.bulk_burst",
+      "statement": "During a bulk similarity-import their write rate hits 32 verifications per second, about 334 rows per second -- 80x the organic rate. Any capacity plan has to size for the burst, not the average.",
+      "value": 32,
+      "unit": "verifications/second at peak",
+      "scope": "measured from the 2026-07-17 single-day spike of 2,774,661 contracts",
+      "source": {
+        "label": "derived from measured rates (sourcify-lab)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "short": "32/s during bulk imports",
+      "tags": [
+        "burst",
+        "peak",
+        "bulk",
+        "import",
+        "write",
+        "engineering",
+        "capacity"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.reads_per_second",
+      "statement": "Across all Sourcify APIs 15M requests/day is about 174 requests per second on average, of which 4byte alone is roughly 81/s (47%) and everything else about 93/s. At 2.31 database transactions per request that is roughly 401 DB transactions per second.",
+      "value": 174,
+      "unit": "requests/second average",
+      "scope": "AVERAGE only -- peak is unknown and is the single most important number we still need from Sourcify",
+      "source": {
+        "label": "derived from measured rates (sourcify-lab)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "short": "~174 req/s average",
+      "tags": [
+        "read",
+        "rps",
+        "requests",
+        "per second",
+        "traffic",
+        "engineering",
+        "load"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.egress_rate",
+      "statement": "13.6 TB/month of database egress is about 453 GB/day, 5.2 MB/s sustained, or roughly 42 Mbit/s. Spread over all API requests that averages ~30 KB read out of Postgres per request.",
+      "value": "5.2",
+      "unit": "MB/s sustained egress",
+      "scope": "database-to-application egress, not client-facing bandwidth; the per-request figure is a rough average across two differently-scoped numbers",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "short": "5.2 MB/s egress",
+      "tags": [
+        "egress",
+        "bandwidth",
+        "network",
+        "mbps",
+        "engineering",
+        "load",
+        "cost"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.storage_rate",
+      "statement": "The database grows about 24.7 GiB/month organically, which is only 10.0 KiB/s -- roughly 296 GiB/year at the current rate. Storage growth is not the pressure; read serving is.",
+      "value": "10.0",
+      "unit": "KiB/s storage growth",
+      "scope": "organic only; bulk imports add far more in bursts",
+      "source": {
+        "label": "derived from measured rates (sourcify-lab)",
+        "url": "https://storage.googleapis.com/sourcify-production-parquet-export/v2/stats.json"
+      },
+      "short": "10 KiB/s storage growth",
+      "tags": [
+        "storage",
+        "growth",
+        "rate",
+        "per second",
+        "engineering"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "load.unit_cost",
+      "statement": "At $373/month for the production database and ~37.5k verifications/day, Sourcify pays roughly $0.00033 per verification and about $0.39 per GB stored per month. Any proposal has to beat a number that small.",
+      "value": "0.00033",
+      "unit": "USD per verification",
+      "scope": "derived from their published production DB cost; the whole Cloud SQL fleet is $1,003/month",
+      "source": {
+        "label": "Sourcify issue #2866",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "short": "$0.00033 per verification",
+      "tags": [
+        "cost",
+        "unit economics",
+        "price",
+        "per contract",
+        "engineering"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "blobs.where_today",
+      "statement": "The authoritative copy of every blob lives INSIDE Postgres, not in a separate object store. Source text is sources.content, bytecode is code.code, the artifacts and metadata are JSON columns. repo.sourcify.dev is not a file server: it redirects to sourcify.dev/server/repository, which reads out of the database. IPFS via Filebase is a pinning MIRROR of sources, and they have an open issue about not being able to delete from it. The GCS Parquet export is a derived daily snapshot.",
+      "unit": "where blobs live",
+      "scope": "verified by following repo.sourcify.dev (307 to the server) and by the v2 API returning source content inline",
+      "source": {
+        "label": "measured against sourcify.dev/server v2",
+        "url": "https://docs.sourcify.dev/docs/api/"
+      },
+      "short": "blobs live in Postgres today",
+      "tags": [
+        "blob",
+        "storage",
+        "postgres",
+        "ipfs",
+        "filebase",
+        "where",
+        "gcs"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "blobs.api_serves_inline",
+      "statement": "The v2 API serves blob content inline out of the database. Measured on USDC: the default response is 189 bytes, ?fields=abi is 1.5 KB, ?fields=sources is 11.9 KB, and ?fields=all is 75 KB. On Uniswap V3 Factory ?fields=all returns 4.56 MB in one response. So the queryable head is ~189 bytes and the blob payload behind it can be four thousand times larger.",
+      "value": "189 B head vs up to 4.56 MB full",
+      "unit": "response size",
+      "scope": "measured 2026-08-19 against their production API",
+      "source": {
+        "label": "measured against sourcify.dev/server v2",
+        "url": "https://docs.sourcify.dev/docs/api/"
+      },
+      "short": "189 B head vs 4.56 MB full response",
+      "tags": [
+        "api",
+        "response",
+        "size",
+        "egress",
+        "blob",
+        "head",
+        "measured"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "measured",
+      "id": "blobs.egress_is_blobs",
+      "statement": "This explains their egress. 13.6 TB/month leaves the database at roughly 30 KB per request on average, and the head record is only 189 bytes -- so essentially all of that egress is blob payload being read out of Postgres and served. That is why their own review concluded a migration only pays if egress drops ~95%, and why they described the fix as redesigning how contracts are served rather than as a storage-price question.",
+      "unit": "analysis",
+      "scope": "our inference from two measured figures: their egress and our API response measurements",
+      "source": {
+        "label": "derived from Sourcify issue #2866 + API measurements",
+        "url": "https://github.com/argotorg/sourcify/issues/2866"
+      },
+      "short": "their egress is blob payload",
+      "tags": [
+        "egress",
+        "blob",
+        "postgres",
+        "cost",
+        "analysis",
+        "opening"
+      ]
+    },
+    {
+      "asOf": "2026-08-18",
+      "confidence": "stated",
+      "id": "blobs.where_to_put_them",
+      "statement": "Where the blobs should go, honestly: NOT Arkiv (nothing in the blob set is ever queried -- it is fetched by hash once you know which contract you want, so putting 95.9% of the bytes behind a query engine buys nothing and inherits every size limit). And NOT left in Postgres either, because that is exactly what makes their database 949.6 GB and their egress 13.6 TB/month. The realistic tier is content-addressed object storage behind a CDN: they already run this pattern for the Parquet export, 242 GiB in cloud storage for about $5/month. IPFS pinning stays as the open, mirrorable copy they already publish, and a decentralized blob layer such as Walrus or Filecoin is the option to evaluate if the goal is that no single provider holds the bytes. Arkiv holds the head with the hash; the hash is what makes any of those interchangeable.",
+      "unit": "design recommendation",
+      "scope": "OUR PROPOSAL, not agreed with Sourcify. The choice between plain object storage and a decentralized blob layer is a real decision that has not been made.",
+      "source": {
+        "label": "argot design reasoning",
+        "url": ""
+      },
+      "short": "blobs to content-addressed object storage, not Arkiv",
+      "tags": [
+        "blob",
+        "storage",
+        "proposal",
+        "ipfs",
+        "walrus",
+        "filecoin",
+        "cdn",
+        "architecture",
+        "where"
+      ]
     }
   ]
 }

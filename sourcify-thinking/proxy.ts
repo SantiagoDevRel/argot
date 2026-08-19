@@ -38,5 +38,8 @@ export function proxy(request: NextRequest) {
 export const config = {
   // Run on everything except Next internals + favicon (assets must not be gated
   // or the gate page itself can't load its CSS/JS).
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Exclude ALL framework internals, not just static assets: the dev HMR socket
+  // (/_next/webpack-hmr) and the font route were being redirected to the gate,
+  // which breaks hydration locally. Nothing under /_next is user content.
+  matcher: ["/((?!_next/|__nextjs|favicon.ico).*)"],
 };
