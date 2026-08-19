@@ -35,6 +35,19 @@ const s128 = (v) => {
   return cut + "\u2026";
 };
 const secs = (iso) => Math.floor(new Date(iso).getTime() / 1000) || 0;
+/**
+ * i32 is a signed 32-bit attribute and `x | 0` wraps silently past 2,147,483,647:
+ * 3e9 optimizer runs would land in the index as a negative number and quietly break
+ * every range filter over it. Unichain's largest is 1e9 — inside the range, but only
+ * by 2x — so this clamps and reports instead of wrapping.
+ */
+let clampedRuns = 0;
+const i32safe = (n) => {
+  const v = Math.trunc(Number(n) || 0);
+  if (v > 2147483647) { clampedRuns++; return 2147483647; }
+  if (v < -2147483648) { clampedRuns++; return -2147483648; }
+  return v;
+};
 
 const rows = fs.readFileSync(IN, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l));
 console.log(`in: ${rows.length} Sourcify records (chain ${CHAIN})`);
@@ -100,7 +113,7 @@ for (const r of rows) {
     fnCount: fnCount | 0,
     evtCount: evtCount | 0,
     optimizer: Boolean(settings.optimizer?.enabled),
-    optimizerRuns: Number(settings.optimizer?.runs ?? 0) | 0,
+    optimizerRuns: i32safe(settings.optimizer?.runs),
     evmVersion: s128(settings.evmVersion ?? "default"),
     blockNumber: BigInt(dep.blockNumber ?? 0),
     deployer: (dep.deployer ?? "0x0000000000000000000000000000000000000000").toLowerCase(),
@@ -134,6 +147,7 @@ verified_contract entities : ${vcs.length}
 compilation entities       : ${compilations.size}  (dedup ${(1 - compilations.size / Math.max(vcs.length,1)).toLocaleString("en-US",{style:"percent",maximumFractionDigits:1})} -- Sourcify's own ratio is ~87%)
 attributes per entity      : ${Object.keys(vcs[0]?.attributes ?? {}).length} / ${MAX_ATTRIBUTES}
 names truncated at 128 B   : ${truncated}
+optimizer runs clamped     : ${clampedRuns}
 payload bytes  p50 ${pct(0.5).toLocaleString()}  p95 ${pct(0.95).toLocaleString()}  max ${(sizes.at(-1)??0).toLocaleString()}  (limit ${MAX_PAYLOAD_BYTES.toLocaleString()})
 OVER THE LIMIT             : ${oversize.length}${oversize.length ? " -> " + oversize.slice(0,5).map(o=>`${o.name} ${o.bytes.toLocaleString()}B`).join(", ") : ""}
 total on-chain bytes       : ${(sizes.reduce((a,b)=>a+b,0)/1e6).toFixed(2)} MB
