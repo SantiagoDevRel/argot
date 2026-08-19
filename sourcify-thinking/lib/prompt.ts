@@ -1,4 +1,5 @@
 import { renderLedger, KB_AS_OF } from "./ground";
+import contextPack from "@/kb/context-pack.json";
 
 /**
  * The policy. Two rules do the real work:
@@ -63,4 +64,6 @@ Arkiv-side facts are marked PROVISIONAL in their scope: our network is still und
 Format: [id] (confidence) | statement | SCOPE | AS OF | SOURCE
 
 ${renderLedger()}
+
+${(contextPack as { text: string }).text}
 `;

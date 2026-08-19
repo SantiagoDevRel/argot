@@ -36,11 +36,28 @@ export function renderLedger(): string {
 
 const TOKEN = /\{\{F:([A-Za-z0-9._-]+)\}\}/g;
 
-/** Digits with optional thousands separators, decimals, percent. */
-const BARE_NUMBER = /(^|[\s(>[])(\d{1,3}(?:,\d{3})+(?:\.\d+)?%?|\d+(?:\.\d+)?%?)(?=$|[\s).,;:\]])/g;
+/**
+ * Any numeral the model typed, wherever it sits.
+ *
+ * The earlier version required the number to be preceded by whitespace or an
+ * opening bracket, which silently missed the most common case of all:
+ * `**949.6 GB**`. Models bold their figures constantly, so bolded numbers were
+ * sailing through unmarked. Also missed `$1,003`, `~44M` and `1.2e9`.
+ *
+ * Now: a digit run not glued to a word character, plus optional magnitude or
+ * percent suffix, so `43.7M` and `88.6%` are captured whole.
+ */
+const BARE_NUMBER =
+  /(?<![\w])(\d[\d,]*(?:\.\d+)?(?:[eE][+-]?\d+)?(?:%|\s?(?:[KMGTPkmgtp]i?[Bb]?|bn|x|×))?)(?![\w])/g;
 
-/** Numerals that are never claims: years, issue refs, version/list numbers. */
-const BENIGN = [/^\d{4}$/, /^v?\d+(\.\d+)*$/];
+/** Numerals that are never quantitative claims: years, versions, list markers. */
+const BENIGN = [/^\d{4}$/, /^v?\d+(\.\d+)+$/, /^\d{1,2}$/];
+
+/** Spans parked verbatim before the number scan: dates and inline code. */
+const PARK_VERBATIM = [
+  /\d{4}-\d{2}-\d{2}/g, // ISO dates -- "2026-08-18" must not read as three numbers
+  /`[^`\n]*`/g, // inline code -- a SQL literal is not a claim
+];
 
 /** Sentinel for parked tokens: private-use chars, so it contains no digits and no HTML. */
 const PARK_OPEN = "";
@@ -59,23 +76,28 @@ export function ground(markdown: string): Grounded {
   const ungrounded: string[] = [];
 
   // 1. Escape the model's text. {{F:id}} survives intact (no HTML characters).
-  let out = escapeHtml(markdown);
+  //    Strip private-use characters first: the parking sentinel lives in that
+  //    range, so model output containing them could corrupt the restore step.
+  let out = escapeHtml(markdown.replace(/[-]/g, ""));
 
   // 2. Park the fact tokens BEFORE scanning for bare numbers. Scanning after
   //    substitution was a real bug: it flagged our own measured values as
   //    "unverified". The sentinel deliberately contains no digits.
   const parked: string[] = [];
-  out = out.replace(TOKEN, (m) => {
+  const park = (m: string) => {
     parked.push(m);
     return PARK_OPEN + String.fromCharCode(PARK_BASE + parked.length - 1);
-  });
+  };
+  out = out.replace(TOKEN, park);
+  for (const re of PARK_VERBATIM) out = out.replace(re, park);
 
   // 3. Anything numeric left is the model's own. Mark it rather than removing
   //    it: in a live meeting a visible chip beats a blocked answer.
-  out = out.replace(BARE_NUMBER, (m, pre: string, n: string) => {
+  out = out.replace(BARE_NUMBER, (m: string) => {
+    const n = m.trim();
     if (BENIGN.some((re) => re.test(n))) return m;
     ungrounded.push(n);
-    return `${pre}<span class="ungrounded" title="Not traced to a fact in the knowledge base — the model's own arithmetic or estimate, not a measurement.">${n}</span>`;
+    return `<span class="ungrounded" title="Not traced to a fact in the knowledge base — the model's own arithmetic or estimate, not a measurement.">${m}</span>`;
   });
 
   // 4. Restore the tokens, then render each one from the ledger.

@@ -39,7 +39,9 @@ export async function POST(request: Request) {
       model: MODEL,
       max_tokens: 8000,
       thinking: { type: "adaptive" },
-      output_config: { effort: "high" },
+      // xhigh measured: 56% more facts grounded (25 vs 16) for ~18% more latency.
+      // For a room with a CTO in it, that trade is worth taking.
+      output_config: { effort: "xhigh" },
       // The ledger is the whole system prompt and it is byte-stable across
       // requests, so it caches; only the question varies.
       system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
