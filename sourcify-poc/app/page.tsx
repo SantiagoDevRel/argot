@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type Tab = "parity" | "query" | "entity";
+type Tab = "parity" | "query" | "fourbyte" | "entity";
 
 const TABS: { id: Tab; label: string; blurb: string }[] = [
   {
@@ -14,6 +14,11 @@ const TABS: { id: Tab; label: string; blurb: string }[] = [
     id: "query",
     label: "2 · What Sourcify cannot answer",
     blurb: "Filters that are one predicate against Arkiv and no URL at all against sourcify.dev.",
+  },
+  {
+    id: "fourbyte",
+    label: "3 · The 4-byte service",
+    blurb: "Selector to signature: the cheapest thing Sourcify runs, and the best fit for this database.",
   },
   {
     id: "entity",
@@ -86,6 +91,7 @@ export default function Page() {
 
       {tab === "parity" && <Parity />}
       {tab === "query" && <Query />}
+      {tab === "fourbyte" && <FourByte />}
       {tab === "entity" && <EntityView />}
     </div>
   );
@@ -422,21 +428,21 @@ function Query() {
                       address?: string;
                       name?: string;
                       match?: string;
-                      compilerVersion?: string;
-                      fnCount?: number;
-                      isProxy?: boolean;
-                      verifiedAt?: string;
+                      compilerversion?: string;
+                      fncount?: number;
+                      isproxy?: boolean;
+                      verifiedat?: string;
                     }) => (
                       <tr key={r.entityKey}>
                         <td>{r.address}</td>
                         <td>{r.name || "—"}</td>
                         <td>{r.match}</td>
-                        <td>{r.compilerVersion}</td>
-                        <td>{r.fnCount}</td>
-                        <td>{String(r.isProxy)}</td>
+                        <td>{r.compilerversion}</td>
+                        <td>{r.fncount}</td>
+                        <td>{String(r.isproxy)}</td>
                         <td>
-                          {r.verifiedAt
-                            ? new Date(Number(r.verifiedAt) * 1000).toISOString().slice(0, 10)
+                          {r.verifiedat
+                            ? new Date(Number(r.verifiedat) * 1000).toISOString().slice(0, 10)
                             : "—"}
                         </td>
                       </tr>
@@ -445,6 +451,79 @@ function Query() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/* ---------------------------------------------------------------- 4 bytes */
+
+const SAMPLE_SELECTORS = ["0xa9059cbb", "0x095ea7b3", "0x23b872dd", "0x70a08231"];
+
+function FourByte() {
+  const [sel, setSel] = useState("0xa9059cbb");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [res, setRes] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = useCallback(async (s: string) => {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/signature?selector=${s}`);
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error ?? r.statusText);
+      setRes(b);
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); }
+  }, []);
+
+  useEffect(() => { run(sel); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  return (
+    <>
+      <div className="panel">
+        <h2>Selector &rarr; signature</h2>
+        <p className="sub">
+          What a wallet does before it shows you what you are about to sign. Sourcify runs this as a
+          separate service at roughly 7 million requests a day; here it is one equality on an indexed
+          attribute.
+        </p>
+        <div className="row">
+          <div>
+            <label htmlFor="sel">4-byte selector</label>
+            <input id="sel" value={sel} onChange={(e) => setSel(e.target.value.trim())} style={{ width: 190 }} />
+          </div>
+          <button onClick={() => run(sel)} disabled={busy}>{busy ? "looking up…" : "Resolve"}</button>
+          {SAMPLE_SELECTORS.map((s) => (
+            <button key={s} className="ghost" onClick={() => { setSel(s); run(s); }}>{s}</button>
+          ))}
+        </div>
+        {err && <p className="err">{err}</p>}
+      </div>
+
+      {res && (
+        <>
+          <div className="panel">
+            <h2>The query that went to the network</h2>
+            <pre className="wire">{res.arkivQuery}</pre>
+            <div className="kpis" style={{ marginTop: 12 }}>
+              <Kpi k="Matches" v={String(res.count ?? 0)} />
+              <Kpi k="Round trip" v={`${res.ms} ms`} />
+              <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
+              <Kpi k="Payload size" v="86 B median" />
+            </div>
+          </div>
+          <div className="panel">
+            <h2>Result</h2>
+            <pre>{j(res.results)}</pre>
+            <p className="note">
+              A selector is four bytes, so collisions are real: several different function texts can hash
+              to the same value. The entity holds the whole candidate set rather than picking one — in our
+              slice, 2 of 12,674 selectors have more than one.
+            </p>
           </div>
         </>
       )}

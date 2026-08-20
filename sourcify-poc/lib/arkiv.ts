@@ -37,19 +37,19 @@ export type Filters = {
 /** Translate the UI's filter bag into an Arkiv predicate. Unset fields are simply absent. */
 export function buildPredicate(f: Filters, kind = "verified_contract") {
   const p: Expression[] = [eq("ds", DATASET), eq("kind", kind)];
-  if (f.chainId) p.push(eq("chainId", BigInt(f.chainId)));
+  if (f.chainId) p.push(eq("chainid", BigInt(f.chainId)));
   if (f.address) p.push(eq("address", f.address.toLowerCase()));
   if (f.match) p.push(eq("match", f.match));
   if (f.compiler) p.push(eq("compiler", f.compiler));
-  if (f.compilerVersion) p.push(startsWith("compilerVersion", f.compilerVersion));
+  if (f.compilerVersion) p.push(startsWith("compilerversion", f.compilerVersion));
   if (f.language) p.push(eq("language", f.language));
-  if (f.isProxy) p.push(eq("isProxy", f.isProxy === "true"));
+  if (f.isProxy) p.push(eq("isproxy", f.isProxy === "true"));
   if (f.optimizer) p.push(eq("optimizer", f.optimizer === "true"));
   if (f.namePrefix) p.push(startsWith("name", f.namePrefix));
   if (f.deployer) p.push(eq("deployer", f.deployer.toLowerCase()));
-  if (f.minFns) p.push(gte("fnCount", Number(f.minFns)));
-  if (f.maxFns) p.push(lte("fnCount", Number(f.maxFns)));
-  if (f.verifiedAfter) p.push(gte("verifiedAt", BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000))));
+  if (f.minFns) p.push(gte("fncount", Number(f.minFns)));
+  if (f.maxFns) p.push(lte("fncount", Number(f.maxFns)));
+  if (f.verifiedAfter) p.push(gte("verifiedat", BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000))));
   // `where()` is variadic, so a flat list of predicates is the whole conjunction.
   return p;
 }
@@ -85,7 +85,7 @@ export async function query(f: Filters, limit = 50, kind = "verified_contract") 
   const res = await q.fetch();
   const rows = res.entities.map(toRow);
   // Sorted here, not by the network — see the note at the top of this file.
-  rows.sort((a, b) => Number(b.attributes.verifiedAt ?? 0) - Number(a.attributes.verifiedAt ?? 0));
+  rows.sort((a, b) => Number(b.attributes.verifiedat ?? 0) - Number(a.attributes.verifiedat ?? 0));
   return { rows, wire, ms: Date.now() - t0, blockNumber: res.blockNumber?.toString() ?? null, truncated: rows.length >= limit };
 }
 

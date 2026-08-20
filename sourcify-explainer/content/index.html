@@ -98,7 +98,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <li><a href="#wall">5 · The size wall</a></li>
   <li><a href="#scope">6 · POC scope</a></li>
   <li><a href="#ask">7 · Ask to engineering</a></li>
-  <li><a href="#open">8 · What this does not answer</a></li>
+  <li><a href="#services">8 · Service by service</a></li>
+  <li><a href="#open">9 · What this does not answer</a></li>
 </ul></nav>
 
 <div class="wrap">
@@ -289,6 +290,26 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <div class="kpi"><div class="k">MAX_ATTRIBUTES</div><div class="v">32</div><div class="f">searchable labels</div></div>
     <div class="kpi"><div class="k">MAX_STRING_BYTES</div><div class="v">128</div><div class="f">per string value</div></div>
     <div class="kpi"><div class="k">MAX_LIMIT</div><div class="v">200</div><div class="f">results per page</div></div>
+  </div>
+
+  <div class="card accent">
+    <h3 style="margin-top:0">What an entity costs to write, measured</h3>
+    <p style="margin:0 0 10px">Encoding real batches locally gives the cost model exactly. It is not
+    proportional to the data &mdash; there is a floor, and <strong>attributes are the expensive part</strong>:</p>
+    <pre style="margin:0 0 10px">calldata bytes  &asymp;  996  +  192 &times; (attributes &minus; 1)  +  payload</pre>
+    <div class="scroll">
+    <table style="margin:0">
+      <thead><tr><th>shape</th><th class="num">overhead</th><th class="num">payload</th><th>reading</th></tr></thead>
+      <tbody>
+        <tr><td>our verified_contract, 25 attributes</td><td class="num">5,604 B</td><td class="num">~1,738 B</td><td>the index costs 3&times; what the data does</td></tr>
+        <tr><td>a 4-byte signature, 5 attributes</td><td class="num">1,764 B</td><td class="num">86 B</td><td><strong>95% overhead</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin:12px 0 0">At Sourcify&rsquo;s full scale the attribute overhead alone is about
+    <strong>249 GB of the 484 GB</strong> in &sect;5 &mdash; more than half the backfill is the index, not the
+    records. Every attribute is a filter you can offer and 192 bytes &times; 44 M you pay for it, so the
+    attribute list is a budget, not a wish list. Trimming ours from 25 to 12 would save roughly 111 GB.</p>
   </div>
 
   <div class="two">
@@ -527,6 +548,9 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
           <code>fields</code> / <code>omit</code> projection Sourcify offers.</li>
         <li><strong>A live parity diff</strong> against sourcify.dev, field by field, that is allowed to fail.</li>
         <li><strong>Queries Sourcify cannot answer</strong> &mdash; the actual argument for the move.</li>
+        <li><strong>The 4-byte signature service</strong>, on its own toggle. It turned out to be the
+          <em>easiest</em> thing here to move, not the hardest &mdash; see below.</li>
+        <li><strong>A two-month lifetime</strong> on every entity, chosen rather than defaulted.</li>
       </ul>
     </div>
     <div class="card">
@@ -535,13 +559,40 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
         <li><strong>Compiling and matching bytecode.</strong> That is Sourcify&rsquo;s verifier and it is not
           the thing under question. The question is whether Arkiv can be the database behind it.</li>
         <li><strong>Sources and stdJsonOutput on-chain.</strong> They do not fit. §5.</li>
-        <li><strong>The 4-byte signature service.</strong> Separate service, separate traffic.</li>
+
         <li><strong>Write path <code>POST /v2/verify</code>.</strong> The migration plan is dual-write behind
           the existing verifier, not a replacement of it.</li>
-        <li><strong>Permanence.</strong> Entities expire. The POC writes a 30-day lifetime and that is a
-          product question, not something a demo can settle.</li>
+
       </ul>
     </div>
+  </div>
+  <div class="card good">
+    <h3 style="margin-top:0">The 4-byte service was mis-scoped, and it is the best fit on this page</h3>
+    <p style="margin:0 0 10px">It was called &ldquo;a separate service&rdquo; and set aside. That was wrong.
+    Selector resolution is a pure key-value lookup with a tiny value, which is exactly the shape this
+    database is good at &mdash; one equality on an indexed attribute, one round trip, no join, no ordering,
+    no aggregation. Derived locally from the ABIs already fetched, so these are measured and not estimated:</p>
+    <div class="scroll">
+    <table style="margin:0">
+      <tbody>
+        <tr><td>distinct selectors across our 2,801 contracts</td><td class="num">12,674</td></tr>
+        <tr><td>payload per selector</td><td class="num">p50 86 B &middot; max 255 B</td></tr>
+        <tr><td>real 4-byte collisions (one selector, several texts)</td><td class="num">2 (0.02%)</td></tr>
+        <tr><td>Sourcify&rsquo;s whole 9,920,797-row dictionary, grouped by selector</td><td class="num">~1.0 GB of payload</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin:12px 0 0">One gigabyte against the 484 GB the contract index needs. If the goal is
+    &ldquo;offer Sourcify everything Sourcify offers&rdquo;, this is the cheapest yard on the field and it
+    serves roughly 7 M requests a day.</p>
+  </div>
+
+  <div class="card accent">
+    <h3 style="margin-top:0">Permanence is in scope now, with a number attached</h3>
+    <p style="margin:0">Entities are written with a <strong>two-month</strong> lifetime. That does not make
+    them permanent &mdash; it makes the renewal a scheduled, funded operation instead of an unanswered
+    question. What still has no answer is <em>who holds the key that does the extending</em>, which is
+    &sect;8, not a demo setting.</p>
   </div>
 </section>
 
@@ -589,7 +640,17 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
         team does not spend effort on the wrong lever.</td>
       </tr>
       <tr>
-        <td>6</td><td class="mono">read metering</td>
+        <td>6</td><td class="mono">attribute-name grammar</td>
+        <td class="no">SDK and node disagree</td><td>agree, and fail locally</td>
+        <td><strong>A live bug, found by a reverted transaction.</strong> The node rejects any attribute
+        name containing an uppercase letter &mdash; <code>useCount</code> reverts, <code>usecount</code> is
+        accepted &mdash; while the SDK&rsquo;s own <code>isValidAttributeName</code> returns true for both and
+        <code>buildMutation</code> encodes it happily. The revert carries no reason, so the failure surfaces
+        as an opaque reverted transaction after the gas is spent. Reproduced through <code>eth_call</code>
+        across both spellings, repeatedly.</td>
+      </tr>
+      <tr>
+        <td>7</td><td class="mono">read metering</td>
         <td class="no">50 req/hour anonymous</td><td>a key with headroom</td>
         <td>One page-load of the POC exhausts the anonymous budget. Fine with an API key, but it means the
         public-good read pattern &mdash; anyone querying the verification registry without an account &mdash;
@@ -616,8 +677,79 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 </section>
 
 <!-- ============================================================ 8 -->
+<section id="services">
+  <h2><span class="n">8</span>Service by service &mdash; what survives the move</h2>
+  <p class="sub">Sourcify is not one program. Its repository ships exactly four services, and they do not
+  face the same way: two of them barely read the database at all. Sorting the question by service rather
+  than by feature is what makes the answer honest.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>service</th><th>what it does</th><th>on Arkiv</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">server</td><td>the v2 API &mdash; lookups, listings, the verify ticket</td><td class="partial">split; see below</td></tr>
+      <tr><td class="mono">monitor</td><td>watches EVM chains for new deployments and submits them to the verify API when the metadata hash is on IPFS</td><td class="yes">runs unchanged</td></tr>
+      <tr><td class="mono">4byte</td><td>selector &rarr; text signature resolution, ~7 M requests/day</td><td class="yes">best fit on this page</td></tr>
+      <tr><td class="mono">database</td><td>schema, migrations, the Parquet export</td><td class="partial">replaced by the entity model + a re-export</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="card good">
+    <p style="margin:0"><strong>The monitor keeps running, untouched.</strong> It is a producer: it reads
+    chains, not the verification database, and it submits through the verify API. Whatever sits behind that
+    API is invisible to it. The same is true of anything that only writes.</p>
+  </div>
+
+  <h3>Endpoint by endpoint</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>endpoint</th><th>who calls it</th><th>status</th><th>why</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">GET /v2/contract/{chain}/{addr}</td><td>explorers, wallets, tooling &mdash; ~70% of traffic</td><td class="yes">works</td><td>one equality on indexed attributes; this is the POC</td></tr>
+      <tr><td class="mono">GET /v2/contract/all-chains/{addr}</td><td>explorers mirroring every chain</td><td class="yes">works</td><td>the same query with the chain predicate dropped &mdash; free</td></tr>
+      <tr><td class="mono">GET /v2/contract/…?fields=abi,…</td><td>wallets needing the ABI</td><td class="yes">works</td><td>projection done by the adapter, since Arkiv returns whole payloads</td></tr>
+      <tr><td class="mono">4byte selector lookup</td><td>wallets and debuggers decoding calldata</td><td class="yes">works, and cheaply</td><td>12,674 selectors measured at p50 86 B; the whole dictionary is ~1 GB</td></tr>
+      <tr><td class="mono">GET /chains, /health, /version</td><td>everyone, at bootstrap</td><td class="yes">works</td><td>static</td></tr>
+      <tr><td class="mono">POST /v2/verify/… + poll</td><td>Foundry, Hardhat, Remix, the monitor</td><td class="partial">unchanged, dual-write</td><td>the verifier compiles and matches bytecode; Arkiv is the store behind it, not a replacement for it</td></tr>
+      <tr><td class="mono">GET /v2/contracts/{chain}?sort=desc</td><td>explorers syncing their mirror</td><td class="no">blocked</td><td><strong>no server-side ordering.</strong> Serving one page means pulling every page and sorting locally</td></tr>
+      <tr><td class="mono">stats.sourcify.dev</td><td>the public counts page</td><td class="no">blocked</td><td><strong>no COUNT.</strong> Counting 44 M records means walking 220,000 pages</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Read it as a consumer instead</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>who</th><th>what they are doing</th><th>do they notice the swap?</th></tr></thead>
+    <tbody>
+      <tr><td>a person on an explorer</td><td>clicking a contract, seeing &ldquo;verified&rdquo; and the source tab</td><td class="yes">no &mdash; identical</td></tr>
+      <tr><td>a wallet</td><td>decoding a transaction it is about to sign</td><td class="yes">no &mdash; and the 4-byte path gets cheaper</td></tr>
+      <tr><td>a developer</td><td><code>forge verify-contract</code>, then checking it landed</td><td class="yes">no &mdash; the verifier is untouched</td></tr>
+      <tr><td>a researcher</td><td>&ldquo;every proxy on this chain built with 0.8.x&rdquo;</td><td class="yes">yes &mdash; this is newly possible</td></tr>
+      <tr><td>an explorer&rsquo;s sync job</td><td>&ldquo;give me everything since matchId N, newest first&rdquo;</td><td class="no">yes &mdash; and it breaks</td></tr>
+      <tr><td>anyone reading the stats page</td><td>&ldquo;how many contracts were verified today?&rdquo;</td><td class="no">yes &mdash; and it breaks</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="card accent">
+    <p style="margin:0 0 8px"><strong>On aggregation, since it is the second thing that breaks.</strong></p>
+    <p style="margin:0 0 10px">What it is actually for here is narrow and concrete: the counts on
+    stats.sourcify.dev, per chain and per day. Not analytics for their own sake &mdash; the public number
+    that says how big the registry is.</p>
+    <p style="margin:0">The interesting part is that <strong>Postgres does not compute this live either.</strong>
+    Sourcify already maintains a materialised view for its signature stats, because counting tens of millions
+    of rows on every page-load is a bad idea in any database. So the ask is not &ldquo;put GROUP BY in the
+    chain&rdquo;. It is: <em>a COUNT over a predicate</em> in the query path for the cheap cases, and for
+    everything else the aggregate belongs in the indexer that already runs beside the network &mdash; the
+    same shape Sourcify already chose. Asking a chain to do OLAP is asking for the wrong thing.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 9 -->
 <section id="open">
-  <h2><span class="n">8</span>What this does not answer</h2>
+  <h2><span class="n">9</span>What this does not answer</h2>
   <p class="sub">Written after handing the document to a reviewer briefed to argue against it as
   Sourcify&rsquo;s own engineer. These are the questions that came back, unresolved. They belong on the page
   rather than in a follow-up, because they are what a real operator asks first.</p>
