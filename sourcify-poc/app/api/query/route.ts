@@ -27,6 +27,9 @@ export async function GET(req: Request) {
   }
   const limit = Math.min(Number(sp.get("limit") ?? 50) || 50, 200);
   const kind = sp.get("kind") ?? "verified_contract";
+  // The Explorer tab needs the stored payload, not just the searchable attributes.
+  // Everything else does not, and payloads are the expensive half of the response.
+  const withPayload = sp.get("withPayload") === "1";
 
   try {
     const { rows, wire, ms, blockNumber, truncated } = await query(f, limit, kind);
@@ -37,7 +40,14 @@ export async function GET(req: Request) {
       blockNumber,
       arkivQuery: wire,
       filters: f,
-      results: rows.map((r) => ({ entityKey: r.key, owner: r.owner, ...r.attributes })),
+      results: rows.map((r) => ({
+        entityKey: r.key,
+        owner: r.owner,
+        attributes: r.attributes,
+        ...(withPayload ? { payload: r.payload } : {}),
+        // Kept flat as well so existing callers and the results table keep working.
+        ...r.attributes,
+      })),
     });
   } catch (e) {
     return NextResponse.json(

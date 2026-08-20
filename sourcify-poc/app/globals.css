@@ -68,3 +68,86 @@ td.ok { color: var(--ok); } td.bad { color: var(--bad); }
 .err { color: var(--bad); font-family: var(--mono); font-size: 13px; }
 .pill { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
 .wire { color: var(--orange); }
+
+/* ---- comparison grid: field | sourcify | arkiv | verdict -------------------
+   Replaces the old table. A table forced horizontal scrolling as soon as one
+   value was a hash; this collapses to stacked rows on a narrow screen instead. */
+.cmplegend, .cmprow {
+  display: grid;
+  /* 210px, not 150: `compilation.fullyQualifiedName` and `deployment.transactionIndex`
+     are longer than that and were spilling over the value column. */
+  grid-template-columns: 210px minmax(0, 1fr) minmax(0, 1fr) 26px;
+  gap: 12px;
+  align-items: start;
+}
+.cmplegend {
+  font-family: var(--mono); font-size: 10px; text-transform: uppercase;
+  letter-spacing: .08em; color: var(--muted); padding: 0 11px 6px; margin-top: 16px;
+}
+.cmp { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.cmprow { padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.cmprow:last-child { border-bottom: 0; }
+.cmprow.isbad { background: rgba(255, 95, 109, .07); }
+.cmpk { font-family: var(--mono); color: var(--muted); font-size: 11.5px; overflow-wrap: anywhere; line-height: 1.4; }
+.cmpv { min-width: 0; }
+.cmpe { font-family: var(--mono); font-weight: 700; text-align: center; }
+@media (max-width: 780px) {
+  .cmplegend { display: none; }
+  .cmprow { grid-template-columns: 1fr 26px; grid-template-areas: "k e" "s s" "a a"; gap: 4px 10px; }
+  .cmpk { grid-area: k; } .cmpe { grid-area: e; }
+  .cmpv:nth-of-type(2) { grid-area: s; }
+  .cmpv:nth-of-type(3) { grid-area: a; }
+  .cmpv:nth-of-type(2)::before { content: "sourcify "; color: var(--muted); font-family: var(--mono); font-size: 10px; }
+  .cmpv:nth-of-type(3)::before { content: "arkiv "; color: var(--muted); font-family: var(--mono); font-size: 10px; }
+}
+
+/* ---- long hashes wrap instead of forcing a scrollbar */
+.mono { font-family: var(--mono); font-size: 12px; }
+.wrapall { overflow-wrap: anywhere; word-break: break-word; }
+
+/* ---- provenance: a definition list, not a preformatted block */
+.prov { display: grid; grid-template-columns: 120px 1fr; gap: 7px 14px; margin: 0; font-size: 12.5px; }
+.prov dt { font-family: var(--mono); font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.prov dd { margin: 0; min-width: 0; }
+@media (max-width: 620px) { .prov { grid-template-columns: 1fr; gap: 2px 0; } .prov dd { margin-bottom: 8px; } }
+
+.grouphead {
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .09em;
+  color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 8px;
+}
+.rowhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+
+/* ---- the two-sided contrast on the query tab */
+.versus { display: grid; grid-template-columns: 1fr; gap: 10px; }
+@media (min-width: 760px) { .versus { grid-template-columns: 1fr 1fr; } }
+.vs { border: 1px solid var(--line); border-radius: 9px; padding: 13px 15px; background: var(--panel-2); }
+.vs-no { border-left: 3px solid var(--bad); }
+.vs-yes { border-left: 3px solid var(--ok); }
+.vshead { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); margin-bottom: 7px; }
+.vsbody { font-size: 13.5px; overflow-wrap: anywhere; }
+
+/* ---- entity explorer */
+.elist { display: flex; flex-direction: column; gap: 9px; }
+.ecard { background: var(--panel); border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.ecard.open { border-color: var(--blue); }
+.ehead {
+  width: 100%; display: grid; grid-template-columns: 20px minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  gap: 10px; align-items: center; text-align: left;
+  background: transparent; border: 0; border-radius: 0; padding: 11px 14px; cursor: pointer; font-weight: 400;
+}
+.ehead:hover { background: var(--panel-2); }
+.echev { font-family: var(--mono); color: var(--orange); }
+.etitle { font-family: var(--mono); font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.esub { font-family: var(--mono); font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ebadge { font-family: var(--mono); font-size: 10px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
+.ebody { padding: 0 14px 15px; border-top: 1px solid var(--line); padding-top: 13px; }
+@media (max-width: 700px) {
+  .ehead { grid-template-columns: 20px 1fr; grid-template-areas: "c t" ". s" ". b"; gap: 3px 10px; }
+  .echev { grid-area: c; align-self: start; padding-top: 2px; }
+  .etitle { grid-area: t; } .esub { grid-area: s; } .ebadge { grid-area: b; justify-self: start; margin-top: 4px; }
+}
+.attrs { display: grid; grid-template-columns: 1fr; gap: 5px; }
+@media (min-width: 720px) { .attrs { grid-template-columns: 1fr 1fr; gap: 5px 16px; } }
+.attr { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.ak { font-family: var(--mono); color: var(--orange); font-size: 11.5px; }
+.av { min-width: 0; }

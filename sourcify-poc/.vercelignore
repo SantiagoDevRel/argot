@@ -15,3 +15,5 @@
 # The gate itself. Leaving it out of the allowlist silently ships an UNGATED site:
 # the deploy succeeds, the build succeeds, and every page is public. Verified the hard way.
 !/proxy.ts
+# Counts written by the ETL. Left out, the build fails to resolve @/kb/counts.json.
+!/kb
