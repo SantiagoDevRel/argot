@@ -16,9 +16,9 @@ limits and the scope. This folder is the thing that runs.
 | Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **2,801** verified contracts |
 | Target | **Arkiv Cheesecake devnet**, chain `7733102`, `https://rpc.cheesecake.db-chain.devnet.gobas.me` |
 | SDK | `@arkiv-network/sdk@0.8.0-advanced.2` — the version carrying the new frozen contract (typed attributes). `0.7.0` is the old string/numeric shape and will not do. |
-| Entity types | `verified_contract` (25 typed attributes), `compilation` (deduplicated, referenced by a `key` attribute), and `signature` (one per 4-byte selector) |
-| Written | 2,801 contracts + 1,127 compilations + 12,674 selectors in **568 transactions**, two-month lifetime |
-| Not stored on-chain | sources, bytecode, stdJsonOutput — see *The size wall* below |
+| Entity types | `verified_contract` (25 typed attributes), `compilation` (deduplicated, referenced by a `key` attribute), `signature` (one per 4-byte selector), and `sourcefile` (one per unique source file, deduplicated by sha256) |
+| Written | 2,801 contracts + 1,127 compilations + 12,674 selectors in **568 transactions**, two-month lifetime — measured before `sourcefile` existed, so that count does not include it yet |
+| Not stored on-chain | bytecode, stdJsonOutput, full metadata — see *The size wall* below. Source FILES are, one small entity per unique hash; a full sources BUNDLE embedded in one payload still is not (over the limit by ~2.3×) |
 
 ## Also in scope, after a rethink
 
@@ -55,6 +55,15 @@ preference — the protocol enforces it. And the limit is on the **whole transac
 the payload: the node rejects anything over 131,072 bytes with `oversized data: transaction
 size N, limit 131072`, so payload, attribute encoding and envelope share one budget.
 
+**One consequence worth spelling out: a whole sources BUNDLE does not fit, but individual
+source FILES do.** `2-transform.mjs` hashes every file in `sources` with sha256 and writes
+one small `sourcefile` entity per unique hash — deduplicated across the whole run, so a file
+like OpenZeppelin's `ERC20.sol`, which shows up in a large fraction of all verified contracts,
+exists on-chain exactly once. The `compilation` entity carries a `path -> hash` map in its
+payload (small — a few hundred bytes even for a multi-file contract) instead of embedding
+any file body, the same way Sourcify's own `compiled_contracts.sources` references into its
+deduplicated `sources` table.
+
 Real gas is roughly **80 per calldata byte**, not the 16 the EVM charges for calldata alone —
 Arkiv prices entity storage on top. Sizing batches on 16 builds transactions that exceed the
 block limit and revert.
@@ -73,6 +82,8 @@ CHAIN=130 DELAY_MS=100 node 1-fetch.mjs
 
 Two passes: the cursor-paginated list, then one field-scoped detail call per contract.
 Both append and skip what is already on disk, so a killed run costs one request.
+`sources` is one of the requested fields — see *The size wall* above for why that is safe
+even though a whole sources bundle does not fit on-chain.
 
 ### 2. Transform
 
@@ -81,7 +92,13 @@ node 2-transform.mjs
 ```
 
 Prints the attribute budget, the payload size distribution and how many records would exceed
-`MAX_PAYLOAD_BYTES`. Fails loudly rather than truncating silently.
+`MAX_PAYLOAD_BYTES`. Fails loudly rather than truncating silently. The mapping logic itself
+(`transformRows`) is a pure function importable without touching the filesystem — see
+`2-transform.test.mjs`, exercised against 3 real fixtures in `etl/fixtures/`:
+
+```bash
+npm test        # from etl/, runs `node --test`
+```
 
 ### 3. Write — dry run first
 
@@ -138,7 +155,7 @@ GATE_PASSWORD=123
 
 | route | what it is |
 |---|---|
-| `GET /api/v2/contract/{chainId}/{address}` | Sourcify v2's most-used endpoint, answered from Arkiv. Supports `fields` and `omit`. Response headers carry the entity key, owner, read block and the literal query. |
+| `GET /api/v2/contract/{chainId}/{address}` | Sourcify v2's most-used endpoint, answered from Arkiv. Supports `fields` and `omit`. `fields=compilationEntity` is the one addition beyond Sourcify's own shape: it follows the entity's `compilationref` (a typed `key` attribute — the join `3-write.mjs` builds) to the linked `compilation` entity and returns a summary (compiler, version, optimizer settings, source file count) — opt-in, a second Arkiv read, not included by `fields=all`. Response headers carry the entity key, owner, read block and the literal query (plus a second timing header when `compilationEntity` was requested). |
 | `GET /api/parity?chainId=&address=&depth=` | Asks both databases and diffs them field by field, at the same projection on both sides. `depth=identity` compares the 7 fields of Sourcify's default response; `depth=full` adds the ABI (as a canonical digest), the compilation and the deployment — 18 fields. Verdict is `identical` / `mismatch` / `inconclusive` / `not_in_arkiv` / `not_in_sourcify`. |
 | `GET /api/query?...` | The filters Sourcify's public API does not expose: proxy status, compiler version prefix, function-count ranges, optimizer settings. Returns the literal Arkiv query it ran. |
 | `GET /api/signature?selector=0x…` | The 4-byte service, answered from Arkiv. One equality on an indexed attribute; returns the whole candidate set, because selectors collide. |
@@ -168,3 +185,7 @@ GATE_PASSWORD=123
   just an empty result.
 - **Renewal is not free.** Extending an entity measured at 10,000 gas. At the two-month lifetime
   that is ~47 hours a year of full block utilisation for a Sourcify-sized corpus, forever.
+- **`getEntity(key)` has no owner filter.** `.ownedBy()` only exists on `select().where()`
+  queries. Dereferencing a `key` attribute (`lib/arkiv.ts`'s `dereferenceCompilation`) has to
+  check `entity.owner === ARKIV_PUBLISHER` itself, after the fetch, or it would trust whatever
+  entity currently sits at that key even if it was never written by us.

@@ -14,9 +14,14 @@ import path from "node:path";
 
 const CHAIN = process.env.CHAIN ?? "130";
 const BASE = "https://sourcify.dev/server/v2";
-// The lookup a wallet or explorer actually needs. NOT `all`: sources are ~300 KB
-// and belong in the content-addressed tier, not in a queryable index.
-const FIELDS = "abi,compilation,deployment,proxyResolution,runtimeMatch,creationMatch,verifiedAt,matchId";
+// The lookup a wallet or explorer actually needs. NOT `all`: `stdJsonInput`,
+// `stdJsonOutput`, metadata, storageLayout etc. are not used by anything downstream
+// and stay off this list. `sources` IS requested despite being the single biggest
+// field (median ~307 KB per contract, see README "the size wall") -- 2-transform.mjs
+// never puts a whole sources bundle on-chain, it hashes each file and writes ONE
+// small entity per unique hash, deduplicated across the run. This field is the input
+// to that dedup, not something that lands in a payload as-is.
+const FIELDS = "abi,compilation,deployment,proxyResolution,runtimeMatch,creationMatch,verifiedAt,matchId,sources";
 const DELAY_MS = Number(process.env.DELAY_MS ?? 120);
 
 const DIR = path.join(import.meta.dirname, "data");
