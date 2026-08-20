@@ -101,7 +101,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <li><a href="#scope"><span class="i">6</span>Scope</a></li>
   <li><a href="#ask"><span class="i">7</span>The asks</a></li>
   <li><a href="#services"><span class="i">8</span>Service by service</a></li>
-  <li><a href="#open"><span class="i">9</span>Open questions</a></li>
+  <li><a href="#bigquery"><span class="i">9</span>vs BigQuery</a></li>
+  <li><a href="#open"><span class="i">10</span>Open questions</a></li>
 </ul></nav>
 
 <div class="wrap">
@@ -750,8 +751,92 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 </section>
 
 <!-- ============================================================ 9 -->
+<section id="bigquery">
+  <h2><span class="n">9</span>Against BigQuery, specifically</h2>
+  <p class="sub">This is the comparison that decides whether any of this is worth doing, because Sourcify
+  already solved &ldquo;make the database publicly queryable&rdquo; &mdash; and Postgres was never the thing
+  they solved it with.</p>
+
+  <div class="card accent">
+    <p style="margin:0 0 10px">From Argot&rsquo;s own roadmap, filed under milestones <em>completed</em>:</p>
+    <p style="margin:0 0 10px;padding-left:14px;border-left:2px solid var(--line);font-style:italic">
+      &ldquo;<strong>Public Queriable DB Instance</strong>: Now mirroring the Sourcify database in BigQuery
+      (listed in Google web3 datasets). Can be plugged into Colab Python notebooks, or queried through GCP
+      services. Also shipped an AI Playground to ask LLMs questions about the dataset.&rdquo;
+    </p>
+    <p style="margin:0">So the target is not their Postgres. It is <strong>the mirror</strong> &mdash; the
+    copy that exists so outsiders can ask questions. They wanted a public queryable instance for an open
+    public good and answered it with the most centralised option available. That is the conversation worth
+    having, and it is a different one from &ldquo;replace your database&rdquo;.</p>
+  </div>
+
+  <h3>Same question, different shape of answer</h3>
+  <p>A query against BigQuery returns <strong>rows you designed</strong> &mdash; the columns you selected,
+  ordered how you asked, aggregated if you wanted. A query against Arkiv returns <strong>whole records you
+  filtered</strong>: every attribute and the payload, up to 200 at a time, in no particular order. Neither
+  is a subset of the other.</p>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>the question a consumer actually asks</th><th>BigQuery</th><th>Arkiv</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">on chain 130, deployed by 0x61e8…</td><td class="yes">yes</td><td class="yes">yes &mdash; 63 hits in 365 ms, measured</td></tr>
+      <tr><td class="mono">…and only exact matches, optimizer on</td><td class="yes">yes</td><td class="yes">yes &mdash; 125 ms, one predicate</td></tr>
+      <tr><td class="mono">every contract compiled with 0.8.x</td><td class="yes">yes</td><td class="yes">yes &mdash; <code>startsWith</code></td></tr>
+      <tr><td class="mono">is this address verified? give me the record</td><td class="partial">yes, but seconds and a GCP bill</td><td class="yes">yes &mdash; this is its best case</td></tr>
+      <tr><td class="mono">how many per chain, per month</td><td class="yes">COUNT + GROUP BY</td><td class="no">no aggregation at all</td></tr>
+      <tr><td class="mono">the 50 most recently verified</td><td class="yes">ORDER BY</td><td class="no">no server-side ordering</td></tr>
+      <tr><td class="mono">names containing &ldquo;Vault&rdquo;</td><td class="yes">LIKE, regex</td><td class="no"><code>startsWith</code> only &mdash; prefix, not substring</td></tr>
+      <tr><td class="mono">join against transfers or traces</td><td class="yes">it is a warehouse</td><td class="no">no joins</td></tr>
+      <tr><td class="mono">just the addresses, nothing else</td><td class="yes">SELECT one column</td><td class="no">the whole entity comes back</td></tr>
+      <tr><td class="mono">more than 200 results in one response</td><td class="yes">yes</td><td class="no">cursor pages of 200</td></tr>
+      <tr><td class="mono">is this record genuinely Sourcify&rsquo;s?</td><td class="no">trust Google, and trust the mirror is current</td><td class="yes">check the owner address &mdash; it is signed</td></tr>
+      <tr><td class="mono">ask it without an account</td><td class="no">needs a GCP project and billing</td><td class="yes">an open RPC, though metered today</td></tr>
+      <tr><td class="mono">how fresh is it</td><td class="partial">a periodic mirror</td><td class="yes">written at verification time</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="two">
+    <div class="card good">
+      <h3 style="margin-top:0">What Arkiv actually adds</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li><strong>Verifiability.</strong> Every record carries a signed owner. &ldquo;Is this really from
+        Sourcify?&rdquo; becomes a check instead of an assumption. BigQuery cannot offer this at any price
+        &mdash; it is the one thing a warehouse structurally cannot do.</li>
+        <li><strong>No gatekeeper.</strong> A public good queried through a Google account is a public good
+        with a login. This is the argument that does not depend on any benchmark.</li>
+        <li><strong>Sub-second filtered lookups</strong> at a cost per query that does not scale with corpus
+        size, because it reads an index rather than scanning.</li>
+      </ul>
+    </div>
+    <div class="card" style="border-left:3px solid var(--bad)">
+      <h3 style="margin-top:0">What it would cost them</h3>
+      <ul style="margin:0;padding-left:20px">
+        <li><strong>The notebook and the AI Playground both break.</strong> Those are the two uses Argot
+        names, and both are analytical: counting, grouping, free-text. Arkiv has none of it.</li>
+        <li><strong>No joins</strong> means no combining verification data with anything else, which is
+        most of what makes a public dataset interesting to a researcher.</li>
+        <li>So this is <strong>not a drop-in replacement for the mirror</strong>, and saying otherwise would
+        not survive the first question.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card accent">
+    <p style="margin:0"><strong>The honest shape of the pitch.</strong> Not &ldquo;leave BigQuery&rdquo;.
+    The mirror does two jobs that got bundled together because one product happened to do both:
+    <em>lookup and filter</em>, and <em>analyse</em>. Arkiv is better than BigQuery at the first &mdash;
+    faster, open, verifiable, no account &mdash; and cannot do the second at all. The version of this that
+    a Sourcify engineer would say yes to is the verifiable filtered-lookup tier <em>beside</em> the
+    warehouse, not instead of it. Which is a smaller claim, and the only one the evidence on this page
+    supports.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 10 -->
 <section id="open">
-  <h2><span class="n">9</span>What this does not answer</h2>
+  <h2><span class="n">10</span>What this does not answer</h2>
   <p class="sub">Written after handing the document to a reviewer briefed to argue against it as
   Sourcify&rsquo;s own engineer. These are the questions that came back, unresolved. They belong on the page
   rather than in a follow-up, because they are what a real operator asks first.</p>
