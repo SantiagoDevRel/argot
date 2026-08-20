@@ -98,3 +98,28 @@ export async function lookup(chainId: string, address: string) {
   const { rows, wire, ms, blockNumber } = await query({ chainId, address }, 1);
   return { row: rows[0] ?? null, wire, ms, blockNumber };
 }
+
+/**
+ * Follows a verified_contract's `compilationref` -- a typed `key` attribute written
+ * in 3-write.mjs (phase B) that points straight at its compilation entity -- rather
+ * than re-deriving the join with a second query. `getEntity` is the SDK's direct
+ * by-key read (see lib/arkiv.ts's sibling `query()`, which uses `select().where()`
+ * for everything that is NOT a known key); a `key` attribute's value IS an entity
+ * key, so that is the right tool here, not another predicate query.
+ *
+ * Returns null rather than throwing when the ref is missing, dangling (the linked
+ * entity expired or the key is malformed), or -- the same authenticity check `query()`
+ * applies via `.ownedBy()` -- not owned by the trusted publisher. A raw `key` attribute
+ * has no owner filter built in, so that check has to happen here, after the fetch.
+ */
+export async function dereferenceCompilation(compilationKey: unknown): Promise<Row["payload"] | null> {
+  if (typeof compilationKey !== "string" || !compilationKey) return null;
+  let entity;
+  try {
+    entity = await arkiv.getEntity(compilationKey as `0x${string}`);
+  } catch {
+    return null;
+  }
+  if (PUBLISHER && entity.owner?.toLowerCase() !== PUBLISHER) return null;
+  return toRow(entity).payload;
+}
