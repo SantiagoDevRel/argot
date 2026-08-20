@@ -1,7 +1,7 @@
 # sourcify-poc — Sourcify's read path, served from Arkiv
 
 A working proof of concept: one complete Sourcify chain lives in Arkiv entities on the
-Cheesecake devnet, and Sourcify's hottest endpoint is answered from there instead of from
+Cheesecake devnet, and Sourcify's most-used endpoint is answered from there instead of from
 Postgres — with a live parity diff against the real sourcify.dev that is allowed to fail.
 
 Companion: [`../sourcify-explainer`](../sourcify-explainer) explains the data model, the
@@ -13,19 +13,28 @@ limits and the scope. This folder is the thing that runs.
 
 | | |
 |---|---|
-| Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **2,988** contracts |
+| Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **2,801** verified contracts |
 | Target | **Arkiv Cheesecake devnet**, chain `7733102`, `https://rpc.cheesecake.db-chain.devnet.gobas.me` |
 | SDK | `@arkiv-network/sdk@0.8.0-advanced.2` — the version carrying the new frozen contract (typed attributes). `0.7.0` is the old string/numeric shape and will not do. |
-| Entity types | `verified_contract` (25 typed attributes) and `compilation` (deduplicated, referenced by a `key` attribute) |
+| Entity types | `verified_contract` (25 typed attributes), `compilation` (deduplicated, referenced by a `key` attribute), and `signature` (one per 4-byte selector) |
+| Written | 2,801 contracts + 1,127 compilations + 12,674 selectors in **568 transactions**, two-month lifetime |
 | Not stored on-chain | sources, bytecode, stdJsonOutput — see *The size wall* below |
+
+## Also in scope, after a rethink
+
+- **The 4-byte signature service.** It was set aside as "a separate service" and that was wrong: selector
+  resolution is a pure key-value lookup with an 86-byte median payload, which is the shape this database is
+  best at. Sourcify's whole 9.9M-row dictionary would be about 1.0 GB of payload, against 484 GB for the
+  contract index.
+- **Permanence, as a cost rather than a shrug.** Entities carry a two-month lifetime. Extending one was
+  measured at **10,000 gas**, so keeping 50M entities alive is roughly 47 hours a year of full block
+  utilisation, forever. What is still unanswered is who holds the key that does the extending.
 
 ## What is deliberately NOT here
 
 - **Compilation and bytecode matching.** That is Sourcify's verifier. The question this POC
   answers is whether Arkiv can be the *database* behind it, not whether we can rewrite it.
 - **`POST /v2/verify`.** The migration plan is dual-write behind the existing verifier.
-- **The 4-byte signature service.** Separate service, separate traffic.
-- **Permanence.** Entities are written with a 30-day lifetime. That is a product question.
 
 ---
 
@@ -42,8 +51,13 @@ Measured on 19 Aug 2026 over real Unichain contracts. `MAX_PAYLOAD_BYTES` is **1
 | `fields=all` | 958,252 | **7.3× over** |
 
 So the split between an on-chain index and a content-addressed blob tier is not a design
-preference — the protocol enforces it. And even without the limit, calldata costs 16 gas per
-byte against a 36,000,000 block, so one full record is 42% of a block.
+preference — the protocol enforces it. And the limit is on the **whole transaction**, not just
+the payload: the node rejects anything over 131,072 bytes with `oversized data: transaction
+size N, limit 131072`, so payload, attribute encoding and envelope share one budget.
+
+Real gas is roughly **80 per calldata byte**, not the 16 the EVM charges for calldata alone —
+Arkiv prices entity storage on top. Sizing batches on 16 builds transactions that exceed the
+block limit and revert.
 
 ---
 
@@ -80,8 +94,10 @@ The dry run uses `client.advanced.buildMutation`, which encodes a batch locally.
 the gas figures above were produced without spending anything — and it matters, because the
 anonymous RPC budget on this devnet is **50 requests per hour**.
 
-Batches are packed by encoded bytes rather than by count, capped so no single transaction
-exceeds roughly 18% of a block.
+Batches are packed by encoded bytes using the measured cost model — `996 + 192 × (attributes − 1)
++ payload` — and capped under the 131,072-byte transaction limit. Sends are paced at 2.5s and
+`txpool is full` is treated as backpressure: wait, then re-send the same nonce, so the sequence
+keeps no holes.
 
 ### 4. Serve
 
@@ -122,10 +138,11 @@ GATE_PASSWORD=123
 
 | route | what it is |
 |---|---|
-| `GET /api/v2/contract/{chainId}/{address}` | Sourcify v2's hottest endpoint (~70% of contract traffic), answered from Arkiv. Supports `fields` and `omit`. Response headers carry the entity key, owner, read block and the literal query. |
-| `GET /api/parity?chainId=&address=` | Asks both databases and diffs them field by field. Verdict is one of `identical` / `mismatch` / `not_in_arkiv` / `not_in_sourcify`. |
+| `GET /api/v2/contract/{chainId}/{address}` | Sourcify v2's most-used endpoint, answered from Arkiv. Supports `fields` and `omit`. Response headers carry the entity key, owner, read block and the literal query. |
+| `GET /api/parity?chainId=&address=&depth=` | Asks both databases and diffs them field by field, at the same projection on both sides. `depth=identity` compares the 7 fields of Sourcify's default response; `depth=full` adds the ABI (as a canonical digest), the compilation and the deployment — 18 fields. Verdict is `identical` / `mismatch` / `inconclusive` / `not_in_arkiv` / `not_in_sourcify`. |
 | `GET /api/query?...` | The filters Sourcify's public API does not expose: proxy status, compiler version prefix, function-count ranges, optimizer settings. Returns the literal Arkiv query it ran. |
-| `GET /api/stats` | What is actually in Arkiv now, counted by walking every page. |
+| `GET /api/signature?selector=0x…` | The 4-byte service, answered from Arkiv. One equality on an indexed attribute; returns the whole candidate set, because selectors collide. |
+| `GET /api/stats` | Live head block and total entity count (one request each), plus the per-type counts from the writer — because counting them live costs ~87 round trips and timed out. |
 
 ---
 
@@ -143,3 +160,11 @@ GATE_PASSWORD=123
   `owner == ARKIV_PUBLISHER` plus the `ds=sourcify` marker, checked on read. A consumer that
   skips the owner check is trusting a public write surface.
 - **`buildMutation` is on the wallet client only**, not the public client.
+- **The node rejects uppercase attribute names.** `useCount` reverts; `usecount` is accepted. The
+  SDK's own `isValidAttributeName` returns true for both, so nothing catches it before the gas is
+  spent and the revert carries no reason.
+- **Typed attributes match on TYPE as well as value.** A bare bigint is inferred as `u256`, so
+  `eq("chainid", 130n)` silently returns zero rows against a `chainid` written as `u64`. No error,
+  just an empty result.
+- **Renewal is not free.** Extending an entity measured at 10,000 gas. At the two-month lifetime
+  that is ~47 hours a year of full block utilisation for a Sourcify-sized corpus, forever.

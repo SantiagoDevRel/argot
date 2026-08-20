@@ -8,7 +8,7 @@ const TABS: { id: Tab; label: string; blurb: string }[] = [
   {
     id: "parity",
     label: "1 · Same question, two databases",
-    blurb: "Sourcify's hottest endpoint, answered by Postgres and by Arkiv, diffed field by field at the same projection.",
+    blurb: "Sourcify's most-used endpoint, answered by Postgres and by Arkiv, diffed field by field at the same projection.",
   },
   {
     id: "query",
@@ -164,8 +164,8 @@ function Parity() {
       <div className="panel">
         <h2>GET /v2/contract/130/&#123;address&#125;</h2>
         <p className="sub">
-          Roughly 70% of Sourcify&apos;s contract-API traffic is this one call. Paste a Unichain address,
-          or pick a sample.
+          Sourcify&apos;s dominant read path — they have not published a request breakdown, so this page
+          does not put a number on it. Paste a Unichain address, or pick a sample.
         </p>
         <div className="row">
           <div style={{ flex: "1 1 340px" }}>

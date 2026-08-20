@@ -86,9 +86,11 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 <header class="hero">
   <div class="eyebrow">[ ARKIV ] × Sourcify</div>
   <h1>Sourcify on Arkiv</h1>
-  <p class="lede">What Sourcify&rsquo;s database actually is, what Arkiv actually is, and what happens
-  when you try to put one inside the other. Every number here was measured against the live systems on
-  19 August 2026 &mdash; none of it is quoted from a deck.</p>
+  <p class="lede">What Sourcify&rsquo;s database actually is, what Arkiv actually is, and what happens when
+  you try to put one inside the other. Nothing here is quoted from a deck: figures come from the live
+  systems, the SDK&rsquo;s own constants and the public Parquet export. Where a number is
+  <em>extrapolated</em> rather than measured &mdash; the full-scale costs in &sect;5 &mdash; it is labelled,
+  because the difference matters.</p>
 </header>
 </div>
 
@@ -470,16 +472,19 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <div class="two">
     <div class="card good">
       <h3 style="margin-top:0">What fits comfortably</h3>
-      <p style="margin:0">The complete index for Unichain, measured by encoding every real batch
-      locally without sending it &mdash; payload p50 1,738 B, p95 17,062 B, largest 62,952 B, none over
-      the limit:</p>
+      <p style="margin:0">The complete index for Unichain, measured by encoding every real batch locally
+      before sending it. Payload p50 <strong>1,738 B</strong>, p95 17,062 B, largest 62,952 B, none over the
+      limit. That p50 is smaller than the 10,130 B in the bar chart above and the two are not in conflict:
+      the bar is Sourcify&rsquo;s raw API JSON for 12 sampled contracts, this is the compacted payload we
+      actually write, across all 2,801. Different measurement, different n &mdash; the bars are a sample and
+      say so, this is the population:</p>
       <table style="margin:12px 0 0">
         <tr><td>contracts</td><td class="num">2,801</td></tr>
         <tr><td>+ deduped compilations</td><td class="num">1,127</td></tr>
         <tr><td>calldata</td><td class="num">33.42 MB</td></tr>
         <tr><td>gas</td><td class="num">534,796,992</td></tr>
         <tr><td>cost at 7 wei</td><td class="num">3.74 &times; 10<sup>&minus;9</sup> GLM</td></tr>
-        <tr><td>transactions</td><td class="num">115</td></tr>
+        <tr><td>transactions</td><td class="num">568</td></tr>
         <tr><td>chain time at 2 s blocks</td><td class="num">~30 s</td></tr>
       </table>
       <p style="margin:12px 0 0;font-size:13.5px;color:var(--muted)">At this scale gas is not the
@@ -500,8 +505,13 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     </div>
   </div>
   <h3>And at Sourcify&rsquo;s real scale, which is the number that matters</h3>
-  <p>The POC covers <strong>0.006%</strong> of Sourcify. Extrapolating the measured per-record cost linearly
-  to all <strong>44,391,604</strong> verified contracts and <strong>5,716,510</strong> compilations:</p>
+  <p>The POC covers <strong>0.006%</strong> of Sourcify&rsquo;s verified contracts, or 0.008% of the
+  contracts-plus-compilations set the extrapolation below actually spans. Extrapolating the measured per-record cost linearly
+  to all <strong>44,391,604</strong> verified contracts and <strong>5,716,510</strong> compilations &mdash;
+  and the linearity is the assumption worth naming, because Unichain is a young, DeFi-heavy chain whose
+  contracts are probably larger than the global median, which would make these figures an over-estimate.
+  The entity-count side is not extrapolated: those two totals are the real row counts from Sourcify&rsquo;s
+  own export:</p>
   <div class="card" style="border-left:3px solid var(--bad)">
     <div class="scroll">
     <table style="margin:0">
@@ -510,19 +520,30 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
         <tr><td>records</td><td class="num">3,928</td><td class="num">50,108,114</td></tr>
         <tr><td>calldata</td><td class="num">33.4 MB</td><td class="num">~484 GB</td></tr>
         <tr><td>gas</td><td class="num">535 M</td><td class="num">~7.74 &times; 10<sup>12</sup></td></tr>
-        <tr><td>transactions</td><td class="num">115</td><td class="num">~1,617,000</td></tr>
+        <tr><td>transactions</td><td class="num">568</td><td class="num">~7,200,000</td></tr>
         <tr><td>block time at 100% utilisation</td><td class="num">~30 s</td><td class="num"><strong>~119 hours (5 days)</strong></td></tr>
       </tbody>
     </table>
     </div>
-    <p style="margin:14px 0 0;font-size:14px">Five days of a chain doing nothing but this, and that is the
-    <em>initial</em> backfill. Two more things the POC&rsquo;s 30 seconds does not show:</p>
+    <p style="margin:14px 0 0;font-size:14px">Five days of a chain doing <em>nothing but this</em>, which
+    is a floor rather than a schedule: at a realistic 10% share of block space it is fifty days, and at 1% it
+    is over a year. And that is only the <em>initial</em> backfill. Three more things the POC&rsquo;s
+    30 seconds does not show:</p>
     <ul style="margin:8px 0 0;font-size:14px">
       <li><strong>7 wei is a devnet price.</strong> Every GLM figure here is a devnet artefact and should be
       re-derived against a real fee market before it is used in any argument.</li>
-      <li><strong>Entities expire.</strong> At the POC&rsquo;s 30-day lifetime, keeping 50 M entities alive is
-      ~12 renewals each per year &mdash; roughly <strong>19 hours per year of full block utilisation, forever</strong>,
-      paid by a funded always-on process holding a key. Cost of ownership, not cost of one write.</li>
+      <li><strong>The headline is the un-optimised number.</strong> Moving the ABI to the blob tier, as
+      the card below argues, takes the backfill from ~484 GB to ~102 GB &mdash; the same five days becomes
+      roughly a day. Quoting the larger figure is deliberate, because it is what the design as built costs,
+      but it should not be read as the floor.</li>
+      <li><strong>Entities expire, and renewal was measured, not guessed.</strong> Extending 50 real
+      entities cost 500,000 gas &mdash; <strong>10,000 gas each</strong>, 225 bytes of calldata. An earlier
+      draft of this page asserted ~2,000 and a reviewer was right to call that inconsistent with the create
+      cost in &sect;3. At the two-month lifetime these were written with, 50 M entities need about six
+      renewals a year each: <strong>3.05 trillion gas a year, roughly 47 hours a year of full block
+      utilisation, forever</strong>, paid by a funded always-on process that holds the owning key. Doubling
+      the lifetime halves the number; it does not remove the standing obligation. This is cost of ownership,
+      not cost of one write.</li>
     </ul>
   </div>
 
@@ -665,8 +686,9 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 
   <div class="card accent">
     <p style="margin:0 0 8px"><strong>The honest summary for the room.</strong></p>
-    <p style="margin:0 0 10px">The point lookup &mdash; roughly 70% of Sourcify&rsquo;s contract traffic &mdash;
-    works on Arkiv today and answers filters the current API cannot. The listing path does not work, and the
+    <p style="margin:0 0 10px">The point lookup &mdash; the dominant read path, though Sourcify has not
+    published a request breakdown and this document should not pretend otherwise &mdash; works on Arkiv today
+    and answers filters the current API cannot. The listing path does not work, and the
     blocker is ordering, not size or money. Permanence, key custody and atomic ingest are decisions no demo
     can settle.</p>
     <p style="margin:0"><strong>And the framing matters more than any of it.</strong> Pitched as a replacement
@@ -709,7 +731,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <table>
     <thead><tr><th>endpoint</th><th>who calls it</th><th>status</th><th>why</th></tr></thead>
     <tbody>
-      <tr><td class="mono">GET /v2/contract/{chain}/{addr}</td><td>explorers, wallets, tooling &mdash; ~70% of traffic</td><td class="yes">works</td><td>one equality on indexed attributes; this is the POC</td></tr>
+      <tr><td class="mono">GET /v2/contract/{chain}/{addr}</td><td>explorers, wallets, tooling &mdash; the dominant read path</td><td class="yes">works</td><td>one equality on indexed attributes; this is the POC</td></tr>
       <tr><td class="mono">GET /v2/contract/all-chains/{addr}</td><td>explorers mirroring every chain</td><td class="yes">works</td><td>the same query with the chain predicate dropped &mdash; free</td></tr>
       <tr><td class="mono">GET /v2/contract/…?fields=abi,…</td><td>wallets needing the ABI</td><td class="yes">works</td><td>projection done by the adapter, since Arkiv returns whole payloads</td></tr>
       <tr><td class="mono">4byte selector lookup</td><td>wallets and debuggers decoding calldata</td><td class="yes">works, and cheaply</td><td>12,674 selectors measured at p50 86 B; the whole dictionary is ~1 GB</td></tr>
@@ -764,8 +786,11 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
       (listed in Google web3 datasets). Can be plugged into Colab Python notebooks, or queried through GCP
       services. Also shipped an AI Playground to ask LLMs questions about the dataset.&rdquo;
     </p>
-    <p style="margin:0">So the target is not their Postgres. It is <strong>the mirror</strong> &mdash; the
-    copy that exists so outsiders can ask questions. They wanted a public queryable instance for an open
+    <p style="margin:0 0 10px">Worth being precise: there are <em>two</em> public mirrors, not one. The
+    Parquet export on Google Cloud Storage is the bulk copy, and the BigQuery instance above is the queryable
+    one. This section is about the second; the first is a file drop and Arkiv does not compete with it.</p>
+    <p style="margin:0">So the target is not their Postgres. It is <strong>a mirror</strong> &mdash; the copy
+    that exists so outsiders can ask questions. They wanted a public queryable instance for an open
     public good and answered it with the most centralised option available. That is the conversation worth
     having, and it is a different one from &ldquo;replace your database&rdquo;.</p>
   </div>
@@ -801,9 +826,15 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <div class="card good">
       <h3 style="margin-top:0">What Arkiv actually adds</h3>
       <ul style="margin:0;padding-left:20px">
-        <li><strong>Verifiability.</strong> Every record carries a signed owner. &ldquo;Is this really from
-        Sourcify?&rdquo; becomes a check instead of an assumption. BigQuery cannot offer this at any price
-        &mdash; it is the one thing a warehouse structurally cannot do.</li>
+        <li><strong>Verifiability, and precisely stated.</strong> Every record carries an owner address
+        that signed it, so &ldquo;is this really from Sourcify?&rdquo; is a check rather than an assumption.
+        The honest version of this claim is narrower than it first looks: BigQuery <em>could</em> carry
+        signatures &mdash; a signature column, or signed snapshot roots, would work fine. Two things still
+        differ. The protocol <strong>enforces</strong> authorship at write time, so nobody can write a
+        record owned by Sourcify&rsquo;s address without Sourcify&rsquo;s key; and the reader verifies the
+        record they actually received rather than trusting that the server returned the row that was signed.
+        Provenance is the storage layer&rsquo;s job instead of an application feature somebody has to build
+        and keep running.</li>
         <li><strong>No gatekeeper.</strong> A public good queried through a Google account is a public good
         with a login. This is the argument that does not depend on any benchmark.</li>
         <li><strong>Sub-second filtered lookups</strong> at a cost per query that does not scale with corpus
@@ -865,7 +896,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
       <p style="margin:0">Entities survive only while someone extends them, and only the owner can. If Sourcify
       holds that key, one compromise rewrites the public verification registry. If it is distributed, a lost key
       silently deletes verified contracts when the lifetime runs out. Neither is a demo problem and the POC
-      picked 30 days by default rather than by argument.</p>
+      chose two months deliberately, which sets the renewal cadence but decides nothing about custody.</p>
     </div>
     <div class="card">
       <h3 style="margin-top:0">Two tiers, one dangling reference</h3>
