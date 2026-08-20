@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { arkiv, DATASET, PUBLISHER } from "@/lib/arkiv";
 import { eq } from "@arkiv-network/sdk/query";
+import { str } from "@arkiv-network/sdk/attr";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,9 +15,9 @@ export async function GET() {
     ]);
     // Walk every page rather than trusting one page's length.
     let contracts = 0;
-    for await (const _e of arkiv.select({ key: true }).where(eq("ds", DATASET), eq("kind", "verified_contract"))) contracts++;
+    for await (const _e of arkiv.select({ key: true }).where(eq("ds", str(DATASET)), eq("kind", str("verified_contract")))) contracts++;
     let compilations = 0;
-    for await (const _e of arkiv.select({ key: true }).where(eq("ds", DATASET), eq("kind", "compilation"))) compilations++;
+    for await (const _e of arkiv.select({ key: true }).where(eq("ds", str(DATASET)), eq("kind", str("compilation")))) compilations++;
     return NextResponse.json({
       chainHeadBlock: head.toString(),
       entitiesOnChain: entityCount,

@@ -34,8 +34,25 @@ const MAX_TXS = Number(process.env.MAX_TXS ?? 0); // 0 = no cap
 // Blocks are 2s and the producer takes only a few transactions each, so firing a whole
 // backfill as fast as the loop can encode fills the mempool and the node starts answering
 // "txpool is full". Pace the sends to roughly what a block can absorb.
-const SEND_DELAY_MS = Number(process.env.SEND_DELAY_MS ?? 700);
+const SEND_DELAY_MS = Number(process.env.SEND_DELAY_MS ?? 2500);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+/**
+ * The SDK wraps node errors, so the useful text is never on `.message` — that just says
+ * "Transaction failed: Execution error without revert data". "txpool is full" lives
+ * several `cause` levels down. Flatten the whole chain before matching, or the retry
+ * silently never fires.
+ */
+const errorText = (e) => {
+  const parts = [];
+  for (let cur = e, depth = 0; cur && depth < 8; cur = cur.cause, depth++) {
+    for (const k of ["message", "details", "shortMessage", "metaMessages"]) {
+      const v = cur?.[k];
+      if (typeof v === "string") parts.push(v);
+      else if (Array.isArray(v)) parts.push(v.join(" "));
+    }
+  }
+  return parts.join(" | ");
+};
 const DIR = path.join(import.meta.dirname, "data");
 const CKPT = path.join(DIR, `written-${CHAIN}.json`);
 
@@ -195,10 +212,11 @@ async function runPhase(label, batches, onSent) {
         nonce++;
         break;
       } catch (e) {
-        const msg = String(e?.message ?? e);
-        if (attempt < 12 && /txpool is full|already known|nonce too low|replacement/i.test(msg)) {
-          const wait = Math.min(2000 * (attempt + 1), 15000);
-          process.stdout.write(`  ${i + 1}/${batches.length} backpressure (${msg.slice(0, 40)}) — waiting ${wait}ms   `);
+        const msg = errorText(e);
+        if (attempt < 20 && /txpool is full|already known|nonce too low|replacement|future transaction/i.test(msg)) {
+          const wait = Math.min(3000 * (attempt + 1), 30000);
+          process.stdout.write(`
+  ${i + 1}/${batches.length} backpressure (${msg.slice(0, 40)}) — waiting ${wait}ms   `);
           await sleep(wait);
           continue;
         }

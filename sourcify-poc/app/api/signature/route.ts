@@ -13,6 +13,7 @@
 import { NextResponse } from "next/server";
 import { arkiv, DATASET, PUBLISHER } from "@/lib/arkiv";
 import { eq, startsWith } from "@arkiv-network/sdk/query";
+import { str } from "@arkiv-network/sdk/attr";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,9 +35,9 @@ export async function GET(req: Request) {
     let q = arkiv
       .select({ key: true, owner: true, attributes: true, payload: true })
       .where(
-        eq("ds", DATASET),
-        eq("kind", "signature"),
-        prefix ? startsWith("selector", prefix.toLowerCase()) : eq("selector", selector),
+        eq("ds", str(DATASET)),
+        eq("kind", str("signature")),
+        prefix ? startsWith("selector", prefix.toLowerCase()) : eq("selector", str(selector)),
       )
       .limit(prefix ? 50 : 5);
     if (PUBLISHER) q = q.ownedBy(PUBLISHER as `0x${string}`);

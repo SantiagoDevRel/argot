@@ -11,6 +11,10 @@
 import { createPublicClient } from "@arkiv-network/sdk";
 import { cheesecake } from "@arkiv-network/sdk/chains";
 import { eq, gte, lte, startsWith, MAX_LIMIT } from "@arkiv-network/sdk/query";
+// Typed attributes match on TYPE as well as value: a bare bigint is inferred as u256,
+// so `eq("chainid", 130n)` silently misses a chainid written as u64 and the query just
+// returns nothing. The constructors here must mirror the writer's exactly.
+import { addr, i32, str, u64 } from "@arkiv-network/sdk/attr";
 import type { Expression } from "@arkiv-network/sdk/query";
 import { http } from "viem";
 
@@ -36,20 +40,20 @@ export type Filters = {
 
 /** Translate the UI's filter bag into an Arkiv predicate. Unset fields are simply absent. */
 export function buildPredicate(f: Filters, kind = "verified_contract") {
-  const p: Expression[] = [eq("ds", DATASET), eq("kind", kind)];
-  if (f.chainId) p.push(eq("chainid", BigInt(f.chainId)));
-  if (f.address) p.push(eq("address", f.address.toLowerCase()));
-  if (f.match) p.push(eq("match", f.match));
-  if (f.compiler) p.push(eq("compiler", f.compiler));
+  const p: Expression[] = [eq("ds", str(DATASET)), eq("kind", str(kind))];
+  if (f.chainId) p.push(eq("chainid", u64(BigInt(f.chainId))));
+  if (f.address) p.push(eq("address", addr(f.address.toLowerCase() as `0x${string}`)));
+  if (f.match) p.push(eq("match", str(f.match)));
+  if (f.compiler) p.push(eq("compiler", str(f.compiler)));
   if (f.compilerVersion) p.push(startsWith("compilerversion", f.compilerVersion));
-  if (f.language) p.push(eq("language", f.language));
+  if (f.language) p.push(eq("language", str(f.language)));
   if (f.isProxy) p.push(eq("isproxy", f.isProxy === "true"));
   if (f.optimizer) p.push(eq("optimizer", f.optimizer === "true"));
   if (f.namePrefix) p.push(startsWith("name", f.namePrefix));
-  if (f.deployer) p.push(eq("deployer", f.deployer.toLowerCase()));
-  if (f.minFns) p.push(gte("fncount", Number(f.minFns)));
-  if (f.maxFns) p.push(lte("fncount", Number(f.maxFns)));
-  if (f.verifiedAfter) p.push(gte("verifiedat", BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000))));
+  if (f.deployer) p.push(eq("deployer", addr(f.deployer.toLowerCase() as `0x${string}`)));
+  if (f.minFns) p.push(gte("fncount", i32(Number(f.minFns))));
+  if (f.maxFns) p.push(lte("fncount", i32(Number(f.maxFns))));
+  if (f.verifiedAfter) p.push(gte("verifiedat", u64(BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000)))));
   // `where()` is variadic, so a flat list of predicates is the whole conjunction.
   return p;
 }
