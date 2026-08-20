@@ -42,7 +42,12 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/|__nextjs|favicon.ico|robots.txt).*)"],
+  // `_next/` is deliberately NOT excluded. Excluding it served the client bundle —
+  // and every line of copy compiled into it — to anyone without the cookie, while the
+  // page HTML and the APIs were correctly gated. A static asset is served before any
+  // rewrite, which is exactly the trap. Post-auth requests carry the cookie, so the
+  // app still loads; the 401 page is self-contained inline HTML and needs no assets.
+  matcher: ["/((?!__nextjs|favicon.ico|robots.txt).*)"],
 };
 
 const GATE_HTML = `<!doctype html><meta charset="utf-8">
