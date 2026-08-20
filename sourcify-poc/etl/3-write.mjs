@@ -1,11 +1,13 @@
 /**
  * 3-write.mjs — push the transformed entities to Arkiv (Cheesecake).
  *
- * Two phases, because the second references the first:
+ * Phases A and B exist because B references A:
  *   A. compilation entities        -> collect their on-chain keys
  *   B. verified_contract entities  -> carry `compilationRef` as a typed `key`
  *      attribute pointing at the phase-A entity. That is the join, expressed in
  *      the data model rather than reconstructed by the reader.
+ * Signature (phase C) and sourcefile (phase 0, run first below) entities carry no
+ * such reference and can be written in any order relative to A/B.
  *
  * WHY THE ADVANCED PATH. The everyday `mutateEntities` bundles send + wait +
  * decode, which is 4-ish RPC calls per batch. The anonymous budget on this devnet
@@ -87,6 +89,11 @@ const cps = read(`entities-compilation-${CHAIN}.ndjson`);
 // median payload 86 bytes, and the lookup is one equality on an indexed attribute.
 const sigs = fs.existsSync(path.join(DIR, `entities-signature-${CHAIN}.ndjson`))
   ? read(`entities-signature-${CHAIN}.ndjson`) : [];
+// Per-file source entities, deduplicated by sha256 in 2-transform.mjs. No `key`
+// attribute links a compilation to these -- the join is the path -> hash map already
+// sitting on the compilation's payload, so unlike phase A/B below, order doesn't matter.
+const sfs = fs.existsSync(path.join(DIR, `entities-sourcefile-${CHAIN}.ndjson`))
+  ? read(`entities-sourcefile-${CHAIN}.ndjson`) : [];
 
 /** Re-apply the attribute types the NDJSON round trip flattened to plain JSON. */
 const typeVc = (a, compilationKey) => ({
@@ -104,6 +111,9 @@ const typeVc = (a, compilationKey) => ({
 const typeSig = (a) => ({
   ds: str(a.ds), kind: str(a.kind), selector: str(a.selector),
   sigtype: str(a.sigtype), variants: i32(a.variants),
+});
+const typeSf = (a) => ({
+  ds: str(a.ds), kind: str(a.kind), hash: str(a.hash), bytes: i32(a.bytes),
 });
 const typeCp = (a) => ({
   ds: str(a.ds), kind: str(a.kind), fp: str(a.fp),
@@ -233,6 +243,35 @@ async function runPhase(label, batches, onSent) {
   return { gas, bytes, sent };
 }
 
+// ------------------------------------------------------------- phase 0: sourcefile
+// Dedup here is scoped to THIS chain's checkpoint file (written-${CHAIN}.json) --
+// consistent with how compilation and signature entities already dedupe, but not a
+// GLOBAL dedup across chains or across separate runs of this script.
+//
+// TODO(santiago): a source file is chain-agnostic by construction (its key is a
+// content hash, nothing about chainId), so the same OpenZeppelin ERC20.sol written
+// while backfilling chain 1 will be written AGAIN, byte-for-byte, while backfilling
+// chain 130 -- the per-chain checkpoint has no way to know it already exists on-chain.
+// Closing that gap needs one of two real design decisions, not a default I should
+// pick silently:
+//   (a) a shared checkpoint keyed by hash alone, outside the per-chain file, so every
+//       chain's run consults the same "already written" set; or
+//   (b) a live existence-check query (`kind='sourcefile' && hash=…`) before each
+//       write, which is correct without shared state but costs one more RPC call per
+//       unique file against the 50 requests/hour anonymous budget this devnet enforces.
+// (a) is cheaper per run but means the checkpoint file is no longer purely per-chain
+// state; (b) keeps every run self-contained but is not free. Your call.
+const writtenHash = new Set(ckpt.writtenSourceHashes ?? []);
+const pendingSfs = sfs.filter((s) => !writtenHash.has(s.hash));
+const sfBatches = pack(
+  pendingSfs.map((s) => ({ src: s, create: mkCreate(typeSf(s.attributes), s.payload) })),
+  (x) => encodedSize(x.create),
+);
+const S = await runPhase("sourcefile", sfBatches, (batch) => {
+  for (const b of batch) writtenHash.add(b.src.hash);
+  ckpt.writtenSourceHashes = [...writtenHash];
+});
+
 // ------------------------------------------------------------- phase A
 const pendingCps = cps.filter((c) => !ckpt.compilationKeys[c.fingerprint]);
 const cpBatches = pack(
@@ -283,15 +322,15 @@ const C = await runPhase("signature", sigBatches, (batch) => {
   ckpt.writtenSelectors = [...doneSelectors];
 });
 
-const totalGas = A.gas + B.gas + C.gas;
+const totalGas = A.gas + B.gas + C.gas + S.gas;
 console.log(`
 === chain ${CHAIN} ===
-pending before this run : ${pendingCps.length} compilations, ${pendingVcs.length} contracts, ${pendingSigs.length} selectors
-calldata encoded        : ${(Number(A.bytes + B.bytes + C.bytes) / 1e6).toFixed(2)} MB
+pending before this run : ${pendingCps.length} compilations, ${pendingVcs.length} contracts, ${pendingSigs.length} selectors, ${pendingSfs.length} source files
+calldata encoded        : ${(Number(A.bytes + B.bytes + C.bytes + S.bytes) / 1e6).toFixed(2)} MB
 gas                     : ${totalGas.toLocaleString()} (${(Number(totalGas) / BLOCK_GAS).toFixed(1)} blocks' worth)
 cost @ 7 wei            : ${(Number(totalGas) * 7 / 1e18).toExponential(3)} GLM
 rpc calls used          : ${rpcCalls}${MAX_TXS ? ` (tx cap ${MAX_TXS})` : ""}
-written so far          : ${writtenAddr.size}/${vcs.length} contracts, ${doneSelectors.size}/${sigs.length} selectors
+written so far          : ${writtenAddr.size}/${vcs.length} contracts, ${doneSelectors.size}/${sigs.length} selectors, ${writtenHash.size}/${sfs.length} source files
 mode                    : ${SEND ? "SENT" : "DRY RUN — pass --send to broadcast"}
 `);
 if (SEND) save();
