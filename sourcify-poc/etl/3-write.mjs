@@ -234,7 +234,18 @@ async function runPhase(label, batches, onSent) {
       }
     }
     rpcCalls++; txBudgetLeft--; sent++;
-    ckpt.txs.push({ phase: label, txHash, count: batch.length });
+    // Record what went into this transaction, in order. The old code mapped created
+    // keys back to fingerprints by walking a global index across all resolved
+    // transactions, so a single unresolved transaction shifted every fingerprint
+    // after it onto the wrong key — a silently wrong join, which is worse than a
+    // missing one. Keys come back in batch order, so pairing them per transaction
+    // makes a gap cost only that transaction.
+    ckpt.txs.push({
+      phase: label,
+      txHash,
+      count: batch.length,
+      items: batch.map((b) => b.src?.fingerprint ?? b.src?.address ?? null),
+    });
     onSent?.(batch, txHash);
     save();
     process.stdout.write(`\r  ${i + 1}/${batches.length} sent ${txHash.slice(0, 14)}… (${sent} txs, ${rpcCalls} rpc)   `);
@@ -275,7 +286,7 @@ const S = await runPhase("sourcefile", sfBatches, (batch) => {
 // ------------------------------------------------------------- phase A
 const pendingCps = cps.filter((c) => !ckpt.compilationKeys[c.fingerprint]);
 const cpBatches = pack(
-  pendingCps.map((c) => ({ src: c, create: mkCreate(typeCp(c.attributes), c.payload) })),
+  pendingCps.map((c) => ({ src: { ...c, fingerprint: c.fingerprint }, create: mkCreate(typeCp(c.attributes), c.payload) })),
   (x) => encodedSize(x.create),
 );
 const A = await runPhase("compilation", cpBatches, () => {});
@@ -283,18 +294,31 @@ const A = await runPhase("compilation", cpBatches, () => {});
 // The created keys come back only from the receipt, so after sending we resolve
 // them in one pass rather than one call per batch.
 if (SEND && A.sent > 0) {
-  console.log("  resolving created compilation keys from receipts…");
-  for (const t of ckpt.txs.filter((t) => t.phase === "compilation" && !t.resolved)) {
-    const res = await client.advanced.getMutationResult(t.txHash); rpcCalls++;
-    if (res.status === "success") { t.keys = res.createdEntities; t.resolved = true; }
+  // WAIT for them. The previous version asked for receipts the instant the last send
+  // returned, so the transactions still in the mempool answered "pending" and were
+  // never revisited: 5 of 42 stayed unresolved and 92.5% of contracts ended up with
+  // no `compilationref` at all. Blocks are 2s; polling costs a handful of requests.
+  const unresolved = () => ckpt.txs.filter((t) => t.phase === "compilation" && !t.resolved);
+  console.log(`  waiting on ${unresolved().length} compilation receipts…`);
+  for (let round = 0; round < 40 && unresolved().length; round++) {
+    for (const t of unresolved()) {
+      const res = await client.advanced.getMutationResult(t.txHash); rpcCalls++;
+      if (res.status === "success") { t.keys = res.createdEntities; t.resolved = true; }
+      else if (res.status === "reverted") { t.resolved = true; t.keys = []; t.reverted = true; }
+    }
+    if (unresolved().length) { process.stdout.write(`  ${unresolved().length} still pending…   `); await sleep(3000); }
   }
-  // Map fingerprints to keys in the order they were batched.
-  let idx = 0;
-  for (const t of ckpt.txs.filter((t) => t.phase === "compilation" && t.resolved)) {
-    for (const k of t.keys) { const c = pendingCps[idx++]; if (c) ckpt.compilationKeys[c.fingerprint] = k; }
+  // Pair per transaction, using the fingerprints recorded when it was sent. Keys come
+  // back in batch order, so index i of this transaction's keys belongs to index i of
+  // its items — and a transaction that never resolved simply contributes nothing.
+  for (const t of ckpt.txs.filter((t) => t.phase === "compilation" && t.resolved && t.keys?.length)) {
+    (t.items ?? []).forEach((fp, i) => { if (fp && t.keys[i]) ckpt.compilationKeys[fp] = t.keys[i]; });
   }
   save();
-  console.log(`  ${Object.keys(ckpt.compilationKeys).length} compilation keys known`);
+  const stillOut = unresolved().length;
+  console.log(`
+  ${Object.keys(ckpt.compilationKeys).length}/${cps.length} compilation keys known` +
+    (stillOut ? `  (${stillOut} transactions never resolved — their contracts fall back to compilationfp)` : ""));
 }
 
 // ------------------------------------------------------------- phase B

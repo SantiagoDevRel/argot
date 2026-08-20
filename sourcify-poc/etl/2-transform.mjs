@@ -29,6 +29,19 @@ import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { MAX_ATTRIBUTES, MAX_PAYLOAD_BYTES, MAX_STRING_BYTES } from "@arkiv-network/sdk/attr";
 
+/**
+ * The binding limit is NOT MAX_PAYLOAD_BYTES. The node caps the whole TRANSACTION at
+ * the same 131,072 bytes ("oversized data: transaction size N, limit 131072"), and
+ * payload, attribute encoding and envelope all come out of that one budget. Measured:
+ * a 129,000-byte source file encodes to a 130,620-byte transaction, so a file that
+ * clears the payload check by a whisker still gets rejected on-chain.
+ *
+ * Overhead per entity is ~996 bytes plus ~192 per attribute; 4 KB of headroom covers
+ * that with room to spare and costs nothing, since real source files are p50 2,781 B.
+ */
+const TX_OVERHEAD_RESERVE = 4096;
+const MAX_SOURCEFILE_PAYLOAD = MAX_PAYLOAD_BYTES - TX_OVERHEAD_RESERVE;
+
 const CHAIN = process.env.CHAIN ?? "130";
 const DIR = path.join(import.meta.dirname, "data");
 const IN = path.join(DIR, `detail-${CHAIN}.ndjson`);
@@ -104,7 +117,14 @@ export function transformRows(rows) {
       if (sourceFiles.has(hash)) continue;
       const payload = { schema: "sourcify.sourcefile.v1", content };
       const bytes = Buffer.byteLength(JSON.stringify(payload));
-      if (bytes > MAX_PAYLOAD_BYTES) oversizeSf.push({ path: filePath, hash, bytes });
+      // SKIP, not just record. Writing an entity that cannot fit in a transaction
+      // means the batch containing it reverts and takes its neighbours with it.
+      // The path -> hash map still names the file, so the reference survives and a
+      // reader can tell the body is elsewhere rather than silently missing.
+      if (bytes > MAX_SOURCEFILE_PAYLOAD) {
+        oversizeSf.push({ path: filePath, hash, bytes });
+        continue;
+      }
       sourceFiles.set(hash, {
         kind: "sourcefile",
         hash,
@@ -205,6 +225,21 @@ async function main() {
 
   const { vcs, compilations, sourceFiles, oversizeVc, oversizeSf, truncated, clampedRuns, sourceFileRefs } = transformRows(rows);
 
+  // Rows fetched before `sources` joined the FIELDS list carry none, so the per-file
+  // work silently produces nothing. Say so, rather than printing a zero and leaving
+  // the reader to wonder whether the dedup simply found no duplicates.
+  if (rows.length && sourceFileRefs === 0) {
+    console.warn(
+      `
+!! no \`sources\` in ${IN} — every row was fetched before that field was requested,
+` +
+      `   so 0 sourcefile entities were produced. Delete data/detail-${CHAIN}.ndjson and re-run
+` +
+      `   1-fetch.mjs to pick them up (roughly 858 MB and 40 minutes for a full chain).
+`,
+    );
+  }
+
   const w = (f, arr) => fs.writeFileSync(f, arr.map((x) => JSON.stringify(x, (k, v) => (typeof v === "bigint" ? v.toString() : v))).join("\n") + "\n");
   w(OUT_VC, vcs);
   w(OUT_CP, [...compilations.values()]);
@@ -224,7 +259,7 @@ optimizer runs clamped     : ${clampedRuns}
 payload bytes  p50 ${pct(0.5).toLocaleString()}  p95 ${pct(0.95).toLocaleString()}  max ${(sizes.at(-1)??0).toLocaleString()}  (limit ${MAX_PAYLOAD_BYTES.toLocaleString()})
 sourcefile bytes  p50 ${sfPct(0.5).toLocaleString()}  p95 ${sfPct(0.95).toLocaleString()}  max ${(sfSizes.at(-1)??0).toLocaleString()}  (limit ${MAX_PAYLOAD_BYTES.toLocaleString()})
 OVER THE LIMIT (vc)        : ${oversizeVc.length}${oversizeVc.length ? " -> " + oversizeVc.slice(0,5).map(o=>`${o.name} ${o.bytes.toLocaleString()}B`).join(", ") : ""}
-OVER THE LIMIT (sourcefile): ${oversizeSf.length}${oversizeSf.length ? " -> " + oversizeSf.slice(0,5).map(o=>`${o.path} ${o.bytes.toLocaleString()}B`).join(", ") : ""}
+SKIPPED, too big to fit a tx : ${oversizeSf.length}${oversizeSf.length ? " -> " + oversizeSf.slice(0,5).map(o=>`${o.path} ${o.bytes.toLocaleString()}B`).join(", ") : ""}  (ceiling ${MAX_SOURCEFILE_PAYLOAD.toLocaleString()} B)
 total on-chain bytes       : ${((sizes.reduce((a,b)=>a+b,0) + sfSizes.reduce((a,b)=>a+b,0))/1e6).toFixed(2)} MB
 `);
 }

@@ -116,3 +116,30 @@ test("none of these 3 real records blow the payload or attribute budgets", () =>
   for (const vc of vcs) assert.ok(vc.bytes <= 131_072, `${vc.address} payload is ${vc.bytes} bytes`);
   for (const sf of sourceFiles.values()) assert.ok(sf.bytes <= 131_072, `sourcefile ${sf.hash} is ${sf.bytes} bytes`);
 });
+
+/**
+ * Guards the fix for the transaction-cap window. The transform used to check a source
+ * file against MAX_PAYLOAD_BYTES, but the binding limit is the whole TRANSACTION, also
+ * 131,072, which payload + attribute encoding + envelope share. A 130,500-byte file
+ * cleared the old check and still built a 132,120-byte transaction the node rejects.
+ */
+test("source files too big to fit in a transaction are skipped, not written", () => {
+  const big = { ...fixtures[0], address: "0x" + "ab".repeat(20), sources: {
+    "Huge.sol": { content: "x".repeat(130_000) },
+    "Fine.sol": { content: "contract Fine {}" },
+  } };
+  const { sourceFiles, oversizeSf } = transformRows([big]);
+  assert.equal(oversizeSf.length, 1, "the oversized file must be reported");
+  assert.equal(oversizeSf[0].path, "Huge.sol");
+  assert.equal(sourceFiles.size, 1, "only the small file becomes an entity");
+  for (const sf of sourceFiles.values()) {
+    assert.ok(sf.bytes < 131_072 - 4096, `${sf.bytes} B leaves no room for the transaction envelope`);
+  }
+});
+
+test("every emitted source file leaves room for the transaction envelope", () => {
+  const { sourceFiles } = transformRows(fixtures);
+  for (const sf of sourceFiles.values()) {
+    assert.ok(sf.bytes + 4096 <= 131_072, `${sf.hash} is ${sf.bytes} B, too close to the transaction cap`);
+  }
+});

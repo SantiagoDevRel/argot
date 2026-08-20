@@ -9,7 +9,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE = "sx_gate";
-const PASSWORD = process.env.GATE_PASSWORD ?? "123";
+// No fallback. A default of "123" meant a deploy that forgot GATE_PASSWORD opened to
+// anyone who guessed the most obvious string in the world, and it would look like a
+// working gate the whole time. Missing config now locks the door rather than propping
+// it open — same fail-closed rule GATE_TOKEN already follows below.
+const PASSWORD = process.env.GATE_PASSWORD;
 
 export function proxy(req: NextRequest) {
   const token = process.env.GATE_TOKEN;
@@ -17,8 +21,8 @@ export function proxy(req: NextRequest) {
 
   if (pathname === "/gate") return NextResponse.next();
 
-  if (!token) {
-    return new NextResponse("Gate misconfigured: GATE_TOKEN is not set.", {
+  if (!token || !PASSWORD) {
+    return new NextResponse("Gate misconfigured: GATE_TOKEN or GATE_PASSWORD is not set.", {
       status: 503, headers: { "content-type": "text/plain" },
     });
   }
