@@ -5,7 +5,7 @@
 Research, design, and two working
 proofs of concepts.
 
-**Start here:** [`CLAUDE.md`](./docs/CLAUDE.md) is the maintained entry point (north star, phase
+**Start here:** [`CLAUDE.md`](./CLAUDE.md) is the maintained entry point (north star, phase
 status, hard rules). This file is a map of what lives where and how to run the apps —
 
 # Overview 
