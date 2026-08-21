@@ -16,6 +16,7 @@
  */
 import { NextResponse } from "next/server";
 import { lookup } from "@/lib/arkiv";
+import { ALL_FIELDS, composeFields, newLedger } from "@/lib/full";
 import crypto from "node:crypto";
 
 export const runtime = "nodejs";
@@ -46,14 +47,122 @@ const digest = (v: unknown): string | null => {
 const at = (o: unknown, path: string): unknown =>
   path.split(".").reduce<unknown>((acc, k) => (acc && typeof acc === "object" ? (acc as Record<string, unknown>)[k] : undefined), o);
 
+/**
+ * depth=all — the WHOLE record, both ways: Sourcify's live fields=all against the
+ * same 24 fields composed from Arkiv entities. Identity fields compare as strings;
+ * everything else as an order-independent canonical digest plus its byte size, so
+ * the table shows both "is it the same data" and "how big is the thing that
+ * matched". One extra byte-exactness probe rides along: the compiler metadata
+ * string inside stdJsonOutput, compared verbatim, because canonical digests would
+ * hide a serialization drift there and that is the one field where we CLAIM
+ * byte-fidelity from composition.
+ */
+async function parityAll(chainId: string, address: string) {
+  const sourcifyUrl = `${SOURCIFY}/contract/${chainId}/${address}?fields=all`;
+  const t0 = Date.now();
+  const ledger = newLedger();
+  const [sourcify, arkivRes] = await Promise.allSettled([
+    (async () => {
+      const r = await fetch(sourcifyUrl, { headers: { accept: "application/json" }, cache: "no-store" });
+      return { status: r.status, body: r.ok ? await r.json() : null, ms: Date.now() - t0 };
+    })(),
+    (async () => {
+      const looked = await lookup(chainId, address);
+      if (!looked.row) return { ...looked, body: null };
+      ledger.reads = 1;
+      const body = await composeFields(looked.row, [...ALL_FIELDS], ledger);
+      return { ...looked, body };
+    })(),
+  ]);
+  const s = sourcify.status === "fulfilled" ? sourcify.value : null;
+  const a = arkivRes.status === "fulfilled" ? arkivRes.value : null;
+  const sBody = (s?.body ?? null) as Record<string, unknown> | null;
+  const aBody = (a && "body" in a ? a.body : null) as Record<string, unknown> | null;
+
+  const bytes = (v: unknown) => (v == null ? 0 : Buffer.byteLength(JSON.stringify(v)));
+  const IDENTITY_SET = new Set(IDENTITY);
+  const fieldsOut: (Cmp & { sourcifyBytes: number; arkivBytes: number })[] = [];
+  for (const k of Object.keys(ALL_FIELDS.reduce((o, f) => ({ ...o, [f]: 1 }), {}))) {
+    const sv = sBody?.[k];
+    const av = aBody?.[k];
+    const asString = IDENTITY_SET.has(k);
+    const sCmp = asString ? norm(k, sv) : digest(sv);
+    const aCmp = asString ? norm(k, av) : digest(av);
+    fieldsOut.push({
+      field: k, sourcify: sCmp, arkiv: aCmp, equal: sCmp === aCmp,
+      group: asString ? "identity" : "content",
+      sourcifyBytes: bytes(sv), arkivBytes: bytes(av),
+    });
+  }
+  // The byte-exactness probe: the compiler's metadata string, verbatim.
+  const unitOf = (b: Record<string, unknown> | null): Record<string, unknown> | null => {
+    const contracts = ((b?.stdJsonOutput as Record<string, unknown> | undefined)?.contracts ?? {}) as Record<string, Record<string, Record<string, unknown>>>;
+    const p = Object.keys(contracts)[0];
+    const n = p ? Object.keys(contracts[p])[0] : undefined;
+    return p && n ? contracts[p][n] : null;
+  };
+  const sMeta = unitOf(sBody)?.metadata;
+  const aMeta = unitOf(aBody)?.metadata;
+  if (typeof sMeta === "string" || typeof aMeta === "string") {
+    fieldsOut.push({
+      field: "stdJsonOutput …metadata (byte-exact)",
+      sourcify: typeof sMeta === "string" ? `sha256:${crypto.createHash("sha256").update(sMeta).digest("hex").slice(0, 16)}` : null,
+      arkiv: typeof aMeta === "string" ? `sha256:${crypto.createHash("sha256").update(aMeta).digest("hex").slice(0, 16)}` : null,
+      equal: sMeta === aMeta,
+      group: "byte-exact",
+      sourcifyBytes: typeof sMeta === "string" ? Buffer.byteLength(sMeta) : 0,
+      arkivBytes: typeof aMeta === "string" ? Buffer.byteLength(aMeta) : 0,
+    });
+  }
+
+  const mismatches = fieldsOut.filter((f) => !f.equal);
+  const compared = fieldsOut.filter((f) => f.sourcify !== null && f.arkiv !== null);
+  const REQUIRED = ["match", "chainId", "address", "matchId"];
+  const missingRequired = REQUIRED.filter((k) => !compared.some((f) => f.field === k));
+
+  return NextResponse.json({
+    chainId, address, depth: "all",
+    verdict:
+      !aBody ? "not_in_arkiv"
+      : !sBody ? "not_in_sourcify"
+      : missingRequired.length > 0 ? "inconclusive"
+      : mismatches.length === 0 ? "identical"
+      : "mismatch",
+    comparedFields: compared.length,
+    missingRequired,
+    mismatches: mismatches.map((m) => m.field),
+    fields: fieldsOut,
+    reads: { arkiv: ledger.reads, cacheHits: ledger.cached, unavailable: ledger.unavailable },
+    totalBytes: {
+      sourcify: fieldsOut.reduce((x, f) => x + f.sourcifyBytes, 0),
+      arkiv: fieldsOut.reduce((x, f) => x + f.arkivBytes, 0),
+    },
+    sourcify: { httpStatus: s?.status ?? null, ms: s?.ms ?? null, url: sourcifyUrl, body: null },
+    arkiv: {
+      ms: a?.ms ?? null,
+      entityKey: a?.row?.key ?? null,
+      owner: a?.row?.owner ?? null,
+      blockNumber: a?.blockNumber ?? null,
+      query: a?.wire ?? null,
+      body: null,
+    },
+    errors: {
+      sourcify: sourcify.status === "rejected" ? String(sourcify.reason) : null,
+      arkiv: arkivRes.status === "rejected" ? String(arkivRes.reason) : null,
+    },
+  });
+}
+
 export async function GET(req: Request) {
   const sp = new URL(req.url).searchParams;
   const chainId = sp.get("chainId") ?? "130";
   const address = sp.get("address") ?? "";
-  const deep = sp.get("depth") === "full";
+  const depth = sp.get("depth") === "all" ? "all" : sp.get("depth") === "full" ? "full" : "identity";
+  const deep = depth === "full";
   if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
     return NextResponse.json({ error: "address must be 0x + 40 hex" }, { status: 400 });
   }
+  if (depth === "all") return parityAll(chainId, address);
 
   const fields = deep ? "?fields=abi,compilation,deployment" : "";
   // The exact URL we call, returned so the page can render it as a link. A reviewer

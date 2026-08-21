@@ -66,7 +66,14 @@ export type Row = {
 
 function toRow(e: any): Row {
   let payload: Record<string, unknown> | null = null;
-  try { payload = e.toJson?.() ?? null; } catch { payload = null; }
+  try { payload = e.toJson?.() ?? null; } catch {
+    // Not JSON — the code and blob lanes store RAW bytes (application/octet-stream).
+    // Surface what it is instead of a null that reads like "empty".
+    const bytes: Uint8Array | undefined = e.payload;
+    payload = bytes?.length
+      ? { $binary: { bytes: bytes.length, head: "0x" + Buffer.from(bytes.slice(0, 32)).toString("hex") + (bytes.length > 32 ? "…" : "") } }
+      : null;
+  }
   return { key: e.key, owner: e.owner, attributes: normalise(e.attributes ?? {}), payload };
 }
 

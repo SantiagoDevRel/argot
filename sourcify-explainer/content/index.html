@@ -78,6 +78,27 @@ summary:focus-visible{outline:2px solid var(--orange);outline-offset:3px}
 .tag.off{border-color:var(--muted)}
 footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font-size:13px}
 .srcnote{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-top:8px}
+/* ---- interactive schema map (§4) ---- */
+.smap{position:relative;display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:860px){.smap{grid-template-columns:1fr 90px 1fr}
+  /* the svg is absolutely positioned, so it is not a grid item — pin the two real columns */
+  .smap-col:first-of-type{grid-column:1}.smap-col:last-of-type{grid-column:3}}
+.smap-col{display:flex;flex-direction:column;gap:7px;min-width:0}
+.smap-colhead{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted);margin-bottom:3px}
+.smap-svg{position:absolute;inset:0;pointer-events:none;z-index:0}
+.smap-node{position:relative;z-index:1;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:8px;
+  padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:12.5px;font-weight:600;cursor:pointer;
+  transition:border-color .15s,opacity .15s;line-height:1.35}
+.smap-node span{display:block;font-weight:400;font-size:10.5px;color:var(--muted);margin-top:2px}
+.smap-node:hover{border-color:var(--blue)}
+.smap-node:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+.smap-node.k{border-left:3px solid var(--blue)}
+.smap-node.sel{border-color:var(--orange);border-left-color:var(--orange);background:#241a17}
+.smap-node.lit{border-color:var(--blue)}
+.smap-node.dim{opacity:.38}
+.smap-detail{border:1px solid var(--orange);border-radius:10px;background:var(--panel);padding:16px 18px;margin-top:14px}
+.smap-dhead{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--orange)}
+.smap-dnote{font-size:13.5px;color:var(--muted);margin:6px 0 4px;max-width:none}
 </style>
 </head>
 <body>
@@ -105,6 +126,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <li><a href="#services"><span class="i">8</span>Service by service</a></li>
   <li><a href="#bigquery"><span class="i">9</span>vs BigQuery</a></li>
   <li><a href="#open"><span class="i">10</span>Open questions</a></li>
+  <li><a href="#queries"><span class="i">11</span>Queries</a></li>
+  <li><a href="#faq"><span class="i">12</span>FAQ</a></li>
 </ul></nav>
 
 <div class="wrap">
@@ -152,7 +175,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   .where(eq(<span class="s">"ds"</span>, <span class="s">"sourcify"</span>), eq(<span class="s">"kind"</span>, <span class="s">"verified_contract"</span>),
          eq(<span class="s">"chainId"</span>, <span class="s">130n</span>), eq(<span class="s">"address"</span>, <span class="s">"0x61d6…"</span>))
   .limit(<span class="s">50</span>).fetch()
-<span class="c">// sources are NOT in here. A second fetch, by content hash, off-chain. See §5.</span></pre>
+<span class="c">// sources are NOT in here — they are their own content-addressed entities,</span>
+<span class="c">// one per unique file, dereferenced by hash. §4 has the whole map.</span></pre>
 
   <h3>Side by side &mdash; the table that tells you what is a blocker</h3>
   <div class="scroll">
@@ -264,16 +288,16 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <table>
     <thead><tr><th>table</th><th class="num">rows in the export</th><th>what it holds</th><th>where it goes</th></tr></thead>
     <tbody>
-      <tr><td class="mono">compiled_contracts_signatures</td><td class="num">175,489,918</td><td>selector &rarr; compilation</td><td><span class="tag off">out of scope</span></td></tr>
-      <tr><td class="mono">sourcify_matches</td><td class="num">74,196,213</td><td>matchId, metadata, verifiedAt</td><td><span class="tag hot">attributes</span></td></tr>
+      <tr><td class="mono">compiled_contracts_signatures</td><td class="num">175,489,918</td><td>selector &rarr; compilation</td><td><span class="tag cold">derived from the ABI at read time</span></td></tr>
+      <tr><td class="mono">sourcify_matches</td><td class="num">74,196,213</td><td>matchId, metadata, verifiedAt</td><td><span class="tag hot">attributes + compilation payload</span></td></tr>
       <tr><td class="mono">verified_contracts</td><td class="num">44,391,604</td><td>the link + transformations</td><td><span class="tag hot">the entity itself</span></td></tr>
       <tr><td class="mono">contract_deployments</td><td class="num">44,303,315</td><td>chain, address, deployer</td><td><span class="tag hot">attributes</span></td></tr>
-      <tr><td class="mono">code</td><td class="num">40,163,166</td><td>bytecode blobs</td><td><span class="tag off">off-chain</span></td></tr>
-      <tr><td class="mono">compiled_contracts_sources</td><td class="num">36,586,086</td><td>compilation &rarr; file paths</td><td><span class="tag off">off-chain</span></td></tr>
+      <tr><td class="mono">code</td><td class="num">40,163,166</td><td>bytecode blobs</td><td><span class="tag cold">code entities, keccak-addressed</span></td></tr>
+      <tr><td class="mono">compiled_contracts_sources</td><td class="num">36,586,086</td><td>compilation &rarr; file paths</td><td><span class="tag cold">path&rarr;hash map on the compilation</span></td></tr>
       <tr><td class="mono">contracts</td><td class="num">24,662,400</td><td>identity of a deployed contract</td><td><span class="tag hot">folded in</span></td></tr>
-      <tr><td class="mono">signatures</td><td class="num">9,920,797</td><td>4-byte selector dictionary</td><td><span class="tag off">out of scope</span></td></tr>
-      <tr><td class="mono">sources</td><td class="num">6,329,026</td><td>Solidity file contents</td><td><span class="tag off">off-chain</span></td></tr>
-      <tr><td class="mono">compiled_contracts</td><td class="num">5,716,510</td><td>compiler, settings, artifacts</td><td><span class="tag cold">second entity type</span></td></tr>
+      <tr><td class="mono">signatures</td><td class="num">9,920,797</td><td>4-byte selector dictionary</td><td><span class="tag cold">signature entities, one per selector</span></td></tr>
+      <tr><td class="mono">sources</td><td class="num">6,329,026</td><td>Solidity file contents</td><td><span class="tag cold">sourcefile entities, sha256-addressed</span></td></tr>
+      <tr><td class="mono">compiled_contracts</td><td class="num">5,716,510</td><td>compiler, settings, artifacts</td><td><span class="tag cold">compilation entities</span></td></tr>
     </tbody>
   </table>
   </div>
@@ -344,70 +368,177 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 
 <!-- ============================================================ 4 -->
 <section id="translate">
-  <h2><span class="n">4</span>The translation: ten tables, two entity types</h2>
-  <p class="sub">The tempting move is ten tables &rarr; ten entity types. It is the wrong move, because
-  without JOIN each extra type is another network round trip on the hot path. The right question is not
-  &ldquo;how do I mirror the schema&rdquo; but &ldquo;what does one lookup need to answer in one query&rdquo;.</p>
+  <h2><span class="n">4</span>The translation: ten tables, six entity kinds</h2>
+  <p class="sub">The hot path is unchanged: one lookup still reads <strong>one</strong> entity. What the
+  v2 pass adds is everything else &mdash; the other five kinds carry the rest of the record, deduplicated
+  and content-addressed the same way Sourcify&rsquo;s own tables are. <strong>Click any table or any
+  entity kind</strong> to see where its data physically lives on the other side.</p>
 
   <figure>
-  <svg viewBox="0 0 900 300" role="img" aria-label="Ten Postgres tables collapsing into two Arkiv entity types plus an off-chain blob tier">
-    <defs>
-      <marker id="ar2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
-        <path d="M0,0 L9,4.5 L0,9 z" fill="#FE7446"/>
-      </marker>
-      <style>
-        .p{fill:#1a1d26;stroke:#282c38;rx:5}
-        .e{fill:#171b2e;stroke:#4c53f0;stroke-width:1.6;rx:8}
-        .o{fill:#1c1a17;stroke:#5a5148;stroke-dasharray:4 3;rx:8}
-        .tt{font-family:'IBM Plex Mono',monospace;font-size:10.5px;fill:#e8eaf0}
-        .tl{font-family:'IBM Plex Mono',monospace;font-size:12.5px;fill:#e8eaf0;font-weight:600}
-        .tg{font-family:'IBM Plex Mono',monospace;font-size:9.5px;fill:#939aab}
-        .fl{stroke:#FE7446;stroke-width:1.4;fill:none;marker-end:url(#ar2);opacity:.75}
-      </style>
-    </defs>
-    <text class="tg" x="14" y="16">POSTGRES — 10 TABLES</text>
-    <text class="tg" x="420" y="16">ARKIV — 2 ENTITY TYPES</text>
-    <text class="tg" x="705" y="16">CONTENT-ADDRESSED, OFF-CHAIN</text>
-
-    <rect class="p" x="14" y="28" width="182" height="21"/><text class="tt" x="22" y="43">contract_deployments</text>
-    <rect class="p" x="14" y="54" width="182" height="21"/><text class="tt" x="22" y="69">verified_contracts</text>
-    <rect class="p" x="14" y="80" width="182" height="21"/><text class="tt" x="22" y="95">sourcify_matches</text>
-    <rect class="p" x="14" y="106" width="182" height="21"/><text class="tt" x="22" y="121">contracts</text>
-    <rect class="p" x="14" y="140" width="182" height="21"/><text class="tt" x="22" y="155">compiled_contracts</text>
-    <rect class="p" x="14" y="182" width="182" height="21"/><text class="tt" x="22" y="197">sources</text>
-    <rect class="p" x="14" y="208" width="182" height="21"/><text class="tt" x="22" y="223">code</text>
-    <rect class="p" x="14" y="234" width="182" height="21"/><text class="tt" x="22" y="249">compiled_contracts_sources</text>
-    <rect class="p" x="14" y="264" width="182" height="21"/><text class="tt" x="22" y="279">signatures ×2</text>
-
-    <rect class="e" x="330" y="34" width="222" height="88"/>
-    <text class="tl" x="344" y="55">verified_contract</text>
-    <text class="tg" x="344" y="72">25 typed attributes — the index</text>
-    <text class="tg" x="344" y="87">payload = the v2 lookup answer</text>
-    <text class="tg" x="344" y="102">p50 1.0 KB · p95 10.7 KB</text>
-    <text class="tg" x="344" y="115">one per (chain, address)</text>
-
-    <rect class="e" x="330" y="140" width="222" height="62"/>
-    <text class="tl" x="344" y="161">compilation</text>
-    <text class="tg" x="344" y="177">deduped, as Postgres dedupes it</text>
-    <text class="tg" x="344" y="192">referenced by a `key` attribute</text>
-
-    <rect class="o" x="640" y="182" width="246" height="73"/>
-    <text class="tl" x="654" y="203">source bundles + bytecode</text>
-    <text class="tg" x="654" y="220">~307 KB median per contract</text>
-    <text class="tg" x="654" y="235">2.3× over MAX_PAYLOAD_BYTES</text>
-    <text class="tg" x="654" y="249">referenced by hash, never inlined</text>
-
-    <path class="fl" d="M200,66 C265,66 275,72 326,74"/>
-    <path class="fl" d="M200,150 C260,150 280,164 326,168"/>
-    <path class="fl" d="M200,214 C300,214 480,214 636,214"/>
-    <path class="fl" d="M441,124 L441,136"/>
-    <text class="tg" x="450" y="134">key ref</text>
-    <text class="tg" x="560" y="278">signatures: a separate service, out of scope</text>
-  </svg>
-  <figcaption>Four tables collapse into the entity that answers the lookup, one becomes a deduplicated
-  second type, three become content-addressed blobs, and the two signature tables belong to a different
-  service entirely.</figcaption>
+  <div class="smap" id="smap">
+    <div class="smap-col">
+      <div class="smap-colhead">POSTGRES &mdash; 10 TABLES</div>
+      <button class="smap-node" data-id="t:contract_deployments">contract_deployments<span>chain, address, tx, deployer &middot; 2,986 rows</span></button>
+      <button class="smap-node" data-id="t:verified_contracts">verified_contracts<span>the link + transformations</span></button>
+      <button class="smap-node" data-id="t:sourcify_matches">sourcify_matches<span>matchId, metadata, verifiedAt</span></button>
+      <button class="smap-node" data-id="t:contracts">contracts<span>creation + runtime code hashes</span></button>
+      <button class="smap-node" data-id="t:compiled_contracts">compiled_contracts<span>compiler, settings, artifacts</span></button>
+      <button class="smap-node" data-id="t:compiled_contracts_sources">compiled_contracts_sources<span>compilation &rarr; file paths</span></button>
+      <button class="smap-node" data-id="t:sources">sources<span>file bodies, deduped by hash</span></button>
+      <button class="smap-node" data-id="t:code">code<span>bytecode, deduped by hash</span></button>
+      <button class="smap-node" data-id="t:signatures">signatures<span>4-byte selector dictionary</span></button>
+      <button class="smap-node" data-id="t:compiled_contracts_signatures">compiled_contracts_signatures<span>selector &rarr; compilation join</span></button>
+    </div>
+    <svg class="smap-svg" id="smapSvg" aria-hidden="true"></svg>
+    <div class="smap-col">
+      <div class="smap-colhead">ARKIV &mdash; 6 ENTITY KINDS</div>
+      <button class="smap-node k" data-id="k:verified_contract">verified_contract<span>2,986 &middot; 27 attrs &middot; the lookup answer</span></button>
+      <button class="smap-node k" data-id="k:compilation">compilation<span>1,438 &middot; deduped by content fingerprint</span></button>
+      <button class="smap-node k" data-id="k:sourcefile">sourcefile<span>5,953 unique files &middot; sha256-addressed</span></button>
+      <button class="smap-node k" data-id="k:code">code<span>4,605 unique bytecodes &middot; keccak-addressed</span></button>
+      <button class="smap-node k" data-id="k:signature">signature<span>12,674 &middot; one per selector</span></button>
+      <button class="smap-node k" data-id="k:blob">blob<span>336 chunks &middot; the oversized tail, in parts</span></button>
+    </div>
+  </div>
+  <div class="smap-detail" id="smapDetail" hidden>
+    <div class="smap-dhead" id="smapDtitle"></div>
+    <p class="smap-dnote" id="smapDnote"></p>
+    <div class="scroll"><table id="smapDtable"><thead><tr id="smapDthead"></tr></thead><tbody id="smapDbody"></tbody></table></div>
+  </div>
+  <figcaption>Every count is the real Unichain figure from the v2 transform. Orange links light up for
+  the selected node; click it again to release. On a narrow screen the lines hide and the detail panel
+  does the work.</figcaption>
   </figure>
+
+  <script>
+  (function () {
+    var LINKS = [
+      ["t:contract_deployments", "k:verified_contract"],
+      ["t:verified_contracts", "k:verified_contract"],
+      ["t:sourcify_matches", "k:verified_contract"],
+      ["t:sourcify_matches", "k:compilation"],
+      ["t:contracts", "k:verified_contract"],
+      ["t:compiled_contracts", "k:compilation"],
+      ["t:compiled_contracts", "k:code"],
+      ["t:compiled_contracts_sources", "k:compilation"],
+      ["t:sources", "k:sourcefile"],
+      ["t:sources", "k:blob"],
+      ["t:code", "k:code"],
+      ["t:signatures", "k:signature"],
+      ["t:compiled_contracts_signatures", "k:verified_contract"],
+    ];
+    var D = {
+      "t:contract_deployments": { t: "contract_deployments → verified_contract", n: "The deployment identity becomes typed, indexed attributes — which is what makes them filterable at all.", h: ["column", "lands as", "why"], r: [
+        ["chain_id", "attr chainid (u64)", "numeric → range queries work"],
+        ["address", "attr address (addr)", "the primary lookup"],
+        ["deployer", "attr deployer (addr)", "“everything this deployer shipped”"],
+        ["block_number", "attr blocknumber (u64)", "time-ish ranges"],
+        ["transaction_hash, transaction_index", "vc payload · deployment", "returned, never filtered on"]]},
+      "t:verified_contracts": { t: "verified_contracts → verified_contract", n: "The central link IS the entity — one per (chain, address).", h: ["column", "lands as", "why"], r: [
+        ["creation_match, runtime_match", "attrs (str)", "exact vs partial filtering"],
+        ["creation/runtime_transformations + values", "vc payload", "deployment-specific; returned by the bytecode fields"],
+        ["deployment_id, compilation_id", "the entity key + compilationref (key attr)", "the foreign keys, one as identity, one as a native pointer"]]},
+      "t:sourcify_matches": { t: "sourcify_matches → two places", n: "Identity numbers stay on the contract; the metadata JSON moves to the compilation, where it deduplicates.", h: ["column", "lands as", "why"], r: [
+        ["id (matchId)", "attr matchid (u64)", "the cursor Sourcify pages by"],
+        ["created (verifiedAt)", "attr verifiedat (u64)", "date-range filters"],
+        ["metadata json", "compilation payload", "identical for every contract sharing the compilation — stored once"]]},
+      "t:contracts": { t: "contracts → folded into verified_contract", n: "A pure join table needs no entity of its own — its two columns become two attributes.", h: ["column", "lands as", "why"], r: [
+        ["creation_code_hash", "attr creationcodehash (str)", "join into the code lane"],
+        ["runtime_code_hash", "attr runtimecodehash (str)", "“every deployment of this exact bytecode”"]]},
+      "t:compiled_contracts": { t: "compiled_contracts → compilation (+ code)", n: "Deduplicated by a CONTENT fingerprint over inputs AND outputs — stronger than v1, which conflated 91 distinct compilations on this one chain.", h: ["column", "lands as", "why"], r: [
+        ["compiler, version, language, name", "attrs on compilation (echoed on vc)", "startsWith('0.8.') across a minor line"],
+        ["fully_qualified_name, compiler_settings", "compilation payload", "returned whole; optimizer/evmVersion also lifted to attrs"],
+        ["compilation_artifacts (abi, docs, storageLayout, sourceIds)", "abi on vc payload · rest on compilation payload", "abi rides the hot path; the rest is one dereference away"],
+        ["creation/runtime_code_artifacts", "compilation payload", "sourceMap, linkReferences, cborAuxdata, immutableReferences"],
+        ["creation/runtime code hashes", "payload refs → code entities", "recompiled bytecode, content-addressed"]]},
+      "t:compiled_contracts_sources": { t: "compiled_contracts_sources → the path→hash map", n: "A compilation can reference dozens of files and attributes cap at 32 — so the join lives as a small map on the compilation payload, exactly like Sourcify's own table references into its deduplicated sources.", h: ["column", "lands as", "why"], r: [
+        ["compilation_id, path, source_hash", "compilation payload · sources: { path: sha256 }", "a few hundred bytes even for a multi-file contract"]]},
+      "t:sources": { t: "sources → sourcefile (+ blob for the tail)", n: "One entity per UNIQUE file body — OpenZeppelin's ERC20.sol exists on-chain exactly once, whatever imports it.", h: ["column", "lands as", "why"], r: [
+        ["source_hash", "attr hash (str, sha256)", "the content address readers query by"],
+        ["content", "sourcefile payload", "42.1 MB across 5,953 unique files"],
+        ["content over ~123 KB", "blob parts", "33 files of 5,953 — the chunk lane, hash-verified on reassembly"]]},
+      "t:code": { t: "code → code", n: "The most direct translation on the page: content-addressed bytecode either side. Onchain and recompiled, creation and runtime, all dedup into one pool — a factory's thousand clones collapse to one entity.", h: ["column", "lands as", "why"], r: [
+        ["code_hash_keccak", "attr hash (str, keccak)", "chain-native address of the blob"],
+        ["code", "payload, raw bytes", "octet-stream, no JSON wrapper — half the bytes of hex"]]},
+      "t:signatures": { t: "signatures → signature", n: "The 4-byte dictionary, one entity per selector — the best-shaped workload in the whole POC (86-byte median payload, one equality to answer).", h: ["column", "lands as", "why"], r: [
+        ["signature_hash_4", "attr selector (str)", "the lookup key"],
+        ["signature, hash_32", "payload · candidate set", "collisions are real, so the whole set is stored"]]},
+      "t:compiled_contracts_signatures": { t: "compiled_contracts_signatures → derived", n: "Not stored at all: the signatures field is recomputed from the ABI at read time, in ABI order — measured byte-identical to Sourcify's own answer on 120/120 sampled contracts. Sourcify composes it too.", h: ["column", "lands as", "why"], r: [
+        ["the 175M-row join", "nothing", "derivable data is composed, not replicated"]]},
+      "k:verified_contract": { t: "verified_contract ← four tables", n: "One per (chain, address): 2,986 on Unichain. 27 of 32 attributes spent. The payload answers the default lookup in one read.", h: ["absorbs", "as", "note"], r: [
+        ["contract_deployments", "attrs + payload.deployment", "chain, address, deployer, block indexed"],
+        ["verified_contracts", "the entity itself + payload", "matches as attrs; transformations in payload"],
+        ["sourcify_matches", "attrs matchid, verifiedat", "metadata goes to the compilation instead"],
+        ["contracts", "attrs creationcodehash, runtimecodehash", "the join into the code lane"]]},
+      "k:compilation": { t: "compilation ← three tables", n: "1,438 entities after deduplication by content-strong fingerprint (inputs + outputs). Carries everything all sharers agree on: settings, metadata, docs, layouts, artifacts, sourceIds, the path→hash source map, refs to recompiled code.", h: ["absorbs", "as", "note"], r: [
+        ["compiled_contracts", "attrs + payload", "the dedup Sourcify already does (~87%)"],
+        ["compiled_contracts_sources", "payload · sources map", "path → sha256, a few hundred bytes"],
+        ["sourcify_matches.metadata", "payload · metadata", "JSON.stringify(payload.metadata) IS the compiler's canonical string — measured 120/120"]]},
+      "k:sourcefile": { t: "sourcefile ← sources", n: "5,953 unique file bodies (42.1 MB). Content-addressed by sha256, so the dedup is structural, not a cache policy.", h: ["absorbs", "as", "note"], r: [
+        ["sources", "one entity per unique hash", "queried by attr hash; immutable, so caches never invalidate"]]},
+      "k:code": { t: "code ← code", n: "4,605 unique bytecodes (39.4 MB, raw bytes). Onchain + recompiled, creation + runtime — one dedup pool.", h: ["absorbs", "as", "note"], r: [
+        ["code", "one entity per unique keccak", "runtime onchain == runtime recompiled when nothing was transformed — and then they are literally the same entity"]]},
+      "k:signature": { t: "signature ← signatures", n: "12,674 selectors from this chain's verified ABIs — written in the v1 pass, unchanged.", h: ["absorbs", "as", "note"], r: [
+        ["signatures (our slice)", "one entity per selector", "median payload 86 B; the whole 9.9M-row dictionary would be ~1 GB"]]},
+      "k:blob": { t: "blob — no Postgres equivalent", n: "The chunk lane the 131,072-byte transaction cap forces: a component too big for one transaction is split into parts (raw bytes, ~100 KB each), found by kind+hash, reassembled in part order and verified against its sha256 before anything is served. The reader refuses a partial body — it says unavailable, never silently shorter.", h: ["carries", "as", "note"], r: [
+        ["162 oversized components", "336 chunk entities · 25.9 MB", "50 metadatas + 33 source files + the other outliers — the tail, not the norm"]]},
+    };
+
+    var root = document.getElementById("smap");
+    var svg = document.getElementById("smapSvg");
+    var detail = document.getElementById("smapDetail");
+    var nodes = {};
+    root.querySelectorAll(".smap-node").forEach(function (b) { nodes[b.getAttribute("data-id")] = b; });
+    var selected = null;
+
+    function draw() {
+      var w = root.clientWidth, h = root.clientHeight;
+      svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+      svg.style.width = w + "px"; svg.style.height = h + "px";
+      var rr = root.getBoundingClientRect();
+      var out = "";
+      LINKS.forEach(function (l) {
+        var a = nodes[l[0]].getBoundingClientRect(), b = nodes[l[1]].getBoundingClientRect();
+        var x1 = a.right - rr.left, y1 = a.top - rr.top + a.height / 2;
+        var x2 = b.left - rr.left, y2 = b.top - rr.top + b.height / 2;
+        if (x2 - x1 < 40) return; // stacked layout: lines off, panel does the work
+        var lit = selected && (l[0] === selected || l[1] === selected);
+        var mx = (x1 + x2) / 2;
+        out += '<path d="M' + x1 + "," + y1 + " C" + mx + "," + y1 + " " + mx + "," + y2 + " " + x2 + "," + y2 +
+          '" fill="none" stroke="' + (lit ? "#FE7446" : "#3a3f4e") + '" stroke-width="' + (lit ? 2 : 1.1) +
+          '" opacity="' + (selected ? (lit ? "0.95" : "0.18") : "0.5") + '"/>';
+      });
+      svg.innerHTML = out;
+    }
+
+    function select(id) {
+      selected = selected === id ? null : id;
+      Object.keys(nodes).forEach(function (k) {
+        var connected = selected && LINKS.some(function (l) { return (l[0] === selected && l[1] === k) || (l[1] === selected && l[0] === k); });
+        nodes[k].classList.toggle("sel", k === selected);
+        nodes[k].classList.toggle("lit", !!connected);
+        nodes[k].classList.toggle("dim", !!selected && k !== selected && !connected);
+      });
+      if (selected && D[selected]) {
+        var d = D[selected];
+        document.getElementById("smapDtitle").textContent = d.t;
+        document.getElementById("smapDnote").textContent = d.n;
+        document.getElementById("smapDthead").innerHTML = d.h.map(function (x) { return "<th>" + x + "</th>"; }).join("");
+        document.getElementById("smapDbody").innerHTML = d.r.map(function (row) {
+          return "<tr><td class=\"mono\">" + row[0] + "</td><td class=\"mono\">" + row[1] + "</td><td>" + row[2] + "</td></tr>";
+        }).join("");
+        detail.hidden = false;
+      } else { detail.hidden = true; }
+      draw();
+    }
+
+    Object.keys(nodes).forEach(function (k) { nodes[k].addEventListener("click", function () { select(k); }); });
+    window.addEventListener("resize", draw);
+    draw();
+    // Fonts shift the layout after load; redraw once they settle.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+  })();
+  </script>
 
   <h3>Attribute budget &mdash; 25 of the 32 spent</h3>
   <div class="scroll">
@@ -504,6 +635,55 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
       later. If someone calls it &ldquo;just a cache&rdquo;: a cache is keyed by location, this is keyed by content.</p>
     </div>
   </div>
+  <h3>The 100% pass &mdash; everything on-chain, measured</h3>
+  <div class="card good">
+    <p style="margin:0 0 12px">The v1 index proved the lookup. The v2 pass (2026-08-21) replicates
+    <strong>the rest of the record</strong> &mdash; every field <code>fields=all</code> returns, including the
+    source bodies, both bytecodes, metadata, layouts and docs &mdash; normalized into the six entity kinds of
+    &sect;4 and chunked only where the transaction cap forces it. Encoded locally batch by batch before
+    sending, so these are exact, not estimated:</p>
+    <div class="kpis" style="margin:0 0 12px">
+      <div class="kpi"><div class="k">calldata</div><div class="v">209.7 MB</div><div class="f">the whole chain, all fields</div></div>
+      <div class="kpi"><div class="k">transactions</div><div class="v">2,343</div><div class="f">~98 min at 2.5 s pacing</div></div>
+      <div class="kpi"><div class="k">gas</div><div class="v">16.8 B</div><div class="f">466 blocks&rsquo; worth &asymp; 16 min of chain</div></div>
+      <div class="kpi"><div class="k">cost at 7 wei</div><div class="v">1.2e&minus;7</div><div class="f">GLM &mdash; devnet price</div></div>
+    </div>
+    <div class="scroll">
+    <table style="margin:0 0 12px">
+      <thead><tr><th>lane</th><th class="num">entities</th><th class="num">payload</th><th>what it is</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">verified_contract</td><td class="num">2,984 patched</td><td class="num">17.7 MB</td><td>+2 attrs, + transformations and code refs</td></tr>
+        <tr><td class="mono">compilation</td><td class="num">1,438</td><td class="num">61.7 MB</td><td>+ metadata, layouts, docs, artifacts, source map</td></tr>
+        <tr><td class="mono">sourcefile</td><td class="num">5,953</td><td class="num">42.1 MB</td><td>every unique file body, sha256-addressed</td></tr>
+        <tr><td class="mono">code</td><td class="num">4,605</td><td class="num">39.4 MB</td><td>every unique bytecode, raw bytes</td></tr>
+        <tr><td class="mono">blob</td><td class="num">336 chunks</td><td class="num">25.9 MB</td><td>162 oversized components, in parts</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="margin:0 0 10px;font-size:14px"><strong>The chunk lane is the tail, not the norm, and that is
+    now measured over the whole population:</strong> 33 of 5,953 source files (0.55%) and 50 of 2,984
+    metadatas (1.7%) exceed what one transaction can carry. Everything else fits whole. A spilled component
+    is split into ~100 KB raw-byte parts, found by <code>kind + hash</code>, reassembled in part order and
+    verified against its sha256 before anything is served &mdash; a reader gets the exact bytes or an explicit
+    &ldquo;unavailable&rdquo;, never a silently truncated file.</p>
+    <p style="margin:0 0 10px;font-size:14px"><strong>What stays composed rather than stored:</strong>
+    <code>stdJsonInput</code>, <code>stdJsonOutput</code> and <code>signatures</code> &mdash; because Sourcify
+    does not store them either. Its server assembles them from the normalized tables per request; the adapter
+    assembles them from the normalized entities, and the composition was verified against 120 verbatim
+    <code>fields=all</code> answers (the compiler&rsquo;s metadata string reproduces <em>byte-for-byte</em>,
+    120/120).</p>
+    <p style="margin:0 0 10px;font-size:14px"><strong>A find the stronger model surfaced:</strong> v1
+    deduplicated compilations by compiler + settings + name. On this one chain, <strong>94 of those
+    fingerprints were quietly conflating 1,438 genuinely different compilations</strong> (same name and
+    settings, different source content or artifacts &mdash; one split 5 ways). The v2 fingerprint keys on
+    inputs <em>and</em> outputs, the way Sourcify&rsquo;s own <code>compiled_contracts</code> dedup does, so
+    &ldquo;shared compilation&rdquo; now implies &ldquo;shared docs&rdquo; by construction.</p>
+    <p style="margin:0;font-size:13.5px;color:var(--muted)">This does not repeal the economics below: at 44 M
+    contracts the same content addresses let the fat tier live in object storage or IPFS unchanged. What the
+    100% pass settles is that <em>nothing in Sourcify&rsquo;s record is unrepresentable in Arkiv</em> &mdash;
+    where the fat bytes live is a choice of economics, not a limitation of the model.</p>
+  </div>
+
   <h3>And at Sourcify&rsquo;s real scale, which is the number that matters</h3>
   <p>The POC covers <strong>0.006%</strong> of Sourcify&rsquo;s verified contracts, or 0.008% of the
   contracts-plus-compilations set the extrapolation below actually spans. Extrapolating the measured per-record cost linearly
@@ -565,7 +745,11 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <div class="card good">
       <h3 style="margin-top:0">In scope &mdash; real</h3>
       <ul style="margin:0;padding-left:20px">
-        <li><strong>One complete chain.</strong> Unichain (130), all 2,801 verified contracts &mdash; every one, not a sample.</li>
+        <li><strong>One complete chain.</strong> Unichain (130), all 2,986 verified contracts &mdash; every one, not a sample.</li>
+        <li><strong>Every field, since the 100% pass.</strong> Source bodies, both bytecodes, metadata,
+          layouts and docs live on-chain as content-addressed entities; <code>stdJsonInput</code>,
+          <code>stdJsonOutput</code> and <code>signatures</code> are composed at read time, the way
+          Sourcify itself composes them. &sect;5 has the measured cost, &sect;4 the map.</li>
         <li><strong>Real Sourcify data</strong>, pulled from the live v2 API.</li>
         <li><strong>Real writes</strong> to the Cheesecake devnet, batched.</li>
         <li><strong><code>GET /v2/contract/{chain}/{address}</code></strong> served from Arkiv, with the
@@ -582,7 +766,6 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
       <ul style="margin:0;padding-left:20px">
         <li><strong>Compiling and matching bytecode.</strong> That is Sourcify&rsquo;s verifier and it is not
           the thing under question. The question is whether Arkiv can be the database behind it.</li>
-        <li><strong>Sources and stdJsonOutput on-chain.</strong> They do not fit. §5.</li>
 
         <li><strong>Write path <code>POST /v2/verify</code>.</strong> The migration plan is dual-write behind
           the existing verifier, not a replacement of it.</li>
@@ -928,10 +1111,184 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   </div>
 </section>
 
+<!-- ============================================================ 11 -->
+<section id="queries">
+  <h2><span class="n">11</span>The query surface, side by side</h2>
+  <p class="sub">Same corpus, two public surfaces. The left column is what sourcify.dev&rsquo;s server
+  actually accepts &mdash; enumerated from its live swagger and probed, not recalled. The right column is
+  what the POC answers from Arkiv. Both directions of the gap matter, and neither is hidden.</p>
+
+  <h3>What both answer</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>question</th><th>sourcify.dev</th><th>on Arkiv (this POC)</th></tr></thead>
+    <tbody>
+      <tr><td>one contract, any of the 24 fields</td>
+        <td class="mono">GET /v2/contract/{chain}/{addr}?fields=&hellip;</td>
+        <td class="mono">same URL shape, same projection semantics, served from entities &mdash; plus provenance headers (entity key, owner, block, the literal query)</td></tr>
+      <tr><td>selector &rarr; signature (4-byte)</td>
+        <td class="mono">api.4byte.sourcify.dev/&hellip;/lookup</td>
+        <td class="mono">eq(selector) on a signature entity &mdash; one equality, whole candidate set</td></tr>
+      <tr><td>is this address verified anywhere?</td>
+        <td class="mono">/v2/contract/all-chains/{addr}</td>
+        <td class="mono">same predicate minus <code>chainid</code> &mdash; scope is one chain today, the query shape is already cross-chain</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Questions with no Sourcify URL &mdash; one predicate here</h3>
+  <p>Their Postgres could answer most of these; the public API exposes no parameter for any of them.
+  Enumerated against the live swagger: <code>GET /v2/contracts/{chainId}</code> accepts exactly
+  <code>sort</code>, <code>limit</code> and <code>afterMatchId</code> &mdash; there is no filter surface at
+  all. Each row below is a working query against the POC, and they all combine:</p>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>question</th><th>the Arkiv predicate</th><th>note</th></tr></thead>
+    <tbody>
+      <tr><td>every proxy on the chain</td><td class="mono">isproxy = true</td><td>Sourcify computes proxy status per request and stores nothing &mdash; not a column even Postgres could filter</td></tr>
+      <tr><td>built with solc 0.8.30</td><td class="mono">compilerversion STARTSWITH "0.8.30"</td><td>the column exists in Postgres; the URL does not</td></tr>
+      <tr><td>Vyper contracts only</td><td class="mono">language = "Vyper"</td><td></td></tr>
+      <tr><td>exact matches with the optimizer on</td><td class="mono">match = "exact_match" AND optimizer = true</td><td>two dimensions at once &mdash; what an index is for</td></tr>
+      <tr><td>everything this deployer shipped</td><td class="mono">deployer = 0x&hellip;</td><td>returned per contract by their API, never queryable</td></tr>
+      <tr><td>contracts with 40+ functions</td><td class="mono">fncount &gt;= 40</td><td>derived from the ABI at index time &mdash; exists nowhere in Sourcify</td></tr>
+      <tr><td>verified since a date</td><td class="mono">verifiedat &gt;= 1755&hellip;</td><td>epoch range on a u64</td></tr>
+      <tr><td>identical ABI to a known contract</td><td class="mono">abihash = sha256(&hellip;)</td><td>find every deployment of an interface</td></tr>
+      <tr><td>every deployment of this exact bytecode</td><td class="mono">runtimecodehash = keccak(&hellip;)</td><td>new with the 100% pass &mdash; factory clones, found by content</td></tr>
+      <tr><td>selectors by prefix</td><td class="mono">selector STARTSWITH "0xa9"</td><td>their 4-byte API has name search, not selector-prefix search</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>What their public surface has that this POC does not</h3>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>surface</th><th>sourcify.dev</th><th>on Arkiv</th><th>why</th></tr></thead>
+    <tbody>
+      <tr><td>the listing feed &mdash; newest first, cursor-paginated</td>
+        <td class="mono yes">GET /v2/contracts/{chain}?sort=desc&amp;afterMatchId=&hellip;</td>
+        <td class="no">does not work</td>
+        <td>no server-side ORDER BY (&sect;7 ask 1). The one absence that is a blocker, not a gap.</td></tr>
+      <tr><td>counts for a stats page</td>
+        <td class="partial">signature counts only (4-byte /stats); no contract counts anywhere public</td>
+        <td class="no">no COUNT &mdash; walking pages (&sect;7 ask 2)</td>
+        <td>neither side really serves this today; Postgres could, Arkiv cannot</td></tr>
+      <tr><td>the write path &mdash; verify, import, similarity jobs</td>
+        <td class="mono yes">POST /v2/verify/&hellip;</td>
+        <td class="partial">out of scope by design</td>
+        <td>the migration plan is dual-write behind their existing verifier, not a rewrite of it</td></tr>
+      <tr><td>signature-name wildcard search</td>
+        <td class="mono yes">4byte /search?query=transfer*</td>
+        <td class="partial">prefix only &mdash; STARTSWITH is the language&rsquo;s one pattern operator</td>
+        <td></td></tr>
+      <tr><td>415+ chains</td>
+        <td class="yes">all of them</td>
+        <td class="partial">one, whole</td>
+        <td>scope of the POC, not of the model &mdash; every entity already carries <code>chainid</code></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="card accent">
+    <p style="margin:0"><strong>The honest sentence for this section.</strong> The public Sourcify API is a
+    lookup service: one contract, one address-across-chains, one feed. Every <em>filter</em> question on
+    this page is answered today by BigQuery, Dune or the Parquet export &mdash; a day-old copy on someone
+    else&rsquo;s infrastructure. The POC answers them against the live, signed corpus with a
+    ~200&nbsp;ms query. What it cannot do is the feed and the counts &mdash; and those two are asks 1 and 2
+    to engineering, not clevernesses away.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 12 -->
+<section id="faq">
+  <h2><span class="n">12</span>The Q&amp;A this page exists for</h2>
+  <p class="sub">The questions the room will actually ask, with the measured answer and nothing padded.</p>
+
+  <details open>
+    <summary>Is 100% of Sourcify&rsquo;s data really in Arkiv?</summary>
+    <p>For chain 130, yes, in the precise sense that matters: <strong>every byte of every
+    <code>fields=all</code> answer is served from Arkiv entities</strong> &mdash; source bodies, both
+    bytecodes, metadata, storage layouts, docs, deployment, transformations, all of it. Three fields
+    (<code>stdJsonInput</code>, <code>stdJsonOutput</code>, <code>signatures</code>) are composed at read
+    time from the stored parts &mdash; which is not a shortcut, because <em>Sourcify does not store those
+    either</em>: its server composes them from the same normalized tables on every request. The parity tab
+    of the POC diffs all 24 fields against sourcify.dev live, per contract, on demand.</p>
+  </details>
+
+  <details>
+    <summary>The record is bigger than the 128&nbsp;KiB limit. How does it fit?</summary>
+    <p>Normalization first, chunking last. Deduplication does most of the work: a source file shared by
+    hundreds of contracts is stored once (5,953 unique files for 2,986 contracts), bytecode dedups the same
+    way (4,605 unique blobs), and a compilation shared by many deployments is stored once (1,438). After
+    that, only the true tail exceeds one transaction &mdash; 33 files of 5,953 and 50 metadatas of 2,984,
+    measured over the whole chain &mdash; and those spill to the <strong>blob lane</strong>: ~100&nbsp;KB
+    raw-byte parts, content-addressed, reassembled in order and verified against their sha256 before
+    anything is served. &ldquo;Part 1 / part 2&rdquo; exists, but as the escape hatch for 1&ndash;2% of
+    atoms, not as the design.</p>
+  </details>
+
+  <details>
+    <summary>Why not just raise MAX_PAYLOAD_BYTES? It is one node parameter.</summary>
+    <p>It is one parameter, and we still did not raise it, for three reasons. <strong>One:</strong> a demo
+    on a private node with a raised limit proves &ldquo;Sourcify fits a chain nobody runs&rdquo;; the
+    chunked design runs on the shared devnet with stock parameters, which is the claim that survives the
+    room. <strong>Two:</strong> the limit is not the binding constraint &mdash; the economics are. Real
+    cost is ~80 gas per calldata byte against a 36&nbsp;M-gas block, so a median 1&nbsp;MB
+    sources-as-one-payload record is <em>two whole blocks</em>; raising the byte cap without raising block
+    gas changes nothing, and raising both is a different chain. That is also why ask #5 to engineering is
+    explicitly <em>&ldquo;leave the limit alone&rdquo;</em>. <strong>Three:</strong> the limit forced the
+    better model &mdash; content addressing and dedup are how Sourcify&rsquo;s own Postgres stores sources
+    and code. What a bigger-payload node <em>would</em> be good for is a controlled experiment measuring
+    what large payloads do to block utilisation &mdash; data for a product conversation, run separately,
+    never the replication path.</p>
+  </details>
+
+  <details>
+    <summary>What does a full record cost to read?</summary>
+    <p>The honest price of normalization on a database with no JOIN: the default lookup is still
+    <strong>one read</strong>; a full <code>fields=all</code> record is 1 (contract) + 1 (compilation) + up
+    to 4 (bytecodes) + one per source file &mdash; median 8 reads, a 100-file contract costs its file count
+    on first touch. Two things keep that sane: the reads are parallel point-lookups, and every piece except
+    the contract itself is immutable and content-addressed, so a cache never invalidates &mdash; the
+    OpenZeppelin file that appears in half the chain is fetched once per server, ever. The POC reports the
+    fan-out per response (<code>x-arkiv-reads</code>) instead of hiding it. Postgres pays a different shape
+    for the same join: one round trip, eight tables walked inside the engine.</p>
+  </details>
+
+  <details>
+    <summary>Who keeps 15,000+ entities alive?</summary>
+    <p>Nobody, yet &mdash; by design, so the question stays visible. Everything written expires around
+    <strong>19&ndash;20 Oct 2026</strong> (the v2 pass was deliberately given the v1 corpus&rsquo;s
+    deadline, so the graph lives and dies together &mdash; no half-expired records serving dangling
+    references). Extension is measured at 10,000 gas per entity, cheap; <em>who holds the key that runs the
+    extension process</em> is one of the open questions in &sect;10, and no demo can settle it.</p>
+  </details>
+
+  <details>
+    <summary>Could someone fake Sourcify data on this public chain?</summary>
+    <p>Anyone can write entities claiming <code>ds=sourcify</code> &mdash; it is a public write surface.
+    Authenticity is <code>owner == the publisher address</code>, checked on every read path, plus the
+    dataset marker; a consumer that skips the owner check is trusting strangers. This is also the flip side
+    worth saying out loud: the same property means a consumer can <em>verify</em> the data came from the
+    publisher cryptographically, which no API response from a Postgres can offer.</p>
+  </details>
+
+  <details>
+    <summary>What broke while building this?</summary>
+    <p>Real things, all measured: the node rejects uppercase attribute names and reserves
+    <code>bytes</code> as a keyword while the SDK validates both happily (found by a reverted transaction
+    and a dry run respectively); typed attributes match on type <em>and</em> value, so one wrong constructor
+    silently returns zero rows; the transaction cap binds the <em>whole</em> transaction, not the payload,
+    so payload budgets need ~8&nbsp;KB of envelope headroom; and the v1 compilation fingerprint quietly
+    conflated 94 groups of genuinely different compilations until the v2 content-strong fingerprint split
+    them. Every one of these is now a guardrail in the pipeline &mdash; and field intel the SDK team can
+    use.</p>
+  </details>
+</section>
+
 <footer>
-  <p style="margin:0">Measured 19 Aug 2026 against sourcify.dev v2, the Sourcify Parquet export, and the Arkiv
-  Cheesecake devnet (chain 7733102, block ~254,070). Limits read from
-  <code>@arkiv-network/sdk@0.8.0-advanced.2</code>. Numbers move; re-measure before quoting.</p>
+  <p style="margin:0">Measured 19&ndash;21 Aug 2026 against sourcify.dev v2 (live swagger + probes), the
+  Sourcify Parquet export, and the Arkiv Cheesecake devnet (chain 7733102). Limits read from
+  <code>@arkiv-network/sdk@0.8.0-advanced.2</code>. The 100% pass: 209.7 MB &middot; 2,343 transactions
+  &middot; six entity kinds. Numbers move; re-measure before quoting.</p>
 </footer>
 
 </div>

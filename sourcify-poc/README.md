@@ -16,9 +16,9 @@ limits and the scope. This folder is the thing that runs.
 | Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **2,801** verified contracts |
 | Target | **Arkiv Cheesecake devnet**, chain `7733102`, `https://rpc.cheesecake.db-chain.devnet.gobas.me` |
 | SDK | `@arkiv-network/sdk@0.8.0-advanced.2` — the version carrying the new frozen contract (typed attributes). `0.7.0` is the old string/numeric shape and will not do. |
-| Entity types | `verified_contract` (25 typed attributes), `compilation` (deduplicated, referenced by a `key` attribute), `signature` (one per 4-byte selector), and `sourcefile` (one per unique source file, deduplicated by sha256) |
-| Written | 2,801 contracts + 1,127 compilations + 12,674 selectors in **568 transactions**, two-month lifetime — measured before `sourcefile` existed, so that count does not include it yet |
-| Not stored on-chain | bytecode, stdJsonOutput, full metadata — see *The size wall* below. Source FILES are, one small entity per unique hash; a full sources BUNDLE embedded in one payload still is not (over the limit by ~2.3×) |
+| Entity types | **six kinds**: `verified_contract` (28 typed attributes), `compilation` (deduplicated by a content-strong fingerprint), `sourcefile` (one per unique file, sha256-addressed), `code` (one per unique bytecode, keccak-addressed, raw bytes), `signature` (one per 4-byte selector), `blob` (the chunk lane for the oversized tail) |
+| Written | v1 (2026-08-20): 2,801 contracts + 1,127 compilations + 12,674 selectors in 568 transactions. **v2 — the 100% pass (2026-08-21)**: everything else — 5,953 source files, 4,605 bytecodes, 1,438 compilations (94 v1 fingerprints split), 336 blob chunks, 2,984 contract patches = **209.7 MB, 2,343 transactions**, dry-run measured exactly; the send is checkpointed and rate-limit-aware (see *The RPC reality* below) |
+| Not stored on-chain | only what Sourcify itself does not store: `stdJsonInput`, `stdJsonOutput` and `signatures` are **composed at read time** from the normalized entities — verified byte-faithful against 120 verbatim `fields=all` answers (`etl/composecheck.mjs`) |
 
 ## Also in scope, after a rethink
 
@@ -116,6 +116,29 @@ Batches are packed by encoded bytes using the measured cost model — `996 + 192
 `txpool is full` is treated as backpressure: wait, then re-send the same nonce, so the sequence
 keeps no holes.
 
+### The 100% pass (steps 5–8)
+
+```bash
+node 5-fetch-full.mjs     # the rest of the record: sources, bytecodes, metadata, docs (~420 MB)
+node 6-sample-all.mjs     # fields=all VERBATIM for 120 addresses — the composition ground truth
+node composecheck.mjs     # proves stdJsonInput/Output/signatures/metadata compose byte-faithfully
+node 7-transform-full.mjs # six lanes out; prints the population-wide field-size table
+node 8-write-full.mjs     # dry run; --send to broadcast (patches + creates, resumable)
+```
+
+`FULL-REPLICATION.md` is the design + build record, including what the adversarial review pass
+changed. The chunk lane (`blob` entities) carries only the measured tail: 33 of 5,953 source
+files and 50 of 2,984 metadatas exceed one transaction.
+
+### The RPC reality
+
+Without an API key the Bouncer meters **everything** — `eth_sendRawTransaction` included — at
+**50 requests/hour per IP** (`429 ANON_RATE_LIMITED`, measured 2026-08-21). Anonymously the v2
+send is a crawler (~45 txs per hourly window, ~2 days); with `ARKIV_API_KEY` it is ~100 minutes.
+Also measured: viem's default retry **honors the up-to-one-hour `Retry-After`** silently, which
+reads as a hang — the writer runs its transport with `retryCount: 0` and does its own visible
+waiting.
+
 ### 4. Serve
 
 ```bash
@@ -156,7 +179,7 @@ GATE_PASSWORD=123
 | route | what it is |
 |---|---|
 | `GET /api/v2/contract/{chainId}/{address}` | Sourcify v2's most-used endpoint, answered from Arkiv. Supports `fields` and `omit`. `fields=compilationEntity` is the one addition beyond Sourcify's own shape: it follows the entity's `compilationref` (a typed `key` attribute — the join `3-write.mjs` builds) to the linked `compilation` entity and returns a summary (compiler, version, optimizer settings, source file count) — opt-in, a second Arkiv read, not included by `fields=all`. Response headers carry the entity key, owner, read block and the literal query (plus a second timing header when `compilationEntity` was requested). |
-| `GET /api/parity?chainId=&address=&depth=` | Asks both databases and diffs them field by field, at the same projection on both sides. `depth=identity` compares the 7 fields of Sourcify's default response; `depth=full` adds the ABI (as a canonical digest), the compilation and the deployment — 18 fields. Verdict is `identical` / `mismatch` / `inconclusive` / `not_in_arkiv` / `not_in_sourcify`. |
+| `GET /api/parity?chainId=&address=&depth=` | Asks both databases and diffs them field by field, at the same projection on both sides. `depth=identity` compares the 7 fields of Sourcify's default response; `depth=full` adds the ABI (as a canonical digest), the compilation and the deployment — 18 fields; **`depth=all` compares all 24 `fields=all` fields** as canonical digests with per-field byte sizes, plus a byte-exact probe on the compiler's metadata string, and reports the Arkiv read fan-out. Verdict is `identical` / `mismatch` / `inconclusive` / `not_in_arkiv` / `not_in_sourcify`. |
 | `GET /api/query?...` | The filters Sourcify's public API does not expose: proxy status, compiler version prefix, function-count ranges, optimizer settings. Returns the literal Arkiv query it ran. |
 | `GET /api/signature?selector=0x…` | The 4-byte service, answered from Arkiv. One equality on an indexed attribute; returns the whole candidate set, because selectors collide. |
 | `GET /api/stats` | Live head block and total entity count (one request each), plus the per-type counts from the writer — because counting them live costs ~87 round trips and timed out. |
@@ -180,6 +203,9 @@ GATE_PASSWORD=123
 - **The node rejects uppercase attribute names.** `useCount` reverts; `usecount` is accepted. The
   SDK's own `isValidAttributeName` returns true for both, so nothing catches it before the gas is
   spent and the revert carries no reason.
+- **`bytes` is a reserved attribute name.** The query language claims it, and this one the SDK
+  *does* catch locally (`InvalidAttributeNameError`) — found on the first v2 dry run. The lanes
+  use `size` instead.
 - **Typed attributes match on TYPE as well as value.** A bare bigint is inferred as `u256`, so
   `eq("chainid", 130n)` silently returns zero rows against a `chainid` written as `u64`. No error,
   just an empty result.

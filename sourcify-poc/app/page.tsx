@@ -172,18 +172,20 @@ const GROUP_LABEL: Record<string, string> = {
   abi: "ABI",
   compilation: "Compilation",
   deployment: "Deployment",
+  content: "Whole record — every fields=all field, as canonical digests",
+  "byte-exact": "Byte-exact probes",
 };
 
 function Parity({ onInspect }: { onInspect: (key: string) => void }) {
   const [address, setAddress] = useState("");
-  const [depth, setDepth] = useState<"identity" | "full">("identity");
+  const [depth, setDepth] = useState<"identity" | "full" | "all">("identity");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [res, setRes] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [showRaw, setShowRaw] = useState(false);
 
-  const run = useCallback(async (addr: string, d: "identity" | "full") => {
+  const run = useCallback(async (addr: string, d: "identity" | "full" | "all") => {
     setBusy(true); setErr(null); setRes(null);
     try {
       const r = await fetch(`/api/parity?chainId=130&address=${addr}&depth=${d}`);
@@ -215,9 +217,10 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
           </div>
           <div>
             <label htmlFor="depth">Compare</label>
-            <select id="depth" value={depth} onChange={(e) => setDepth(e.target.value as "identity" | "full")}>
+            <select id="depth" value={depth} onChange={(e) => setDepth(e.target.value as "identity" | "full" | "all")}>
               <option value="identity">identity — 7 fields</option>
               <option value="full">+ ABI, compilation, deployment</option>
+              <option value="all">everything — all 24 fields=all fields</option>
             </select>
           </div>
           <button onClick={() => run(address, depth)} disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address)}>
@@ -247,7 +250,13 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
               <Kpi k="Mismatches" v={String(res.mismatches?.length ?? 0)} />
               <Kpi k="Sourcify (Postgres)" v={res.sourcify?.ms != null ? `${res.sourcify.ms} ms` : undefined} />
               <Kpi k="Arkiv (Cheesecake)" v={res.arkiv?.ms != null ? `${res.arkiv.ms} ms` : undefined} />
+              {res.reads && <Kpi k="Arkiv point reads" v={`${res.reads.arkiv}${res.reads.cacheHits ? ` (+${res.reads.cacheHits} cached)` : ""}`} />}
             </div>
+            {res.reads?.unavailable?.length ? (
+              <p className="err" style={{ marginTop: 10 }}>
+                unavailable on-chain: {res.reads.unavailable.join(" · ")}
+              </p>
+            ) : null}
 
             <div className="cmplegend">
               <span>field</span><span>sourcify.dev</span><span>arkiv</span><span />
@@ -256,13 +265,13 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
               <div key={g} style={{ marginTop: 10 }}>
                 <div className="grouphead">{GROUP_LABEL[g] ?? g}</div>
                 <div className="cmp">
-                  {(res.fields as { field: string; sourcify: string | null; arkiv: string | null; equal: boolean; group: string }[])
+                  {(res.fields as { field: string; sourcify: string | null; arkiv: string | null; equal: boolean; group: string; sourcifyBytes?: number; arkivBytes?: number }[])
                     .filter((f) => f.group === g)
                     .map((f) => (
                       <div key={f.field} className={`cmprow ${f.equal ? "" : "isbad"}`}>
                         <div className="cmpk">{f.field}</div>
-                        <div className="cmpv"><Mono wrap>{f.sourcify ?? "—"}</Mono></div>
-                        <div className="cmpv"><Mono wrap>{f.arkiv ?? "—"}</Mono></div>
+                        <div className="cmpv"><Mono wrap>{f.sourcify ?? "—"}</Mono>{f.sourcifyBytes ? <span className="pill">{f.sourcifyBytes.toLocaleString()} B</span> : null}</div>
+                        <div className="cmpv"><Mono wrap>{f.arkiv ?? "—"}</Mono>{f.arkivBytes ? <span className="pill">{f.arkivBytes.toLocaleString()} B</span> : null}</div>
                         <div className={`cmpe ${f.equal ? "ok" : "bad"}`}>{f.equal ? "=" : "≠"}</div>
                       </div>
                     ))}
@@ -663,9 +672,12 @@ function FourByte() {
 /* ---------------------------------------------------------------- explorer */
 
 const KINDS = [
-  { id: "verified_contract", label: "verified_contract", note: "One per (chain, address) — 25 typed attributes and the lookup answer as payload." },
-  { id: "compilation", label: "compilation", note: "Deduplicated by compilation fingerprint, the way Postgres dedupes compiled_contracts." },
+  { id: "verified_contract", label: "verified_contract", note: "One per (chain, address) — 27 typed attributes and the lookup answer as payload." },
+  { id: "compilation", label: "compilation", note: "Deduplicated by compilation fingerprint, the way Postgres dedupes compiled_contracts — carries metadata, layouts, docs, artifacts and the path→hash source map." },
   { id: "signature", label: "signature", note: "One per 4-byte selector — the smallest entity here, 86 bytes of payload at the median." },
+  { id: "sourcefile", label: "sourcefile", note: "One per UNIQUE source file, sha256 content-addressed — OpenZeppelin's ERC20.sol exists on-chain exactly once." },
+  { id: "code", label: "code", note: "One per unique bytecode, keccak content-addressed — onchain and recompiled, creation and runtime, all dedup here." },
+  { id: "blob", label: "blob", note: "The chunk lane: a component too big for one transaction, split into parts and reassembled (and hash-verified) at read time." },
 ];
 
 function EntityCard({ e, index }: { e: Record<string, unknown>; index: number }) {
@@ -756,8 +768,8 @@ function Explorer({ focusKey, onClearFocus }: { focusKey: string | null; onClear
       <div className="panel">
         <h2>Entities on Cheesecake</h2>
         <Duo
-          left={{ big: "7 tables", cap: <>One verification is a row in each, tied together by foreign keys.</> }}
-          right={{ big: "1 entity", cap: <>Typed attributes you can filter on, plus a payload the database never looks inside.</> }}
+          left={{ big: "10 tables", cap: <>The whole normalized schema — one verification is a join across eight of them.</> }}
+          right={{ big: "6 entity kinds", cap: <>Typed attributes you can filter on, plus payloads the database never looks inside — same normalization, content-addressed.</> }}
         />
         {focusKey && (
           <p className="note" style={{ marginTop: 0, marginBottom: 14 }}>
