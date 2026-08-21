@@ -15,7 +15,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const ARGOT = path.resolve(here, "..", "..");
+const ARGOT = path.resolve(here, "..", "..", "docs");
 const OUT = path.resolve(here, "..", "kb", "context-pack.json");
 
 const DOCS = [
