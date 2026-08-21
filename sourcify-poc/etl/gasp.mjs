@@ -1,0 +1,13 @@
+import { createPublicClient } from "@arkiv-network/sdk";
+import { cheesecake } from "@arkiv-network/sdk/chains";
+import { http } from "viem";
+const c = createPublicClient({ chain: cheesecake, transport: http("https://rpc.cheesecake.db-chain.devnet.gobas.me") });
+const gp = await c.getGasPrice();
+const blk = await c.getBlock();
+console.log("gasPrice (wei):", gp.toString());
+console.log("baseFeePerGas (wei):", blk.baseFeePerGas?.toString());
+console.log("block gasLimit:", blk.gasLimit?.toString(), "gasUsed:", blk.gasUsed?.toString());
+const spent = 200 - 199.997457959478;
+console.log("\nIF funded with 200 GLM, spent =", spent.toFixed(12), "GLM =", (spent*1e18).toExponential(3), "wei");
+console.log("at 7 wei/gas that would be", (spent*1e18/7).toExponential(3), "gas");
+console.log("at 1,000,000 wei/gas that would be", (spent*1e18/1e6).toExponential(3), "gas");

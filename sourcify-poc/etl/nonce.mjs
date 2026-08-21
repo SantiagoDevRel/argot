@@ -1,0 +1,10 @@
+import { createPublicClient } from "@arkiv-network/sdk";
+import { cheesecake } from "@arkiv-network/sdk/chains";
+import { http } from "viem";
+const c = createPublicClient({ chain: cheesecake, transport: http("https://rpc.cheesecake.db-chain.devnet.gobas.me") });
+const PUB = "0x4691f23a5Da293D31e93f129287402063E95AD21";
+const n = await c.getTransactionCount({ address: PUB });
+const bal = await c.getBalance({ address: PUB });
+console.log("publisher", PUB);
+console.log("transaction count (nonce) =", n, "  <- total txs this account ever sent");
+console.log("balance GLM =", Number(bal)/1e18);
