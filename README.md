@@ -1,19 +1,19 @@
-# [Sourcify](https://sourcify.dev) x [Arkiv](https://arkiv.network) integration
+# 🟦 [Sourcify](https://sourcify.dev) x [Arkiv](https://arkiv.network) 🟧 integration
 
-Can Sourcify's contract-verification database move onto Arkiv — a database that is
-decentralized *and* queryable? This repo is the research, the design, and two working
-proofs of concept for that question.
+> Can Sourcify's contract-verification database be fully moved into Arkiv? (a decentralized queryable database)
 
-Two numbers worth getting right, because an earlier draft had both wrong: Sourcify holds
-**43.8M verified contracts** across 377 chains as of 19 Aug 2026, not the ~11M an older
-note quoted. And **BigQuery is not their database** — Postgres is. BigQuery is the public
-queryable *mirror*, which Argot's own roadmap files under milestones completed as a
-"Public Queriable DB Instance". That distinction decides what this work is actually
-proposing to replace; see `sourcify-explainer` §9.
+Research, design, and two working
+proofs of concepts.
 
 **Start here:** [`CLAUDE.md`](./docs/CLAUDE.md) is the maintained entry point (north star, phase
 status, hard rules). This file is a map of what lives where and how to run the apps —
-it does not replace CLAUDE.md, it points at it.
+
+# Overview 
+
+Sourcify holds
+**43.8M verified contracts** across 377 chains as of 19 Aug 2026.
+
+Sourcify has a Postgres DB, but **uses BigQuery as a public queryable *mirror***
 
 ## Working docs
 
