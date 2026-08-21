@@ -151,3 +151,34 @@ td.ok { color: var(--ok); } td.bad { color: var(--bad); }
 .attr { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
 .ak { font-family: var(--mono); color: var(--orange); font-size: 11.5px; }
 .av { min-width: 0; }
+
+
+/* ---- the query block: wrap, do not scroll -------------------------------
+   A one-line query in a fixed-height <pre> produced a bright horizontal
+   scrollbar sitting under the text — the ugliest element on the page, and on a
+   dark ground the browser paints it light. Queries are text; let them wrap. */
+pre.wire {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow-x: visible;
+  max-height: none;
+}
+
+/* Where scrolling is genuinely needed (wide tables), make the bar belong to the
+   page instead of the operating system. */
+.scroll { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.scroll::-webkit-scrollbar { height: 8px; }
+.scroll::-webkit-scrollbar-track { background: transparent; }
+.scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+.scroll::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+pre { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+pre::-webkit-scrollbar { height: 8px; width: 8px; }
+pre::-webkit-scrollbar-track { background: transparent; }
+pre::-webkit-scrollbar-thumb { background: var(--line); border-radius: 99px; }
+
+/* ---- provenance key as a link into our own entity browser --------------- */
+.keylink {
+  color: var(--blue); text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer; background: none; border: 0; padding: 0; font: inherit; text-align: left;
+}
+.keylink:hover { color: var(--orange); }

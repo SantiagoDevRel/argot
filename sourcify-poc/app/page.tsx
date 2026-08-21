@@ -50,6 +50,10 @@ function Mono({ children, wrap }: { children: React.ReactNode; wrap?: boolean })
 export default function Page() {
   const [tab, setTab] = useState<Tab>("parity");
   const [stats, setStats] = useState<Record<string, unknown> | null>(null);
+  // Set when a provenance key is clicked: the Browse tab opens on that one entity.
+  // Cheesecake has no block explorer to link at, so this app is the explorer.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const inspect = (key: string) => { setFocusKey(key); setTab("explorer"); };
 
   useEffect(() => {
     fetch("/api/stats").then((r) => r.json()).then(setStats).catch(() => setStats(null));
@@ -97,10 +101,10 @@ export default function Page() {
         {TABS.find((t) => t.id === tab)?.blurb}
       </p>
 
-      {tab === "parity" && <Parity />}
+      {tab === "parity" && <Parity onInspect={inspect} />}
       {tab === "query" && <Query />}
       {tab === "fourbyte" && <FourByte />}
-      {tab === "explorer" && <Explorer />}
+      {tab === "explorer" && <Explorer focusKey={focusKey} onClearFocus={() => setFocusKey(null)} />}
     </div>
   );
 }
@@ -134,7 +138,7 @@ const GROUP_LABEL: Record<string, string> = {
   deployment: "Deployment",
 };
 
-function Parity() {
+function Parity({ onInspect }: { onInspect: (key: string) => void }) {
   const [address, setAddress] = useState("");
   const [depth, setDepth] = useState<"identity" | "full">("identity");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -239,8 +243,20 @@ function Parity() {
           <div className="panel">
             <h2>Provenance</h2>
             <p className="sub">Where Arkiv&apos;s answer physically came from.</p>
+            <p className="sub" style={{ marginTop: -6 }}>
+              The key opens that record on the Browse tab. There is no block explorer for this
+              network to link at &mdash; the indexer on that host is a gas-price tracker &mdash; so
+              this app is the explorer.
+            </p>
             <dl className="prov">
-              <dt>entity key</dt><dd><Mono wrap>{res.arkiv?.entityKey ?? "—"}</Mono></dd>
+              <dt>entity key</dt>
+              <dd>
+                {res.arkiv?.entityKey ? (
+                  <button className="keylink" onClick={() => onInspect(res.arkiv.entityKey)}>
+                    <Mono wrap>{res.arkiv.entityKey}</Mono>
+                  </button>
+                ) : "—"}
+              </dd>
               <dt>owner</dt><dd><Mono wrap>{res.arkiv?.owner ?? "—"}</Mono></dd>
               <dt>read at block</dt><dd><Mono>{res.arkiv?.blockNumber ?? "—"}</Mono></dd>
               <dt>query sent</dt><dd className="wire"><Mono wrap>{res.arkiv?.query ?? "—"}</Mono></dd>
@@ -507,7 +523,30 @@ function FourByte() {
             </div>
           </div>
           <div className="panel">
-            <h2>Result</h2>
+            <h2>The same lookup, both services</h2>
+            <p className="sub">
+              This is the one part of Sourcify where the shapes genuinely match: a selector in, a set
+              of candidate texts out. No join to lose, nothing to order, nothing to count.
+            </p>
+            <div className="versus">
+              <div className="vs vs-no">
+                <div className="vshead">4byte.sourcify.dev</div>
+                <div className="vsbody">
+                  A separate service on its own Postgres, consolidating openchain, 4byte.directory
+                  and etherface. Roughly <strong>7 million requests a day</strong> &mdash; and one
+                  more database to operate.
+                </div>
+              </div>
+              <div className="vs vs-yes">
+                <div className="vshead">the same, on Arkiv</div>
+                <div className="vsbody">
+                  One equality on an indexed attribute, one round trip. Median payload{" "}
+                  <strong>86 bytes</strong>; the whole 9.9M-row dictionary is about{" "}
+                  <strong>1 GB</strong>, against 484 GB for the contract index.
+                </div>
+              </div>
+            </div>
+            <h2 style={{ marginTop: 20 }}>What came back</h2>
             <pre>{j(res.results)}</pre>
             <p className="note">
               A selector is four bytes, so collisions are real: different function texts can hash to the
@@ -574,7 +613,7 @@ function EntityCard({ e, index }: { e: Record<string, unknown>; index: number })
   );
 }
 
-function Explorer() {
+function Explorer({ focusKey, onClearFocus }: { focusKey: string | null; onClearFocus: () => void }) {
   const [kind, setKind] = useState("verified_contract");
   const [limit, setLimit] = useState("20");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -593,7 +632,22 @@ function Explorer() {
     finally { setBusy(false); }
   }, []);
 
-  useEffect(() => { run(kind, limit); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+  const lookup = useCallback(async (key: string) => {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch(`/api/entity?key=${key}`);
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error ?? r.statusText);
+      setRes(b);
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); }
+  }, []);
+
+  useEffect(() => {
+    if (focusKey) lookup(focusKey);
+    else run(kind, limit);
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [focusKey]);
 
   const note = KINDS.find((k) => k.id === kind)?.note;
 
@@ -605,6 +659,14 @@ function Explorer() {
           Every record below was written by this project and read back from the chain. Open one to see the
           split the whole design turns on: <strong>attributes are searchable, the payload is not</strong>.
         </p>
+        {focusKey && (
+          <p className="note" style={{ marginTop: 0, marginBottom: 14 }}>
+            Showing one entity, opened from its provenance line.{" "}
+            <button className="keylink" onClick={() => { onClearFocus(); run(kind, limit); }}>
+              Back to browsing all of them
+            </button>
+          </p>
+        )}
         <div className="row">
           <div>
             <label htmlFor="kind">Entity type</label>
