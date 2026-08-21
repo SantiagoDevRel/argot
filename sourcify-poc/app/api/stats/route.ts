@@ -19,6 +19,7 @@
 import { NextResponse } from "next/server";
 import { arkiv, PUBLISHER } from "@/lib/arkiv";
 import counts from "@/kb/counts.json";
+import progress from "@/kb/progress.json";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -50,6 +51,8 @@ export async function GET() {
     writtenAt: counts.writtenAt,
     publisher: PUBLISHER || counts.publisher,
     countsAreLive: false,
+    // The 100% pass, as of the last deploy — see etl/progress.mjs.
+    v2: progress,
     // What asking the chain for these same numbers would cost.
     countCostRoundTrips: Math.ceil(total / PAGE) + 3,
     countCostAtSourcifyScale: Math.ceil(44_391_604 / PAGE),

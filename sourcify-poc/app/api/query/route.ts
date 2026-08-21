@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 const KEYS = [
   "chainId", "address", "match", "compiler", "compilerVersion", "language",
-  "isProxy", "minFns", "maxFns", "optimizer", "namePrefix", "verifiedAfter", "deployer",
+  "isProxy", "minFns", "maxFns", "optimizer", "namePrefix", "verifiedAfter", "deployer", "hash",
 ] as const;
 
 export async function GET(req: Request) {

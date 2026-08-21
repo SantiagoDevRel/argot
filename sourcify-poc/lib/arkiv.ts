@@ -26,7 +26,14 @@ export const PUBLISHER = (process.env.ARKIV_PUBLISHER ?? "").toLowerCase();
 const apiKey = process.env.ARKIV_API_KEY;
 export const arkiv = createPublicClient({
   chain: cheesecake,
-  transport: http(RPC, apiKey ? { fetchOptions: { headers: { "X-Api-Key": apiKey } } } : undefined),
+  // retryCount 0: on a 429 the Bouncer answers with `Retry-After` of up to an hour
+  // and viem's default retry HONORS it — the function then sits silent until
+  // Vercel's 60 s timeout. Failing fast turns that into a readable 502 instead.
+  transport: http(RPC, {
+    retryCount: 0,
+    timeout: 15_000,
+    ...(apiKey ? { fetchOptions: { headers: { "X-Api-Key": apiKey } } } : {}),
+  }),
 });
 
 export const SELECT = { key: true, owner: true, attributes: true, payload: true } as const;
@@ -35,7 +42,7 @@ export type Filters = {
   chainId?: string; address?: string; match?: string; compiler?: string;
   compilerVersion?: string; language?: string; isProxy?: string;
   minFns?: string; maxFns?: string; optimizer?: string; namePrefix?: string;
-  verifiedAfter?: string; deployer?: string;
+  verifiedAfter?: string; deployer?: string; hash?: string;
 };
 
 /** Translate the UI's filter bag into an Arkiv predicate. Unset fields are simply absent. */
@@ -51,6 +58,8 @@ export function buildPredicate(f: Filters, kind = "verified_contract") {
   if (f.optimizer) p.push(eq("optimizer", f.optimizer === "true"));
   if (f.namePrefix) p.push(startsWith("name", f.namePrefix));
   if (f.deployer) p.push(eq("deployer", addr(f.deployer.toLowerCase() as `0x${string}`)));
+  // content-addressed lanes (sourcefile / code / blob) are found by this, never by key
+  if (f.hash) p.push(eq("hash", str(f.hash)));
   if (f.minFns) p.push(gte("fncount", i32(Number(f.minFns))));
   if (f.maxFns) p.push(lte("fncount", i32(Number(f.maxFns))));
   if (f.verifiedAfter) p.push(gte("verifiedat", u64(BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000)))));

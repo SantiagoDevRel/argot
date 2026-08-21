@@ -6,7 +6,13 @@
   --text: #e7e9ef; --muted: #949aab; --ok: #3ddc97; --bad: #ff5f6d; --warn: #ffc857;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  /* one colour per entity kind — used by the graph, the schema map, the chips */
+  --k-vc: #FE7446; --k-cp: #4c53f0; --k-sf: #3ddc97; --k-code: #9ba0ff; --k-blob: #ffc857; --k-sig: #ff8fb1;
 }
+/* kind modifiers: put one of these next to .enode / .smap-node / .fprov-chip and
+   every colour in that component resolves through --k */
+.vc { --k: var(--k-vc); } .cp { --k: var(--k-cp); } .sf { --k: var(--k-sf); }
+.code { --k: var(--k-code); } .blob { --k: var(--k-blob); } .sig { --k: var(--k-sig); }
 * { box-sizing: border-box; }
 body {
   margin: 0; background: var(--ink); color: var(--text);
@@ -19,12 +25,33 @@ header.top { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-
 .brand { font-family: var(--mono); font-size: 12px; letter-spacing: .18em; color: var(--orange); text-transform: uppercase; }
 h1 { font-family: var(--mono); font-size: 26px; margin: 8px 0 6px; font-weight: 600; text-wrap: balance; }
 .lede { color: var(--muted); max-width: 70ch; margin: 0; }
-.tabs { display: flex; gap: 6px; margin: 22px 0 18px; flex-wrap: wrap; }
+/* ---- tab bar: a grid, never a wrapping row ---------------------------------
+   Five tabs in a flex row wrapped into 4+1 on a laptop; six would wrap 5+1.
+   A grid with a fixed column count per breakpoint gives equal cells and full
+   rows at every width: 2x3 narrow, 3x2 medium, 6 across from 1100px. The
+   number is its own span (.tab-n) so it sits in orange beside the words (.tab-t);
+   a tab with plain text and no spans still renders, just without the colour. */
+.tabs {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px;
+  margin: 22px 0 18px;
+}
+@media (min-width: 640px) { .tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .tabs { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .tab {
-  font-family: var(--mono); font-size: 13px; padding: 8px 14px; cursor: pointer;
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.3; font-weight: 400;
+  padding: 9px 11px; cursor: pointer; text-align: left; min-height: 54px; min-width: 0;
+  display: flex; gap: 9px; align-items: flex-start;
   background: var(--panel); border: 1px solid var(--line); color: var(--muted); border-radius: 6px;
 }
+.tab .tab-n {
+  flex: none; font-size: 10.5px; font-weight: 700; letter-spacing: .08em;
+  color: var(--orange); padding-top: 2px; font-variant-numeric: tabular-nums;
+}
+.tab .tab-t { min-width: 0; overflow-wrap: anywhere; }
+.tab:hover { background: var(--panel-2); border-color: var(--muted); color: var(--text); }
 .tab[aria-selected="true"] { background: var(--blue-deep); border-color: var(--blue); color: #fff; }
+.tab[aria-selected="true"] .tab-n { color: #fff; }
+.tab[aria-selected="true"]:hover { background: var(--blue-deep); border-color: var(--blue); }
 .tab:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
 .panel h2 { font-family: var(--mono); font-size: 15px; margin: 0 0 4px; font-weight: 600; }
@@ -314,3 +341,233 @@ details.why .body p:last-child { margin-bottom: 0; }
   .fhead { grid-template-columns: 1fr auto; }
   .fsize, .fchev { display: none; }
 }
+
+/* ============================================================ hierarchy
+   One eyebrow, one h2, one caption — the same three on every tab, so the eye
+   learns the page once. The eyebrow is the small mono label that already
+   existed five times under different names (.side, .who, .vshead, .grouphead). */
+.eyebrow {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); margin: 0 0 8px;
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+}
+.eyebrow.spark { color: var(--orange); }
+.eyebrow.blue { color: var(--blue); }
+.panel h2 { font-size: 16px; letter-spacing: -.01em; }
+.panel h3 { font-family: var(--mono); font-size: 13px; font-weight: 600; margin: 14px 0 6px; }
+.caption { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 6px 0 0; max-width: 72ch; }
+.caption strong { color: var(--text); font-weight: 600; }
+/* the block that opens every tab: which tab this is, what it shows, one line why */
+.tabintro { display: grid; gap: 4px; margin: 0 0 14px; }
+.tabintro .eyebrow { margin: 0; }
+.tabintro h2 {
+  font-family: var(--mono); font-size: 19px; font-weight: 600; letter-spacing: -.01em;
+  margin: 0; text-wrap: balance;
+}
+.tabintro .blurb { color: var(--muted); font-size: 13.5px; line-height: 1.55; margin: 2px 0 0; max-width: 72ch; }
+
+/* a legend of the six kinds; reuse above any graph or map */
+.klegend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 0 0 12px; }
+.klegend > span { display: inline-flex; gap: 6px; align-items: center; }
+.klegend > span::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--k, var(--muted)); flex: none; }
+
+/* ============================================================ entity graph
+   One contract as a tree: verified_contract -> compilation -> its parts. The
+   connectors are drawn by the list, so the markup stays a plain nested list
+   and every node is a real button. */
+.egraph { font-family: var(--mono); font-size: 12px; --edge: #3a3f4d; --gap: 8px; --tick: 13px; }
+.echildren { list-style: none; margin: var(--gap) 0 0; padding: 0 0 0 22px; display: grid; gap: var(--gap); }
+.ebranch { position: relative; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; min-width: 0; }
+/* a node's own children nest inside its branch and drop to a new row */
+.ebranch > .echildren { flex-basis: 100%; width: 100%; margin-top: 0; }
+/* vertical rail: every branch draws its own segment, the last one stops at its tick */
+.ebranch::before {
+  content: ""; position: absolute; left: calc(-1 * var(--tick)); top: calc(-1 * var(--gap));
+  height: calc(100% + var(--gap)); border-left: 1px solid var(--edge);
+}
+.ebranch:last-child::before { height: calc(var(--gap) + 17px); }
+/* horizontal tick into the node */
+.ebranch::after {
+  content: ""; position: absolute; left: calc(-1 * var(--tick)); top: 17px;
+  width: var(--tick); border-top: 1px solid var(--edge);
+}
+/* the edge label: which attribute makes the join (compilationref, sources[path] -> sha256) */
+.eedge {
+  font-size: 10px; color: var(--muted); letter-spacing: .04em; white-space: nowrap;
+  padding: 1px 6px; border: 1px dashed var(--edge); border-radius: 4px; background: var(--panel);
+}
+.eedge::after { content: " \2192"; color: var(--orange); }
+.enode {
+  display: inline-grid; grid-template-columns: auto minmax(0, 1fr); grid-auto-flow: column; grid-auto-columns: max-content;
+  gap: 2px 10px; align-items: center;
+  text-align: left; padding: 7px 11px 7px 10px; min-width: 0; max-width: 100%;
+  background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--k, var(--muted));
+  border-radius: 6px; color: var(--text); font: inherit; font-size: 12px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.enode .ekind { font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--k, var(--muted)); white-space: nowrap; }
+.enode .ekey { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.enode .esize { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.enode .ecount {
+  font-size: 10px; color: var(--k, var(--muted)); border: 1px solid color-mix(in srgb, var(--k, var(--muted)) 45%, var(--line));
+  border-radius: 99px; padding: 1px 7px; white-space: nowrap; justify-self: start;
+}
+.enode:hover { background: var(--panel-2); border-color: var(--muted); border-left-color: var(--k, var(--muted)); }
+.enode.sel, .enode[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--k, var(--blue)) 13%, var(--panel-2));
+  border-color: var(--k, var(--blue)); color: #fff;
+}
+.enode.sel .ekey, .enode[aria-pressed="true"] .ekey { color: var(--text); }
+.enode:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.enode.dim { opacity: .4; }
+@media (max-width: 640px) {
+  .egraph { --tick: 10px; }
+  .echildren { padding-left: 16px; }
+  .enode { grid-auto-flow: row; }
+  .enode .ecount { grid-column: 1; justify-self: start; }
+  .enode .esize { grid-column: 2; justify-self: start; }
+}
+
+/* ============================================================ composition
+   which entities are read, in what order, to rebuild one field that Sourcify
+   itself does not store. A row on a wide screen, a column on a phone — the
+   arrow turns with it. */
+/* .compose is also the FieldCard tone (.fcard.compose / .fstatus.compose); the :not() keeps
+   those two out of this layout. */
+.compose:not(.fcard):not(.fstatus) {
+  display: grid; grid-template-columns: 1fr; gap: 8px; align-items: stretch; margin-top: 10px;
+}
+@media (min-width: 900px) {
+  .compose:not(.fcard):not(.fstatus) { grid-template-columns: minmax(0, 1.35fr) auto minmax(0, 1fr); gap: 12px; }
+}
+.compose-from, .compose-result {
+  border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2);
+  padding: 12px 14px; min-width: 0; display: grid; gap: 6px; align-content: start;
+}
+.compose-from .eyebrow, .compose-result .eyebrow { margin-bottom: 2px; }
+.compose-from .enode { justify-self: start; }
+.compose-result {
+  border-color: rgba(76,83,240,.6);
+  background: linear-gradient(180deg, rgba(76,83,240,.12), var(--panel-2) 70%);
+}
+.compose-field { font-family: var(--mono); font-size: 17px; font-weight: 600; color: #fff; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.compose-result .esize { font-family: var(--mono); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.compose-arrow {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); text-align: center; padding: 2px 4px;
+}
+.compose-arrow::before { content: "\2193"; font-size: 20px; color: var(--orange); line-height: 1; }
+@media (min-width: 900px) { .compose-arrow::before { content: "\2192"; } .compose-arrow { max-width: 96px; } }
+/* the recipe, step by step — an ordered list the eye reads as the read fan-out */
+.compose-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: step; }
+.compose-steps li {
+  display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; align-items: baseline;
+  font-family: var(--mono); font-size: 11.5px; color: var(--muted);
+}
+.compose-steps li::before { counter-increment: step; content: counter(step, decimal-leading-zero); color: var(--orange); font-weight: 700; font-size: 10px; }
+.compose-steps li strong { color: var(--text); font-weight: 600; }
+
+/* ============================================================ built from
+   a strip under a field card's head: the entities whose bytes made this field.
+   Each chip is a kind dot plus a short key; clicking one opens the browser. */
+.fprov {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 6px 12px 9px; border-top: 1px dashed var(--line);
+}
+.fprov-l { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-right: 2px; }
+.fprov-chip {
+  font-family: var(--mono); font-size: 11px; font-weight: 400; line-height: 1.3;
+  padding: 3px 9px 3px 7px; border-radius: 99px; border: 1px solid var(--line);
+  background: var(--ink); color: var(--text); cursor: pointer;
+  display: inline-flex; gap: 6px; align-items: center; max-width: 100%; min-width: 0;
+}
+.fprov-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--k, var(--muted)); flex: none; }
+.fprov-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fprov-chip .n { color: var(--muted); }
+.fprov-chip:hover { background: var(--ink); border-color: var(--k, var(--muted)); }
+.fprov-chip:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.fprov-more { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* ============================================================ capacity
+   the protocol's limits, each as a bar against what this record uses. Width
+   comes from --pct on the inner element; over the limit the bar goes red. */
+.caps { display: grid; grid-template-columns: 1fr; gap: 10px 22px; margin-top: 4px; }
+@media (min-width: 760px) { .caps { grid-template-columns: 1fr 1fr; } }
+.caps .cap { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; align-items: baseline; font-family: var(--mono); font-size: 11.5px; }
+.caps .cap-k { color: var(--muted); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; overflow-wrap: anywhere; }
+.caps .cap-v { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.caps .cap-v .lim { color: var(--muted); }
+.caps .cap-bar { grid-column: 1 / -1; height: 5px; border-radius: 99px; background: var(--ink); border: 1px solid var(--line); overflow: hidden; }
+.caps .cap-bar > i { display: block; height: 100%; width: var(--pct, 0%); max-width: 100%; background: var(--blue); border-radius: 99px; transition: width .3s; }
+.caps .cap.warn .cap-bar > i { background: var(--warn); }
+.caps .cap.over .cap-bar > i { background: var(--bad); width: 100%; }
+.caps .cap.over .cap-v { color: var(--bad); }
+.caps .cap-note { grid-column: 1 / -1; font-family: var(--sans); font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+
+/* ============================================================ schema map
+   ten Postgres tables on the left, six entity kinds on the right, the folds
+   drawn as curves in the gap between. Click a node: it is .sel, what it maps
+   to is .lit, the rest is .dim. */
+.smap { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 clamp(56px, 11vw, 140px); margin-top: 10px; }
+.smap-col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.smap-col > .eyebrow { margin-bottom: 2px; }
+.smap-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.smap-svg path { fill: none; stroke: #3a3f4d; stroke-width: 1.5; transition: stroke .15s, opacity .15s; }
+.smap-svg path.lit { stroke: var(--k, var(--blue)); stroke-width: 2; }
+.smap-svg path.dim { opacity: .2; }
+.smap-node {
+  font-family: var(--mono); font-size: 12px; font-weight: 400; text-align: left; line-height: 1.3;
+  padding: 7px 10px; min-width: 0; background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 6px; color: var(--text); cursor: pointer;
+  display: flex; gap: 8px; align-items: center; justify-content: space-between;
+  transition: border-color .15s, opacity .15s, background .15s;
+}
+.smap-node > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.smap-node .n { color: var(--muted); font-size: 10.5px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.smap-node.k { border-left: 3px solid var(--k, var(--blue)); }
+.smap-node:hover { background: var(--panel-2); border-color: var(--muted); }
+.smap-node.lit { border-color: color-mix(in srgb, var(--k, var(--blue)) 65%, var(--line)); color: #fff; }
+.smap-node.sel { border-color: var(--k, var(--blue)); background: color-mix(in srgb, var(--k, var(--blue)) 14%, var(--panel-2)); color: #fff; }
+.smap-node.dim { opacity: .35; }
+.smap-node:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.smap-detail { margin-top: 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); padding: 12px 14px; font-size: 13px; line-height: 1.55; }
+.smap-detail .eyebrow { margin-bottom: 6px; }
+.smap-detail p { margin: 0 0 6px; max-width: 72ch; }
+.smap-detail p:last-child { margin-bottom: 0; }
+@media (max-width: 640px) {
+  .smap { grid-template-columns: 1fr; gap: 14px; }
+  .smap-svg { display: none; }
+}
+
+/* ---- engineer additions on top of the design system ---------------------- */
+.flinks { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 8px 12px 0; font-size: 12px; }
+.flinks a { color: var(--blue); }
+.btnlink { text-decoration: none; display: inline-block; }
+.toggle { display: inline-flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); cursor: pointer; }
+.keylink.small { font-size: 11.5px; }
+.enode-actions { display: flex; gap: 14px; padding: 4px 0 2px 14px; }
+.ecomps { margin: 6px 0 8px 14px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 8px; background: var(--panel-2); }
+.ecomp { display: grid; grid-template-columns: 190px 1fr auto; gap: 10px; align-items: center; font-size: 11.5px; font-family: var(--mono); padding: 2px 0; }
+.ecomp-k { color: var(--muted); overflow-wrap: anywhere; }
+.ecomp-bar { height: 8px; background: var(--ink); border-radius: 4px; overflow: hidden; }
+.ecomp-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--blue-deep), var(--blue)); }
+.ecomp.spilled .ecomp-bar i { background: linear-gradient(90deg, #8f2230, var(--bad)); }
+.ecomp-v { white-space: nowrap; color: var(--text); }
+@media (max-width: 640px) { .ecomp { grid-template-columns: 1fr; gap: 3px; } }
+.v2bar { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 12px 14px; margin-bottom: 16px; }
+.v2head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; justify-content: space-between; font-size: 13px; }
+.v2track { height: 8px; background: var(--ink); border-radius: 4px; overflow: hidden; margin: 10px 0 8px; }
+.v2track span { display: block; height: 100%; background: linear-gradient(90deg, var(--blue-deep), var(--blue)); }
+.v2lanes { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--mono); font-size: 11px; color: var(--text); }
+.v2lane .k { color: var(--muted); }
+.refs { display: flex; flex-wrap: wrap; gap: 6px; }
+.refchip { font-family: var(--mono); font-size: 11px; padding: 5px 9px; border-radius: 99px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); cursor: pointer; text-align: left; border-left-width: 3px; }
+.refchip:disabled { cursor: default; opacity: .6; }
+.refchip.compilation { border-left-color: var(--blue); }
+.refchip.code { border-left-color: #9ba0ff; }
+.refchip.sourcefile { border-left-color: var(--ok); }
+.refchip.blob { border-left-color: var(--warn); }
+.refhash { color: var(--muted); margin-left: 6px; }
+.vlink { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--blue); }
+.vlink:hover { color: var(--blue); }

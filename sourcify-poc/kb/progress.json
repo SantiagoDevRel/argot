@@ -1,0 +1,38 @@
+{
+  "chain": "130",
+  "updatedAt": "2026-08-21T22:00:45.075Z",
+  "txsSent": 233,
+  "txsPlanned": 2495,
+  "lanes": {
+    "blob": {
+      "done": 219,
+      "total": 375
+    },
+    "code": {
+      "done": 16,
+      "total": 4927
+    },
+    "sourcefile": {
+      "done": 130,
+      "total": 6119
+    },
+    "compilation": {
+      "done": 7,
+      "total": 1505
+    },
+    "verified_contract": {
+      "done": 7,
+      "total": 3131
+    }
+  },
+  "completeContracts": [
+    "0x61d62ed33a3811e6e34083d9b88eadddce7cf6df",
+    "0xe6743fec6cb4bb28c04e1fa74e2e19e309f2f740",
+    "0x87071e6eb50420e21a1f6d29cf64c0983b5b0954",
+    "0xb401ccda43c36935e6059c02103e9541fba3337e",
+    "0xcefdebb8feb23ab45b7902d81a98e47156464801",
+    "0xef740bf23acae26f6492b10de645d6b98dc8eaf3",
+    "0x5ff137d4b0fdcd49dca30c7cf57e578a026d2789"
+  ],
+  "anonymousRateLimit": true
+}

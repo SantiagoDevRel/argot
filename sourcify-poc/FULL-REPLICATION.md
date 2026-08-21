@@ -134,8 +134,16 @@ entity; who holds the extending key stays an open product question, on purpose.
 
 ## 5. Read plan, as built (lib/full.ts + the v2 route)
 
-Fan-out for one full record: 1 (vc) + 1 (compilation) + ≤4 (code) + one per source file +
-spilled blobs — median ≈ 8 point reads, parallelized. Every piece except the vc is immutable
+Fan-out for one full record: 1 (vc) + 1 (compilation) + the content-addressed pieces in
+**batches** — `kind = sourcefile AND (hash = a OR hash = b OR …)`, 20 hashes per query, the
+`or` operator being network-supported (verified live) — so a 93-file contract costs ~6
+reads, not 93. That matters twice: for latency, and because the deployed app reads
+Cheesecake anonymously too, against the same 50-requests/hour meter.
+
+Every composed field carries **provenance**: the ledger records which entities (kind, key,
+hash, bytes, role) built it, so the UI can show "built from" per field and draw the
+entity graph of one contract (`/api/record`, `/api/graph`). This is the answer to "how do
+the entities interconnect" — not a diagram of intent, the real keys read on this request. Every piece except the vc is immutable
 and content-addressed, so an in-process LRU (800 entries) makes hot files free after first
 touch. The response headers carry the truth: `x-arkiv-reads`, `x-arkiv-cache-hits`,
 `x-arkiv-unavailable`, the entity key, owner, block and the literal query.
