@@ -290,10 +290,14 @@ async function runPhase(label, batches, onSent) {
             break;
           }
         }
-        // Rate-limit is backpressure with an HOUR-long clock: sleep big, never die.
+        // Rate-limit is backpressure. Anonymous: an hour-long clock, sleep big.
+        // Keyed: measured ~21 sends then a 429 — a cost-based limiter with a short
+        // window — so back off in seconds, not minutes, and print what it said.
         if (attempt < 200 && /429|ANON_RATE_LIMITED|too many|rate.?limit/i.test(msg)) {
-          process.stdout.write(`\n  ${i + 1}/${batches.length} rate-limited — sleeping 5 min (window resets hourly)   `);
-          await sleep(5 * 60_000);
+          const keyed = !!process.env.ARKIV_API_KEY;
+          const wait = keyed ? Math.min(20_000 * (attempt + 1), 120_000) : 5 * 60_000;
+          process.stdout.write(`\n  ${i + 1}/${batches.length} rate-limited [${msg.replace(/\s+/g, " ").slice(0, 160)}] — sleeping ${Math.round(wait / 1000)}s   `);
+          await sleep(wait);
           continue;
         }
         if (attempt < 30 && /txpool is full|already known|nonce too low|replacement|future transaction/i.test(msg)) {

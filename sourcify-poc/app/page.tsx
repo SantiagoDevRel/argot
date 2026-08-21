@@ -133,7 +133,9 @@ export default function Page() {
         return (
           <div className="v2bar">
             <div className="v2head">
-              <span><strong>The 100% pass is landing.</strong> v1 (20 Aug) wrote the lookup answer; v2 writes every other field — sources, bytecodes, metadata, docs.</span>
+              <span>{pct >= 100
+                ? <><strong>The 100% pass has landed.</strong> Every field of every contract on Unichain is served from Arkiv entities — v1 (20 Aug) wrote the lookup answer, v2 wrote the rest.</>
+                : <><strong>The 100% pass is landing.</strong> v1 (20 Aug) wrote the lookup answer; v2 writes every other field — sources, bytecodes, metadata, docs.</>}</span>
               <span className="pill">{v2.txsSent.toLocaleString()} / {v2.txsPlanned.toLocaleString()} txs · {pct}% · as of {new Date(v2.updatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC</span>
             </div>
             <div className="v2track"><span style={{ width: `${pct}%` }} /></div>
@@ -143,7 +145,7 @@ export default function Page() {
               ))}
               <span className="v2lane"><span className="k">complete contracts</span> {v2.completeContracts.length}</span>
             </div>
-            {v2.anonymousRateLimit && <div className="hint">Paced by the devnet&apos;s anonymous meter (50 requests/hour per IP, sends included) — ~45 transactions an hour. With an API key the remainder lands in ~100 minutes.</div>}
+            {v2.anonymousRateLimit && pct < 100 && <div className="hint">Paced by the devnet&apos;s anonymous meter (50 requests/hour per IP, sends included) — ~45 transactions an hour. With an API key the remainder lands in ~100 minutes.</div>}
           </div>
         );
       })() : null}
