@@ -1,4 +1,4 @@
-# argot — Sourcify × Arkiv
+# [Sourcify](https://sourcify.dev) x [Arkiv](https://arkiv.network) integration
 
 Can Sourcify's contract-verification database move onto Arkiv — a database that is
 decentralized *and* queryable? This repo is the research, the design, and two working
