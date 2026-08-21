@@ -233,3 +233,25 @@ details.why .body {
 }
 details.why .body p { margin: 0 0 8px; max-width: 68ch; }
 details.why .body p:last-child { margin-bottom: 0; }
+
+/* ---- the two requests, side by side and both checkable --------------------
+   The Sourcify side is a real link. Clicking it hits their own server and returns
+   the response we compared against — which beats any screenshot of it. */
+.reqs { display: grid; grid-template-columns: 1fr; gap: 1px; background: var(--line);
+        border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+@media (min-width: 900px) { .reqs { grid-template-columns: 1fr 1fr; } }
+.reqs > div { background: var(--panel); padding: 14px 16px; min-width: 0; }
+.reqs .r { background: linear-gradient(180deg, rgba(76,83,240,.08), transparent 62%); }
+.reqs .who { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: .1em;
+             text-transform: uppercase; margin-bottom: 9px; display: flex; gap: 8px; align-items: baseline; }
+.reqs .l .who { color: var(--muted); }
+.reqs .r .who { color: var(--blue); }
+.reqs .verb { font-family: var(--mono); font-size: 10px; color: var(--orange); font-weight: 700; }
+.reqs a.url, .reqs .q {
+  font-family: var(--mono); font-size: 12px; line-height: 1.55;
+  overflow-wrap: anywhere; display: block;
+}
+.reqs a.url { color: var(--blue); text-decoration: underline; text-underline-offset: 3px; }
+.reqs a.url:hover { color: var(--orange); }
+.reqs .q { color: var(--orange); }
+.reqs .hint { font-size: 11.5px; color: var(--muted); margin-top: 9px; }

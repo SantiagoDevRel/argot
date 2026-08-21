@@ -56,10 +56,14 @@ export async function GET(req: Request) {
   }
 
   const fields = deep ? "?fields=abi,compilation,deployment" : "";
+  // The exact URL we call, returned so the page can render it as a link. A reviewer
+  // clicking it hits Sourcify's own server and sees the response we compared against,
+  // which is a stronger claim than any screenshot of it.
+  const sourcifyUrl = `${SOURCIFY}/contract/${chainId}/${address}${fields}`;
   const t0 = Date.now();
   const [sourcify, arkivRes] = await Promise.allSettled([
     (async () => {
-      const r = await fetch(`${SOURCIFY}/contract/${chainId}/${address}${fields}`, {
+      const r = await fetch(sourcifyUrl, {
         headers: { accept: "application/json" }, cache: "no-store",
       });
       return { status: r.status, body: r.ok ? await r.json() : null, ms: Date.now() - t0 };
@@ -119,7 +123,7 @@ export async function GET(req: Request) {
     missingRequired,
     mismatches: mismatches.map((m) => m.field),
     fields: fieldsOut,
-    sourcify: { httpStatus: s?.status ?? null, ms: s?.ms ?? null, body: sBody },
+    sourcify: { httpStatus: s?.status ?? null, ms: s?.ms ?? null, url: sourcifyUrl, body: sBody },
     arkiv: {
       ms: a?.ms ?? null,
       entityKey: a?.row?.key ?? null,

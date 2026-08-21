@@ -280,6 +280,24 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
           </div>
 
           <div className="panel">
+            <h2>The two requests</h2>
+            <div className="reqs">
+              <div className="l">
+                <div className="who">sourcify.dev <span className="verb">GET</span></div>
+                <a className="url" href={res.sourcify?.url} target="_blank" rel="noopener">
+                  {res.sourcify?.url}
+                </a>
+                <div className="hint">Opens their server. Same response this page compared against.</div>
+              </div>
+              <div className="r">
+                <div className="who">on arkiv <span className="verb">arkiv_query</span></div>
+                <span className="q">{res.arkiv?.query ?? "—"}</span>
+                <div className="hint">Byte-identical to what the SDK puts on the wire.</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="panel">
             <h2>Provenance</h2>
             <p className="sub">Where Arkiv&apos;s answer physically came from.</p>
             <p className="sub" style={{ marginTop: -6 }}>
@@ -298,7 +316,6 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
               </dd>
               <dt>owner</dt><dd><Mono wrap>{res.arkiv?.owner ?? "—"}</Mono></dd>
               <dt>read at block</dt><dd><Mono>{res.arkiv?.blockNumber ?? "—"}</Mono></dd>
-              <dt>query sent</dt><dd className="wire"><Mono wrap>{res.arkiv?.query ?? "—"}</Mono></dd>
             </dl>
           </div>
 
