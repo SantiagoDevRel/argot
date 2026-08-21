@@ -255,3 +255,33 @@ details.why .body p:last-child { margin-bottom: 0; }
 .reqs a.url:hover { color: var(--orange); }
 .reqs .q { color: var(--orange); }
 .reqs .hint { font-size: 11.5px; color: var(--muted); margin-top: 9px; }
+
+/* The 4-byte tab puts the two candidate lists face to face. Green marks a text both
+   services return; orange marks one only we do — which is the case worth noticing. */
+.reqs ul.names { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.reqs ul.names li {
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.45;
+  overflow-wrap: anywhere; color: var(--text);
+  padding-left: 15px; position: relative;
+}
+.reqs ul.names li::before {
+  content: "·"; position: absolute; left: 2px; color: var(--muted); font-weight: 700;
+}
+.reqs ul.names li.same::before { content: "="; color: var(--ok); font-size: 11px; top: 1px; }
+.reqs ul.names li.only::before { content: "+"; color: var(--orange); font-size: 11px; top: 1px; }
+
+.sigverdict {
+  margin: 14px 0 0; padding: 10px 13px; border-radius: 8px;
+  font-size: 13px; line-height: 1.5;
+  border: 1px solid var(--line); background: var(--panel-2); color: var(--muted);
+}
+.sigverdict.identical, .sigverdict.same_plus_their_wider_dictionary {
+  border-color: color-mix(in srgb, var(--ok) 45%, var(--line));
+  background: color-mix(in srgb, var(--ok) 9%, transparent);
+  color: var(--text);
+}
+.sigverdict.we_know_something_they_do_not {
+  border-color: color-mix(in srgb, var(--orange) 50%, var(--line));
+  background: color-mix(in srgb, var(--orange) 9%, transparent);
+  color: var(--text);
+}

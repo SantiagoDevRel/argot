@@ -526,6 +526,18 @@ function Query() {
 
 const SAMPLE_SELECTORS = ["0xa9059cbb", "0x095ea7b3", "0x23b872dd", "0x70a08231"];
 
+/** What the two answers add up to, said plainly rather than as a status code. */
+const VERDICT: Record<string, string> = {
+  identical: "Same answer, both services.",
+  same_plus_their_wider_dictionary:
+    "Everything we return, they confirm. They also know texts outside our one-chain slice.",
+  we_know_something_they_do_not:
+    "We return a text they do not confirm — worth a look, since our source is their own verified ABIs.",
+  not_in_our_slice: "Not in our slice: this selector is not in Unichain's verified ABIs.",
+  sourcify_unreachable: "Their service did not answer, so there is nothing to compare against.",
+  no_sourcify_equivalent: "Prefix search has no equivalent on their API — this one is Arkiv only.",
+};
+
 function FourByte() {
   const [sel, setSel] = useState("0xa9059cbb");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -571,23 +583,74 @@ function FourByte() {
       {res && (
         <>
           <div className="panel">
-            <h2>The query that went to the network</h2>
-            <pre className="wire">{res.arkivQuery}</pre>
-            <div className="kpis" style={{ marginTop: 12 }}>
-              <Kpi k="Matches" v={String(res.count ?? 0)} />
-              <Kpi k="Round trip" v={`${res.ms} ms`} />
-              <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
-              <Kpi k="Payload size" v="86 B median" />
+            <h2>The two requests</h2>
+            <div className="reqs">
+              <div className="l">
+                <div className="who">api.4byte.sourcify.dev <span className="verb">GET</span></div>
+                {res.sourcify?.url ? (
+                  <a className="url" href={res.sourcify.url} target="_blank" rel="noopener">
+                    {res.sourcify.url}
+                  </a>
+                ) : (
+                  <span className="q">no equivalent — their API has no prefix search</span>
+                )}
+                <div className="hint">Opens their 4-byte service. Same answer this page compared against.</div>
+              </div>
+              <div className="r">
+                <div className="who">on arkiv <span className="verb">arkiv_query</span></div>
+                <span className="q">{res.arkivQuery}</span>
+                <div className="hint">Byte-identical to what the SDK puts on the wire.</div>
+              </div>
             </div>
+            <div className="kpis" style={{ marginTop: 14 }}>
+              <Kpi k="Sourcify (4-byte service)" v={res.sourcify?.ms != null ? `${res.sourcify.ms} ms` : undefined} />
+              <Kpi k="Arkiv (Cheesecake)" v={res.ms != null ? `${res.ms} ms` : undefined} />
+              <Kpi k="Matches" v={String(res.count ?? 0)} />
+              <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
+            </div>
+            <Why label="about those timings">
+              <p>
+                Both are measured from this server on the same request, so the comparison is at least
+                fair in shape — but Arkiv&apos;s number includes a round trip to a public devnet RPC
+                behind Cloudflare, and theirs hits a production service. Shown for shape, not for a win.
+              </p>
+            </Why>
           </div>
           <div className="panel">
-            <h2>What came back</h2>
-            <pre>{j(res.results)}</pre>
-            <Why label="a selector is four bytes, so collisions are real">
+            <h2>Both answers, side by side</h2>
+            <div className="reqs">
+              <div className="l">
+                <div className="who">sourcify says</div>
+                {res.sourcify?.names?.length ? (
+                  <ul className="names">{res.sourcify.names.map((n: string) => <li key={n}>{n}</li>)}</ul>
+                ) : (
+                  <span className="q">{res.sourcify?.supported === false ? "not asked" : "nothing"}</span>
+                )}
+              </div>
+              <div className="r">
+                <div className="who">arkiv says</div>
+                {res.comparison?.arkivNames?.length ? (
+                  <ul className="names">
+                    {res.comparison.arkivNames.map((n: string) => (
+                      <li key={n} className={res.sourcify?.names?.includes(n) ? "same" : "only"}>{n}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="q">not in our slice</span>
+                )}
+              </div>
+            </div>
+            <p className={`sigverdict ${res.comparison?.verdict}`}>{VERDICT[res.comparison?.verdict] ?? ""}</p>
+            <Why label="why their dictionary is bigger, and why that is scope not disagreement">
               <p>
-                Different function texts can hash to the same four bytes, so the entity holds the whole
-                candidate set rather than picking one. In our slice, 2 of 12,674 selectors have more
-                than one.
+                Theirs is ~9.9M signatures consolidated from openchain, 4byte.directory and etherface —
+                every chain, verified or not. Ours is the selectors of one chain&apos;s verified ABIs. So
+                they will know texts we do not, and that is the slice, not a defect. The defect would be
+                the other direction: a name we return that they cannot confirm.
+              </p>
+              <p>
+                A selector is also only four bytes, so collisions are real: different function texts can
+                hash to the same value. The entity holds the whole candidate set rather than picking one.
               </p>
             </Why>
           </div>
