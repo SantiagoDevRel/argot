@@ -2,27 +2,32 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-type Tab = "parity" | "query" | "fourbyte" | "explorer";
+type Tab = "parity" | "record" | "query" | "fourbyte" | "explorer";
 
 const TABS: { id: Tab; label: string; blurb: string }[] = [
   {
     id: "parity",
     label: "1 · Same question, two databases",
-    blurb: "Sourcify's most-used endpoint, answered by Postgres and by Arkiv, diffed field by field at the same projection.",
+    blurb: "Sourcify's most-used endpoint, answered by Postgres and by Arkiv, diffed field by field at the same projection — up to all 24 fields=all fields.",
+  },
+  {
+    id: "record",
+    label: "2 · The whole record",
+    blurb: "Every fields=all field of one contract — sources, bytecodes, metadata, stdJsonInput/Output — served from Arkiv entities, with per-field status and the read fan-out on display.",
   },
   {
     id: "query",
-    label: "2 · Questions Sourcify has no URL for",
+    label: "3 · Questions Sourcify has no URL for",
     blurb: "Not that Postgres could not answer these — that the public API exposes no way to ask them. Against Arkiv each one is a single predicate.",
   },
   {
     id: "fourbyte",
-    label: "3 · The 4-byte service",
+    label: "4 · The 4-byte service",
     blurb: "Selector to signature: the cheapest thing Sourcify runs, and the best fit for this database.",
   },
   {
     id: "explorer",
-    label: "4 · Browse the entities",
+    label: "5 · Browse the entities",
     blurb: "What is physically stored on the chain: typed attributes and the payload, one record at a time.",
   },
 ];
@@ -92,6 +97,9 @@ export default function Page() {
   // Cheesecake has no block explorer to link at, so this app is the explorer.
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const inspect = (key: string) => { setFocusKey(key); setTab("explorer"); };
+  // Set by the Record tab's "compare all 24" button: parity opens pre-filled, at depth=all.
+  const [parityPreset, setParityPreset] = useState<{ address: string; depth: "identity" | "full" | "all" } | null>(null);
+  const compareAll = (address: string) => { setParityPreset({ address, depth: "all" }); setTab("parity"); };
 
   useEffect(() => {
     fetch("/api/stats").then((r) => r.json()).then(setStats).catch(() => setStats(null));
@@ -137,7 +145,8 @@ export default function Page() {
         ))}
       </div>
 
-      {tab === "parity" && <Parity onInspect={inspect} />}
+      {tab === "parity" && <Parity onInspect={inspect} preset={parityPreset} onPresetConsumed={() => setParityPreset(null)} />}
+      {tab === "record" && <FullRecord onCompareAll={compareAll} />}
       {tab === "query" && <Query />}
       {tab === "fourbyte" && <FourByte />}
       {tab === "explorer" && <Explorer focusKey={focusKey} onClearFocus={() => setFocusKey(null)} />}
@@ -176,9 +185,13 @@ const GROUP_LABEL: Record<string, string> = {
   "byte-exact": "Byte-exact probes",
 };
 
-function Parity({ onInspect }: { onInspect: (key: string) => void }) {
-  const [address, setAddress] = useState("");
-  const [depth, setDepth] = useState<"identity" | "full" | "all">("identity");
+function Parity({ onInspect, preset, onPresetConsumed }: {
+  onInspect: (key: string) => void;
+  preset?: { address: string; depth: "identity" | "full" | "all" } | null;
+  onPresetConsumed?: () => void;
+}) {
+  const [address, setAddress] = useState(preset?.address ?? "");
+  const [depth, setDepth] = useState<"identity" | "full" | "all">(preset?.depth ?? "identity");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [res, setRes] = useState<any>(null);
   const [busy, setBusy] = useState(false);
@@ -195,6 +208,12 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
     } finally { setBusy(false); }
+  }, []);
+
+  // Arriving from the Record tab's "compare all 24" button: run immediately.
+  useEffect(() => {
+    if (preset?.address) { run(preset.address, preset.depth); onPresetConsumed?.(); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const groups: string[] = res
@@ -347,6 +366,193 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
                   <pre>{j(res.arkiv?.body)}</pre>
                 </div>
               </div>
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/* ------------------------------------------------------------- full record */
+
+/**
+ * Five contracts written end-to-end FIRST by the priority pass (9-priority-send.mjs),
+ * so the whole-record view has something complete to show while the bulk send crawls.
+ * They are quick-picks, not the limit — any address on the chain works.
+ */
+const DEMO_CONTRACTS: { addr: string; name: string; why: string }[] = [
+  { addr: "0x61d62ed33a3811e6e34083d9b88eadddce7cf6df", name: "ideo", why: "single file" },
+  { addr: "0xcefdebb8feb23ab45b7902d81a98e47156464801", name: "DiamondLoupeFacet", why: "proxy facet" },
+  { addr: "0xb401ccda43c36935e6059c02103e9541fba3337e", name: "FeeForwarder", why: "13 source files" },
+  { addr: "0x87071e6eb50420e21a1f6d29cf64c0983b5b0954", name: "MiniVault", why: "3 files" },
+  { addr: "0xe6743fec6cb4bb28c04e1fa74e2e19e309f2f740", name: "HelloWorld", why: "tiny" },
+];
+
+const bytesOf = (v: unknown) => (v == null ? 0 : new TextEncoder().encode(JSON.stringify(v)).length);
+const kb = (n: number) => (n >= 1024 ? `${(n / 1024).toFixed(1)} KB` : `${n} B`);
+
+/** Which fields only exist once the v2 write landed their compilation/code/sources. */
+const V2_FIELDS = new Set([
+  "metadata", "storageLayout", "transientStorageLayout", "userdoc", "devdoc", "sourceIds",
+  "sources", "creationBytecode", "runtimeBytecode", "stdJsonInput", "stdJsonOutput",
+]);
+
+function FieldCard({ name, value, pendingV2, composed }: {
+  name: string; value: unknown; pendingV2: boolean; composed?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const size = bytesOf(value);
+  const isNull = value == null || (typeof value === "object" && value !== null && Object.keys(value as object).length === 0 && !Array.isArray(value));
+  const status = value != null
+    ? (composed ? "composed at read time" : "served from Arkiv")
+    : pendingV2 ? "pending — v2 write still landing" : "null (same as Sourcify)";
+  const tone = value != null ? (composed ? "compose" : "ok") : pendingV2 ? "pend" : "nul";
+  return (
+    <div className={`fcard ${tone}`}>
+      <button className="fhead" onClick={() => !isNull && setOpen((v) => !v)} aria-expanded={open}>
+        <span className="fname">{name}</span>
+        <span className={`fstatus ${tone}`}>{status}</span>
+        <span className="fsize">{value != null ? kb(size) : "—"}</span>
+        <span className="fchev">{isNull ? "" : open ? "▾" : "▸"}</span>
+      </button>
+      {open && value != null && (
+        <pre className="fbody">{typeof value === "string"
+          ? (value.length > 4000 ? value.slice(0, 4000) + `\n… (${kb(size)} total)` : value)
+          : JSON.stringify(value, null, 2).slice(0, 4000) + (size > 4000 ? `\n… (${kb(size)} total)` : "")}</pre>
+      )}
+    </div>
+  );
+}
+
+function FullRecord({ onCompareAll }: { onCompareAll: (address: string) => void }) {
+  const [address, setAddress] = useState(DEMO_CONTRACTS[0].addr);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [res, setRes] = useState<any>(null);
+  const [hdr, setHdr] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const run = useCallback(async (a: string) => {
+    setBusy(true); setErr(null); setRes(null);
+    try {
+      const r = await fetch(`/api/v2/contract/130/${a}?fields=all`);
+      const b = await r.json();
+      if (!r.ok) throw new Error(b.error ?? r.statusText);
+      setRes(b);
+      setHdr({
+        reads: r.headers.get("x-arkiv-reads") ?? "",
+        cached: r.headers.get("x-arkiv-cache-hits") ?? "",
+        unavailable: r.headers.get("x-arkiv-unavailable") ?? "",
+        key: r.headers.get("x-arkiv-entity-key") ?? "",
+        block: r.headers.get("x-arkiv-block") ?? "",
+      });
+    } catch (e) { setErr(e instanceof Error ? e.message : String(e)); }
+    finally { setBusy(false); }
+  }, []);
+
+  useEffect(() => { run(address); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
+  // hdr starts empty — the first render happens before any fetch has populated it.
+  const unavailable = hdr.unavailable ?? "";
+  const pendingV2 = unavailable.includes("v2 write not yet landed") || unavailable.includes("unreachable");
+  const presentCount = res ? Object.values(res).filter((v) => v != null).length : 0;
+  const totalBytes = res ? bytesOf(res) : 0;
+  const sources = (res?.sources ?? null) as Record<string, { content: string }> | null;
+
+  const GROUPS: { title: string; fields: string[]; composed?: string[] }[] = [
+    { title: "Identity — the default response", fields: ["match", "creationMatch", "runtimeMatch", "chainId", "address", "verifiedAt", "matchId"] },
+    { title: "Interface", fields: ["abi", "signatures"], composed: ["signatures"] },
+    { title: "Compilation, metadata & docs", fields: ["compilation", "metadata", "userdoc", "devdoc", "storageLayout", "transientStorageLayout", "sourceIds"] },
+    { title: "Bytecode — onchain and recompiled", fields: ["creationBytecode", "runtimeBytecode"] },
+    { title: "Deployment & proxy", fields: ["deployment", "proxyResolution", "additionalInput"] },
+    { title: "The compiler's own I/O — composed like Sourcify composes it", fields: ["stdJsonInput", "stdJsonOutput"], composed: ["stdJsonInput", "stdJsonOutput"] },
+  ];
+
+  return (
+    <>
+      <div className="panel">
+        <h2>GET /v2/contract/130/&#123;address&#125;?fields=all</h2>
+        <Duo
+          left={{ cap: <>One SQL join across eight tables, assembled by their server.</> }}
+          right={{ cap: <>Point reads over content-addressed entities, assembled by this adapter — fan-out on display, never hidden.</> }}
+        />
+        <div className="row">
+          <div style={{ flex: "1 1 340px" }}>
+            <label htmlFor="raddr">Contract address</label>
+            <input id="raddr" value={address} onChange={(e) => setAddress(e.target.value.trim())} style={{ width: "100%" }} />
+          </div>
+          <button onClick={() => run(address)} disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address)}>
+            {busy ? "assembling…" : "Fetch the whole record"}
+          </button>
+        </div>
+        <div className="row" style={{ marginTop: 8 }}>
+          {DEMO_CONTRACTS.map((d) => (
+            <button key={d.addr} className="ghost" title={d.addr}
+                    onClick={() => { setAddress(d.addr); run(d.addr); }}>
+              {d.name} · {d.why}
+            </button>
+          ))}
+        </div>
+        {err && <p className="err">{err}</p>}
+      </div>
+
+      {res && (
+        <>
+          <div className="panel">
+            <div className="kpis">
+              <Kpi k="Fields present" v={`${presentCount} / 24`} />
+              <Kpi k="Whole record" v={kb(totalBytes)} />
+              <Kpi k="Arkiv point reads" v={`${hdr.reads}${hdr.cached && hdr.cached !== "0" ? ` (+${hdr.cached} cached)` : ""}`} />
+              <Kpi k="Read at block" v={hdr.block || undefined} />
+            </div>
+            {pendingV2 && (
+              <p className="note" style={{ marginTop: 12 }}>
+                This contract&apos;s heavy fields are still landing — the v2 write is being paced by the
+                devnet&apos;s anonymous 50-requests/hour meter. Fields below marked <em>pending</em> flip to
+                served automatically as their entities arrive; the five quick-pick contracts were written
+                end-to-end first.
+              </p>
+            )}
+            {unavailable && !pendingV2 && <p className="err" style={{ marginTop: 12 }}>unavailable: {unavailable}</p>}
+            <div className="row" style={{ marginTop: 12 }}>
+              <button onClick={() => onCompareAll(address)}>Compare all 24 fields vs sourcify.dev →</button>
+              <a className="ghost" style={{ padding: "8px 14px", textDecoration: "none" }}
+                 href={`/api/v2/contract/130/${address}?fields=all`} target="_blank" rel="noopener">
+                raw JSON
+              </a>
+            </div>
+          </div>
+
+          {GROUPS.map((g) => (
+            <div className="panel" key={g.title}>
+              <div className="grouphead">{g.title}</div>
+              <div className="flist">
+                {g.fields.map((f) => (
+                  <FieldCard key={f} name={f} value={res[f]}
+                             pendingV2={pendingV2 && V2_FIELDS.has(f)}
+                             composed={g.composed?.includes(f)} />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="panel">
+            <div className="grouphead">
+              Source files {sources ? <span className="pill">{Object.keys(sources).length} files</span> : null}
+            </div>
+            {sources && Object.keys(sources).length ? (
+              <div className="flist">
+                {Object.entries(sources).map(([p, s]) => (
+                  <FieldCard key={p} name={p} value={s?.content ?? null} pendingV2={false} />
+                ))}
+              </div>
+            ) : (
+              <p className="note">
+                {pendingV2
+                  ? "Source bodies live as content-addressed sourcefile entities — this contract's are still landing."
+                  : "No sources returned."}
+              </p>
             )}
           </div>
         </>

@@ -93,14 +93,14 @@ async function reassemble(spill: { hash: string; parts: number; bytes: number },
   // The reader contract (review finding): exactly `parts` distinct indexes AND a
   // hash match, or an explicit unavailable — never a silently shorter component.
   if (byPart.size !== spill.parts) {
-    ledger.unavailable.push(`blob ${spill.hash.slice(0, 14)}…: ${byPart.size}/${spill.parts} parts`);
+    ledger.unavailable.push(`blob ${spill.hash.slice(0, 14)}...: ${byPart.size}/${spill.parts} parts`);
     return undefined;
   }
   const ordered = [...byPart.entries()].sort((a, b) => a[0] - b[0]).map(([, p]) => p);
   const whole = Buffer.concat(ordered);
   const digest = "0x" + crypto.createHash("sha256").update(whole).digest("hex");
   if (digest !== spill.hash) {
-    ledger.unavailable.push(`blob ${spill.hash.slice(0, 14)}…: hash mismatch after reassembly`);
+    ledger.unavailable.push(`blob ${spill.hash.slice(0, 14)}...: hash mismatch after reassembly`);
     return undefined;
   }
   const value = JSON.parse(whole.toString("utf8"));
@@ -122,10 +122,10 @@ async function getSourceContent(hash: string, ledger: ReadLedger): Promise<strin
   const hit = cacheGet(ck);
   if (hit !== undefined) { ledger.cached++; return hit as string; }
   const got = await fetchByHash("sourcefile", hash, ledger);
-  if (!got) { ledger.unavailable.push(`sourcefile ${hash.slice(0, 14)}…`); return undefined; }
+  if (!got) { ledger.unavailable.push(`sourcefile ${hash.slice(0, 14)}...`); return undefined; }
   const parsed = JSON.parse(Buffer.from(got.payload).toString("utf8")) as { content: unknown };
   const content = await resolve(parsed.content, ledger);
-  if (typeof content !== "string") { ledger.unavailable.push(`sourcefile ${hash.slice(0, 14)}… body`); return undefined; }
+  if (typeof content !== "string") { ledger.unavailable.push(`sourcefile ${hash.slice(0, 14)}... body`); return undefined; }
   cacheSet(ck, content);
   return content;
 }
@@ -136,7 +136,7 @@ async function getCodeHex(hash: string | null | undefined, ledger: ReadLedger): 
   const hit = cacheGet(ck);
   if (hit !== undefined) { ledger.cached++; return hit as string; }
   const got = await fetchByHash("code", hash, ledger);
-  if (!got) { ledger.unavailable.push(`code ${hash.slice(0, 14)}…`); return null; }
+  if (!got) { ledger.unavailable.push(`code ${hash.slice(0, 14)}...`); return null; }
   const hex = "0x" + Buffer.from(got.payload).toString("hex");
   cacheSet(ck, hex);
   return hex;
@@ -206,7 +206,7 @@ export async function composeFields(row: Row, wanted: FieldName[], ledger: ReadL
   const isV2 = cpPayload?.schema === "sourcify.compilation.v2";
   if (!cpPayload || !isV2) {
     for (const f of NEEDS_COMPILATION) if (want.has(f)) out[f] = null;
-    ledger.unavailable.push(cpPayload ? "compilation payload is v1 — v2 write not yet landed" : "compilation entity unreachable");
+    ledger.unavailable.push(cpPayload ? "compilation payload is v1 -- v2 write not yet landed" : "compilation entity unreachable");
     return out;
   }
 

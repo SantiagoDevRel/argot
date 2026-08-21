@@ -285,3 +285,32 @@ details.why .body p:last-child { margin-bottom: 0; }
   background: color-mix(in srgb, var(--orange) 9%, transparent);
   color: var(--text);
 }
+
+/* ---- whole-record tab: one card per fields=all field ----------------------- */
+.flist { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.fcard { border: 1px solid var(--line); border-radius: 8px; background: var(--panel-2); }
+.fcard.pend { border-style: dashed; }
+.fhead {
+  display: grid; grid-template-columns: 1fr auto auto 16px; gap: 10px; align-items: center;
+  width: 100%; text-align: left; background: none; border: 0; color: inherit;
+  padding: 8px 12px; cursor: pointer; font: inherit;
+}
+.fhead:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; border-radius: 8px; }
+.fname { font-family: var(--mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.fstatus {
+  font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 99px;
+  border: 1px solid var(--line); color: var(--muted); white-space: nowrap;
+}
+.fstatus.ok { border-color: rgba(61,220,151,.5); color: var(--ok); }
+.fstatus.compose { border-color: rgba(76,83,240,.6); color: #9ba0ff; }
+.fstatus.pend { border-color: rgba(255,200,87,.5); color: var(--warn); }
+.fsize { font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fchev { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.fbody {
+  margin: 0; border-top: 1px solid var(--line); border-radius: 0 0 8px 8px;
+  max-height: 340px; overflow: auto; font-size: 11.5px;
+}
+@media (max-width: 640px) {
+  .fhead { grid-template-columns: 1fr auto; }
+  .fsize, .fchev { display: none; }
+}

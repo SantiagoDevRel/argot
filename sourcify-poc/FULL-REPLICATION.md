@@ -31,7 +31,7 @@ composed = assembled at read time (exactly what Sourcify does for the same field
 | sources | `sourcefile` entities | one per unique sha256; compilation carries path→hash |
 | metadata, storageLayout, transientStorageLayout, userdoc, devdoc, sourceIds | payload (`compilation`) | per-compilation, dedup with it; `sourceIds` is compiler-assigned, NOT derivable |
 | creationBytecode, runtimeBytecode | `code` entities + payloads | onchain code refs on vc attrs; recompiled refs + sourceMap/linkReferences/cborAuxdata/immutableReferences on compilation; transformations on vc |
-| additionalInput | payload (vc) | null on all 2,986 Unichain contracts, handled anyway |
+| additionalInput | payload (vc) | null on all 3,131 Unichain contracts, handled anyway |
 | stdJsonInput | **composed** | `{language, sources, settings}` — measured byte-equal parts, 120/120 |
 | stdJsonOutput | **composed** | sourceIds + abi + metadata-string + docs + layouts + `evm.*` = recompiled code without `0x` — all shapes measured, 120/120 |
 | signatures | **composed** from abi | ABI order, tuple-expanded keccak — measured identical 120/120; plus 12,674 standalone `signature` entities for the 4-byte service |
@@ -43,22 +43,22 @@ defaulting to the identity fields like Sourcify does.
 ## 2. Entity model v2 (six kinds), as built
 
 ```
-verified_contract  2,984 patched (+~185 created for post-v1 verifications)
+verified_contract  3,131 (2,801 patched + 330 created for post-v1 verifications)
                    +creationcodehash +runtimecodehash (+compilationfp re-set) → 28/32 attrs
                    payload += transformations, code refs, additionalInput
-compilation        1,438 (1,285 patched + 153 created)
+compilation        1,505 (1,346 patched + 159 created)
                    payload += metadata, layouts, docs, sourceIds, code artifacts,
                    recompiled-code refs, sources path→sha256 map
-sourcefile         5,953 unique files, 42.1 MB, sha256 content-addressed
-code               4,605 unique bytecodes, 39.4 MB RAW bytes (octet-stream)
+sourcefile         6,119 unique files, 45.4 MB, sha256 content-addressed
+code               4,927 unique bytecodes, 43.3 MB RAW bytes (octet-stream)
 signature          12,674 (v1, unchanged)
-blob               336 chunks carrying 162 spilled components, 25.9 MB
+blob               375 chunks carrying 190 spilled components, 28.6 MB
 ```
 
 ### The fingerprint fix — a real bug, measured
 
 v1 deduplicated compilations by `sha256(compiler, version, language, fqn, settings)`. On this
-one chain that key **conflated 94 groups of genuinely different compilations** (one split 5
+one chain that key **conflated 99 groups of genuinely different compilations** (one split 5
 ways) — same name and settings, different sources or artifacts. Sourcify itself keys
 `compiled_contracts` by OUTPUT code hashes, because identical inputs do not guarantee identical
 artifacts (solc-js vs native builds of one version string is a documented divergence class).
@@ -93,13 +93,13 @@ The node caps the **whole transaction** at 131,072 bytes. Budgets, as built:
   Anything less → the component reports *unavailable*, named in `x-arkiv-unavailable` — never
   a silently truncated file.
 
-Measured over the whole population: **33 of 5,953 source files (0.55%) and 50 of 2,984
-metadatas (1.7%)** need the lane. It is the escape hatch for the tail, not the design.
+Measured over the whole population: **40 of 6,119 source files (0.65%) and 51 of 3,129
+metadatas (1.6%)** need the lane. It is the escape hatch for the tail, not the design.
 
 ## 4. Write plan, as built (8-write-full.mjs)
 
-Dry run first (`buildMutation`, zero RPC): **209.66 MB calldata · 16.77 B gas (466 blocks) ·
-1.174e-7 GLM at 7 wei · 2,343 transactions**.
+Dry run first (`buildMutation`, zero RPC): **222.72 MB calldata · 17.82 B gas (495 blocks) ·
+1.247e-7 GLM at 7 wei · 2,495 transactions**.
 
 1. **Key recovery**: one cursor-paginated, attribute-only, `ownedBy`-filtered sweep (21 reads)
    rebuilt `address→key` and `fp→key`; it collects ALL keys per identity and retires

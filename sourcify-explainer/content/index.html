@@ -119,7 +119,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <li><a href="#shapes"><span class="i">1</span>Two shapes</a></li>
   <li><a href="#tables"><span class="i">2</span>Ten tables</a></li>
   <li><a href="#entity"><span class="i">3</span>The entity</a></li>
-  <li><a href="#translate"><span class="i">4</span>Translation</a></li>
+  <li><a href="#translate"><span class="i">4</span>Schema map</a></li>
   <li><a href="#wall"><span class="i">5</span>Size wall</a></li>
   <li><a href="#scope"><span class="i">6</span>Scope</a></li>
   <li><a href="#ask"><span class="i">7</span>The asks</a></li>
@@ -301,10 +301,13 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     </tbody>
   </table>
   </div>
-  <p class="srcnote">The chain feed returned 2,988 rows for 2,801 distinct addresses: 187 contracts
-  have been verified more than once, the same phenomenon that leaves 42% of
-  <code>sourcify_matches</code> rows in the export superseded. An entity keyed by (chain, address)
-  collapses them; a naive replay of the export would not.<br><br>Row counts read directly from the Parquet footers of the public export
+  <p class="srcnote">The chain is a moving target and the pipeline treats it as one: the live feed held
+  3,131 distinct Unichain addresses when audited on 21 Aug — 143 more than the first snapshot two days
+  earlier — so coverage is re-audited by walking every page of the cursor feed
+  (<code>etl/audit-coverage.mjs</code>) and topped up until the diff is zero, rather than assumed from a
+  one-time fetch. Re-verifications of the same address collapse into one entity keyed by (chain,
+  address), the same phenomenon that leaves 42% of <code>sourcify_matches</code> rows in the export
+  superseded.<br><br>Row counts read directly from the Parquet footers of the public export
   (2,687 files, storage.googleapis.com/sourcify-production-parquet-export), 18 Aug 2026.</p>
 </section>
 
@@ -378,7 +381,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <div class="smap" id="smap">
     <div class="smap-col">
       <div class="smap-colhead">POSTGRES &mdash; 10 TABLES</div>
-      <button class="smap-node" data-id="t:contract_deployments">contract_deployments<span>chain, address, tx, deployer &middot; 2,986 rows</span></button>
+      <button class="smap-node" data-id="t:contract_deployments">contract_deployments<span>chain, address, tx, deployer &middot; 3,131 rows</span></button>
       <button class="smap-node" data-id="t:verified_contracts">verified_contracts<span>the link + transformations</span></button>
       <button class="smap-node" data-id="t:sourcify_matches">sourcify_matches<span>matchId, metadata, verifiedAt</span></button>
       <button class="smap-node" data-id="t:contracts">contracts<span>creation + runtime code hashes</span></button>
@@ -392,12 +395,12 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <svg class="smap-svg" id="smapSvg" aria-hidden="true"></svg>
     <div class="smap-col">
       <div class="smap-colhead">ARKIV &mdash; 6 ENTITY KINDS</div>
-      <button class="smap-node k" data-id="k:verified_contract">verified_contract<span>2,986 &middot; 27 attrs &middot; the lookup answer</span></button>
-      <button class="smap-node k" data-id="k:compilation">compilation<span>1,438 &middot; deduped by content fingerprint</span></button>
-      <button class="smap-node k" data-id="k:sourcefile">sourcefile<span>5,953 unique files &middot; sha256-addressed</span></button>
-      <button class="smap-node k" data-id="k:code">code<span>4,605 unique bytecodes &middot; keccak-addressed</span></button>
+      <button class="smap-node k" data-id="k:verified_contract">verified_contract<span>3,131 &middot; 27 typed attrs &middot; the lookup answer</span></button>
+      <button class="smap-node k" data-id="k:compilation">compilation<span>1,505 &middot; deduped by content fingerprint</span></button>
+      <button class="smap-node k" data-id="k:sourcefile">sourcefile<span>6,119 unique files &middot; sha256-addressed</span></button>
+      <button class="smap-node k" data-id="k:code">code<span>4,927 unique bytecodes &middot; keccak-addressed</span></button>
       <button class="smap-node k" data-id="k:signature">signature<span>12,674 &middot; one per selector</span></button>
-      <button class="smap-node k" data-id="k:blob">blob<span>336 chunks &middot; the oversized tail, in parts</span></button>
+      <button class="smap-node k" data-id="k:blob">blob<span>375 chunks &middot; the oversized tail, in parts</span></button>
     </div>
   </div>
   <div class="smap-detail" id="smapDetail" hidden>
@@ -455,8 +458,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
         ["compilation_id, path, source_hash", "compilation payload · sources: { path: sha256 }", "a few hundred bytes even for a multi-file contract"]]},
       "t:sources": { t: "sources → sourcefile (+ blob for the tail)", n: "One entity per UNIQUE file body — OpenZeppelin's ERC20.sol exists on-chain exactly once, whatever imports it.", h: ["column", "lands as", "why"], r: [
         ["source_hash", "attr hash (str, sha256)", "the content address readers query by"],
-        ["content", "sourcefile payload", "42.1 MB across 5,953 unique files"],
-        ["content over ~123 KB", "blob parts", "33 files of 5,953 — the chunk lane, hash-verified on reassembly"]]},
+        ["content", "sourcefile payload", "45.4 MB across 6,119 unique files"],
+        ["content over ~123 KB", "blob parts", "40 files of 6,119 — the chunk lane, hash-verified on reassembly"]]},
       "t:code": { t: "code → code", n: "The most direct translation on the page: content-addressed bytecode either side. Onchain and recompiled, creation and runtime, all dedup into one pool — a factory's thousand clones collapse to one entity.", h: ["column", "lands as", "why"], r: [
         ["code_hash_keccak", "attr hash (str, keccak)", "chain-native address of the blob"],
         ["code", "payload, raw bytes", "octet-stream, no JSON wrapper — half the bytes of hex"]]},
@@ -465,23 +468,23 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
         ["signature, hash_32", "payload · candidate set", "collisions are real, so the whole set is stored"]]},
       "t:compiled_contracts_signatures": { t: "compiled_contracts_signatures → derived", n: "Not stored at all: the signatures field is recomputed from the ABI at read time, in ABI order — measured byte-identical to Sourcify's own answer on 120/120 sampled contracts. Sourcify composes it too.", h: ["column", "lands as", "why"], r: [
         ["the 175M-row join", "nothing", "derivable data is composed, not replicated"]]},
-      "k:verified_contract": { t: "verified_contract ← four tables", n: "One per (chain, address): 2,986 on Unichain. 27 of 32 attributes spent. The payload answers the default lookup in one read.", h: ["absorbs", "as", "note"], r: [
+      "k:verified_contract": { t: "verified_contract ← four tables", n: "One per (chain, address): 3,131 on Unichain. 27 of 32 attributes spent. The payload answers the default lookup in one read.", h: ["absorbs", "as", "note"], r: [
         ["contract_deployments", "attrs + payload.deployment", "chain, address, deployer, block indexed"],
         ["verified_contracts", "the entity itself + payload", "matches as attrs; transformations in payload"],
         ["sourcify_matches", "attrs matchid, verifiedat", "metadata goes to the compilation instead"],
         ["contracts", "attrs creationcodehash, runtimecodehash", "the join into the code lane"]]},
-      "k:compilation": { t: "compilation ← three tables", n: "1,438 entities after deduplication by content-strong fingerprint (inputs + outputs). Carries everything all sharers agree on: settings, metadata, docs, layouts, artifacts, sourceIds, the path→hash source map, refs to recompiled code.", h: ["absorbs", "as", "note"], r: [
+      "k:compilation": { t: "compilation ← three tables", n: "1,505 entities after deduplication by content-strong fingerprint (inputs + outputs). Carries everything all sharers agree on: settings, metadata, docs, layouts, artifacts, sourceIds, the path→hash source map, refs to recompiled code.", h: ["absorbs", "as", "note"], r: [
         ["compiled_contracts", "attrs + payload", "the dedup Sourcify already does (~87%)"],
         ["compiled_contracts_sources", "payload · sources map", "path → sha256, a few hundred bytes"],
         ["sourcify_matches.metadata", "payload · metadata", "JSON.stringify(payload.metadata) IS the compiler's canonical string — measured 120/120"]]},
-      "k:sourcefile": { t: "sourcefile ← sources", n: "5,953 unique file bodies (42.1 MB). Content-addressed by sha256, so the dedup is structural, not a cache policy.", h: ["absorbs", "as", "note"], r: [
+      "k:sourcefile": { t: "sourcefile ← sources", n: "6,119 unique file bodies (45.4 MB). Content-addressed by sha256, so the dedup is structural, not a cache policy.", h: ["absorbs", "as", "note"], r: [
         ["sources", "one entity per unique hash", "queried by attr hash; immutable, so caches never invalidate"]]},
-      "k:code": { t: "code ← code", n: "4,605 unique bytecodes (39.4 MB, raw bytes). Onchain + recompiled, creation + runtime — one dedup pool.", h: ["absorbs", "as", "note"], r: [
+      "k:code": { t: "code ← code", n: "4,927 unique bytecodes (43.3 MB, raw bytes). Onchain + recompiled, creation + runtime — one dedup pool.", h: ["absorbs", "as", "note"], r: [
         ["code", "one entity per unique keccak", "runtime onchain == runtime recompiled when nothing was transformed — and then they are literally the same entity"]]},
       "k:signature": { t: "signature ← signatures", n: "12,674 selectors from this chain's verified ABIs — written in the v1 pass, unchanged.", h: ["absorbs", "as", "note"], r: [
         ["signatures (our slice)", "one entity per selector", "median payload 86 B; the whole 9.9M-row dictionary would be ~1 GB"]]},
       "k:blob": { t: "blob — no Postgres equivalent", n: "The chunk lane the 131,072-byte transaction cap forces: a component too big for one transaction is split into parts (raw bytes, ~100 KB each), found by kind+hash, reassembled in part order and verified against its sha256 before anything is served. The reader refuses a partial body — it says unavailable, never silently shorter.", h: ["carries", "as", "note"], r: [
-        ["162 oversized components", "336 chunk entities · 25.9 MB", "50 metadatas + 33 source files + the other outliers — the tail, not the norm"]]},
+        ["190 oversized components", "375 chunk entities · 28.6 MB", "51 metadatas + 40 source files + the other outliers — the tail, not the norm"]]},
     };
 
     var root = document.getElementById("smap");
@@ -643,25 +646,25 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     &sect;4 and chunked only where the transaction cap forces it. Encoded locally batch by batch before
     sending, so these are exact, not estimated:</p>
     <div class="kpis" style="margin:0 0 12px">
-      <div class="kpi"><div class="k">calldata</div><div class="v">209.7 MB</div><div class="f">the whole chain, all fields</div></div>
-      <div class="kpi"><div class="k">transactions</div><div class="v">2,343</div><div class="f">~98 min at 2.5 s pacing</div></div>
-      <div class="kpi"><div class="k">gas</div><div class="v">16.8 B</div><div class="f">466 blocks&rsquo; worth &asymp; 16 min of chain</div></div>
+      <div class="kpi"><div class="k">calldata</div><div class="v">222.7 MB</div><div class="f">the whole chain, all fields</div></div>
+      <div class="kpi"><div class="k">transactions</div><div class="v">2,495</div><div class="f">~104 min at 2.5 s pacing</div></div>
+      <div class="kpi"><div class="k">gas</div><div class="v">17.8 B</div><div class="f">495 blocks&rsquo; worth &asymp; 16 min of chain</div></div>
       <div class="kpi"><div class="k">cost at 7 wei</div><div class="v">1.2e&minus;7</div><div class="f">GLM &mdash; devnet price</div></div>
     </div>
     <div class="scroll">
     <table style="margin:0 0 12px">
       <thead><tr><th>lane</th><th class="num">entities</th><th class="num">payload</th><th>what it is</th></tr></thead>
       <tbody>
-        <tr><td class="mono">verified_contract</td><td class="num">2,984 patched</td><td class="num">17.7 MB</td><td>+2 attrs, + transformations and code refs</td></tr>
-        <tr><td class="mono">compilation</td><td class="num">1,438</td><td class="num">61.7 MB</td><td>+ metadata, layouts, docs, artifacts, source map</td></tr>
-        <tr><td class="mono">sourcefile</td><td class="num">5,953</td><td class="num">42.1 MB</td><td>every unique file body, sha256-addressed</td></tr>
-        <tr><td class="mono">code</td><td class="num">4,605</td><td class="num">39.4 MB</td><td>every unique bytecode, raw bytes</td></tr>
-        <tr><td class="mono">blob</td><td class="num">336 chunks</td><td class="num">25.9 MB</td><td>162 oversized components, in parts</td></tr>
+        <tr><td class="mono">verified_contract</td><td class="num">2,801 patched + 330 created</td><td class="num">19.2 MB</td><td>+2 attrs, + transformations and code refs</td></tr>
+        <tr><td class="mono">compilation</td><td class="num">1,505</td><td class="num">66.5 MB</td><td>+ metadata, layouts, docs, artifacts, source map</td></tr>
+        <tr><td class="mono">sourcefile</td><td class="num">6,119</td><td class="num">45.4 MB</td><td>every unique file body, sha256-addressed</td></tr>
+        <tr><td class="mono">code</td><td class="num">4,927</td><td class="num">43.3 MB</td><td>every unique bytecode, raw bytes</td></tr>
+        <tr><td class="mono">blob</td><td class="num">375 chunks</td><td class="num">28.6 MB</td><td>190 oversized components, in parts</td></tr>
       </tbody>
     </table>
     </div>
     <p style="margin:0 0 10px;font-size:14px"><strong>The chunk lane is the tail, not the norm, and that is
-    now measured over the whole population:</strong> 33 of 5,953 source files (0.55%) and 50 of 2,984
+    now measured over the whole population:</strong> 40 of 6,119 source files (0.65%) and 51 of 3,129
     metadatas (1.7%) exceed what one transaction can carry. Everything else fits whole. A spilled component
     is split into ~100 KB raw-byte parts, found by <code>kind + hash</code>, reassembled in part order and
     verified against its sha256 before anything is served &mdash; a reader gets the exact bytes or an explicit
@@ -673,8 +676,8 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <code>fields=all</code> answers (the compiler&rsquo;s metadata string reproduces <em>byte-for-byte</em>,
     120/120).</p>
     <p style="margin:0 0 10px;font-size:14px"><strong>A find the stronger model surfaced:</strong> v1
-    deduplicated compilations by compiler + settings + name. On this one chain, <strong>94 of those
-    fingerprints were quietly conflating 1,438 genuinely different compilations</strong> (same name and
+    deduplicated compilations by compiler + settings + name. On this one chain, <strong>99 of those
+    fingerprints were quietly conflating 1,505 genuinely different compilations</strong> (same name and
     settings, different source content or artifacts &mdash; one split 5 ways). The v2 fingerprint keys on
     inputs <em>and</em> outputs, the way Sourcify&rsquo;s own <code>compiled_contracts</code> dedup does, so
     &ldquo;shared compilation&rdquo; now implies &ldquo;shared docs&rdquo; by construction.</p>
@@ -745,7 +748,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     <div class="card good">
       <h3 style="margin-top:0">In scope &mdash; real</h3>
       <ul style="margin:0;padding-left:20px">
-        <li><strong>One complete chain.</strong> Unichain (130), all 2,986 verified contracts &mdash; every one, not a sample.</li>
+        <li><strong>One complete chain.</strong> Unichain (130), all 3,131 verified contracts &mdash; every one, not a sample.</li>
         <li><strong>Every field, since the 100% pass.</strong> Source bodies, both bytecodes, metadata,
           layouts and docs live on-chain as content-addressed entities; <code>stdJsonInput</code>,
           <code>stdJsonOutput</code> and <code>signatures</code> are composed at read time, the way
@@ -1216,9 +1219,9 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   <details>
     <summary>The record is bigger than the 128&nbsp;KiB limit. How does it fit?</summary>
     <p>Normalization first, chunking last. Deduplication does most of the work: a source file shared by
-    hundreds of contracts is stored once (5,953 unique files for 2,986 contracts), bytecode dedups the same
-    way (4,605 unique blobs), and a compilation shared by many deployments is stored once (1,438). After
-    that, only the true tail exceeds one transaction &mdash; 33 files of 5,953 and 50 metadatas of 2,984,
+    hundreds of contracts is stored once (6,119 unique files for 3,131 contracts), bytecode dedups the same
+    way (4,927 unique blobs), and a compilation shared by many deployments is stored once (1,505). After
+    that, only the true tail exceeds one transaction &mdash; 40 files of 6,119 and 51 metadatas of 3,129,
     measured over the whole chain &mdash; and those spill to the <strong>blob lane</strong>: ~100&nbsp;KB
     raw-byte parts, content-addressed, reassembled in order and verified against their sha256 before
     anything is served. &ldquo;Part 1 / part 2&rdquo; exists, but as the escape hatch for 1&ndash;2% of
@@ -1254,7 +1257,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
   </details>
 
   <details>
-    <summary>Who keeps 15,000+ entities alive?</summary>
+    <summary>Who keeps 16,000+ entities alive?</summary>
     <p>Nobody, yet &mdash; by design, so the question stays visible. Everything written expires around
     <strong>19&ndash;20 Oct 2026</strong> (the v2 pass was deliberately given the v1 corpus&rsquo;s
     deadline, so the graph lives and dies together &mdash; no half-expired records serving dangling
@@ -1278,7 +1281,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
     and a dry run respectively); typed attributes match on type <em>and</em> value, so one wrong constructor
     silently returns zero rows; the transaction cap binds the <em>whole</em> transaction, not the payload,
     so payload budgets need ~8&nbsp;KB of envelope headroom; and the v1 compilation fingerprint quietly
-    conflated 94 groups of genuinely different compilations until the v2 content-strong fingerprint split
+    conflated 99 groups of genuinely different compilations until the v2 content-strong fingerprint split
     them. Every one of these is now a guardrail in the pipeline &mdash; and field intel the SDK team can
     use.</p>
   </details>
@@ -1287,7 +1290,7 @@ footer{border-top:1px solid var(--line);padding-top:22px;color:var(--muted);font
 <footer>
   <p style="margin:0">Measured 19&ndash;21 Aug 2026 against sourcify.dev v2 (live swagger + probes), the
   Sourcify Parquet export, and the Arkiv Cheesecake devnet (chain 7733102). Limits read from
-  <code>@arkiv-network/sdk@0.8.0-advanced.2</code>. The 100% pass: 209.7 MB &middot; 2,343 transactions
+  <code>@arkiv-network/sdk@0.8.0-advanced.2</code>. The 100% pass: 222.7 MB &middot; 2,495 transactions
   &middot; six entity kinds. Numbers move; re-measure before quoting.</p>
 </footer>
 

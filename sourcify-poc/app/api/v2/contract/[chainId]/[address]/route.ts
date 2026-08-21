@@ -141,7 +141,9 @@ export async function GET(
         "x-arkiv-ms": String(Date.now() - t0),
         "x-arkiv-reads": String(ledger.reads),
         "x-arkiv-cache-hits": String(ledger.cached),
-        ...(ledger.unavailable.length ? { "x-arkiv-unavailable": ledger.unavailable.slice(0, 8).join("; ") } : {}),
+        // Headers are ByteStrings: one non-Latin-1 character in a message makes the
+        // whole Response constructor throw (found live — an em-dash 502'd the route).
+        ...(ledger.unavailable.length ? { "x-arkiv-unavailable": ledger.unavailable.slice(0, 8).join("; ").replace(/[^\x20-\x7E]/g, "-") } : {}),
         "server-timing": `arkiv;dur=${ms}` + (compilationMs !== null ? `, arkiv-compilation;dur=${compilationMs}` : ""),
       },
     });
