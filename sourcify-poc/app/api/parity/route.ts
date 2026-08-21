@@ -81,10 +81,28 @@ async function parityAll(chainId: string, address: string) {
 
   const bytes = (v: unknown) => (v == null ? 0 : Buffer.byteLength(JSON.stringify(v)));
   const IDENTITY_SET = new Set(IDENTITY);
+  /**
+   * `signatures` compares as a SET. Measured against 198 multi-entry lists from 120
+   * verbatim records: Sourcify's own array order matches no deterministic rule —
+   * not ABI order (152/198), not byte sort (154), not linguistic sort (170), not
+   * hash order (26); one contract even returns locked() before lock(uint256),
+   * which no string sort can produce. It is their DB's row order. The entries are
+   * keyed by their hashes, so order carries no meaning — sort both sides by
+   * signatureHash32 before digesting, and compare the content.
+   */
+  const sortSignatures = (v: unknown): unknown => {
+    if (!v || typeof v !== "object") return v;
+    const out: Record<string, unknown> = { ...(v as Record<string, unknown>) };
+    for (const k of ["function", "event", "error"]) {
+      const arr = out[k];
+      if (Array.isArray(arr)) out[k] = [...arr].sort((a, b) => String(a?.signatureHash32 ?? "").localeCompare(String(b?.signatureHash32 ?? "")));
+    }
+    return out;
+  };
   const fieldsOut: (Cmp & { sourcifyBytes: number; arkivBytes: number })[] = [];
   for (const k of Object.keys(ALL_FIELDS.reduce((o, f) => ({ ...o, [f]: 1 }), {}))) {
-    const sv = sBody?.[k];
-    const av = aBody?.[k];
+    const sv = k === "signatures" ? sortSignatures(sBody?.[k]) : sBody?.[k];
+    const av = k === "signatures" ? sortSignatures(aBody?.[k]) : aBody?.[k];
     const asString = IDENTITY_SET.has(k);
     const sCmp = asString ? norm(k, sv) : digest(sv);
     const aCmp = asString ? norm(k, av) : digest(av);
