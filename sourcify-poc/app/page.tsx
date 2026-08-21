@@ -42,6 +42,44 @@ function Kpi({ k, v }: { k: string; v?: string }) {
   );
 }
 
+/**
+ * The spine of every tab: Sourcify on the left, Arkiv on the right, always in that
+ * order and always the same colours. The comparison used to be a section you had to
+ * go find; making it the layout means nobody has to ask which side is which.
+ */
+function Duo({
+  tone = "neutral", left, right,
+}: {
+  tone?: "neutral" | "win" | "lose";
+  left: { big?: string; cap: React.ReactNode };
+  right: { big?: string; cap: React.ReactNode };
+}) {
+  return (
+    <div className={`duo ${tone === "neutral" ? "" : tone}`}>
+      <div className="l">
+        <div className="side">sourcify.dev</div>
+        {left.big && <div className="big">{left.big}</div>}
+        <div className="cap">{left.cap}</div>
+      </div>
+      <div className="r">
+        <div className="side">on arkiv</div>
+        {right.big && <div className="big">{right.big}</div>}
+        <div className="cap">{right.cap}</div>
+      </div>
+    </div>
+  );
+}
+
+/** The long explanation, available but not shouting. */
+function Why({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <details className="why">
+      <summary>{label}</summary>
+      <div className="body">{children}</div>
+    </details>
+  );
+}
+
 /** A hash or key, kept readable without hiding what it is. */
 function Mono({ children, wrap }: { children: React.ReactNode; wrap?: boolean }) {
   return <span className={wrap ? "mono wrapall" : "mono"}>{children}</span>;
@@ -65,10 +103,8 @@ export default function Page() {
         <div className="brand">[ ARKIV ] × Sourcify — proof of concept</div>
         <h1>Sourcify&apos;s read path, served from Arkiv</h1>
         <p className="lede">
-          One complete chain of Sourcify — Unichain, 2,801 verified contracts and every 4-byte selector
-          in them — written into Arkiv entities on the Cheesecake devnet. The lookup below hits Arkiv,
-          not Postgres, and is diffed live against the real sourcify.dev so the claim can be checked
-          rather than believed.
+          One whole chain of Sourcify, living in Arkiv — and diffed against their live API on every
+          request, so nothing here has to be taken on trust.
         </p>
       </header>
 
@@ -79,15 +115,18 @@ export default function Page() {
         <Kpi k="Entities on Cheesecake" v={num(stats?.entitiesOnChain)} />
       </div>
       {stats?.countCostRoundTrips ? (
-        <p className="note" style={{ marginTop: -6, marginBottom: 18 }}>
-          The three counts above come from the writer, not from the chain — and that is the aggregation
-          limit, not a shortcut. Arkiv has no <code>COUNT</code>, so asking it how many entities match means
-          walking every page of 200 and adding them up: <strong>{num(stats.countCostRoundTrips)} round trips</strong>{" "}
-          for this small slice, and about <strong>{num(stats.countCostAtSourcifyScale)}</strong> for
-          Sourcify&apos;s real 44.4M. The first version of this endpoint did count live and hit the
-          60-second function timeout. Head block and total entity count, right of them, <em>are</em> live —
-          those are one request each.
-        </p>
+        <Why label={`those counts are not live — and that is the point (${num(stats.countCostRoundTrips)} round trips)`}>
+          <p>
+            Arkiv has no <code>COUNT</code>. Asking how many entities match means walking every page of
+            200 and adding them up — {num(stats.countCostRoundTrips)} round trips for this small slice,
+            about {num(stats.countCostAtSourcifyScale)} at Sourcify&apos;s real 44.4M.
+          </p>
+          <p>
+            The first version of this endpoint counted live and hit the 60-second function timeout, so
+            the counts come from the writer instead. Head block and total entities <em>are</em> live —
+            one request each.
+          </p>
+        </Why>
       ) : null}
 
       <div className="tabs" role="tablist">
@@ -97,9 +136,6 @@ export default function Page() {
           </button>
         ))}
       </div>
-      <p className="lede" style={{ marginTop: -8, marginBottom: 16, fontSize: 13 }}>
-        {TABS.find((t) => t.id === tab)?.blurb}
-      </p>
 
       {tab === "parity" && <Parity onInspect={inspect} />}
       {tab === "query" && <Query />}
@@ -167,10 +203,10 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
     <>
       <div className="panel">
         <h2>GET /v2/contract/130/&#123;address&#125;</h2>
-        <p className="sub">
-          Sourcify&apos;s dominant read path — they have not published a request breakdown, so this page
-          does not put a number on it. Paste a Unichain address, or pick a sample.
-        </p>
+        <Duo
+          left={{ cap: <>Their busiest read. A join across the deployment, the compilation and the match.</> }}
+          right={{ cap: <>One equality on indexed attributes. Same response shape, same field names.</> }}
+        />
         <div className="row">
           <div style={{ flex: "1 1 340px" }}>
             <label htmlFor="addr">Contract address</label>
@@ -189,14 +225,15 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
           </button>
           <SampleButtons onPick={(a) => { setAddress(a); run(a, depth); }} />
         </div>
-        <p className="note">
-          <strong>Why seven fields?</strong> Because seven is the entire record Sourcify returns when you
-          do not pass <code>fields</code> — <code>match</code>, <code>creationMatch</code>,{" "}
-          <code>runtimeMatch</code>, <code>chainId</code>, <code>address</code>, <code>verifiedAt</code>,{" "}
-          <code>matchId</code>. It is not a sample of the answer, it is the answer, and it is what most of
-          that 70% receives. Switch the dropdown to compare the ABI, the compilation and the deployment
-          as well.
-        </p>
+        <Why label="why seven fields is the whole record, not a sample">
+          <p>
+            Seven is everything Sourcify returns when you do not pass <code>fields</code>:{" "}
+            <code>match</code>, <code>creationMatch</code>, <code>runtimeMatch</code>,{" "}
+            <code>chainId</code>, <code>address</code>, <code>verifiedAt</code>, <code>matchId</code>.
+            Not a sample of the answer — the answer.
+          </p>
+          <p>Switch the dropdown to compare the ABI, the compilation and the deployment too: 18 fields.</p>
+        </Why>
         {err && <p className="err">{err}</p>}
       </div>
 
@@ -233,11 +270,13 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
               </div>
             ))}
 
-            <p className="note">
-              Arkiv&apos;s timing includes a round trip to a public devnet RPC behind Cloudflare. It is not
-              a like-for-like latency benchmark against Sourcify&apos;s production Postgres, and is shown
-              for shape, not for a win.
-            </p>
+            <Why label="about those timings">
+              <p>
+                Arkiv&apos;s number includes a round trip to a public devnet RPC behind Cloudflare. It is
+                not a like-for-like benchmark against Sourcify&apos;s production Postgres — shown for
+                shape, not for a win.
+              </p>
+            </Why>
           </div>
 
           <div className="panel">
@@ -270,11 +309,7 @@ function Parity({ onInspect }: { onInspect: (key: string) => void }) {
                 {showRaw ? "hide" : "show"}
               </button>
             </div>
-            <p className="sub">
-              Both projected to exactly what Sourcify was asked for. Arkiv stores more than this — the whole
-              record is on the Browse tab — but showing its full payload against Sourcify&apos;s seven-field
-              default would look like a difference and would only be a difference in what was requested.
-            </p>
+            <p className="sub">Both projected to exactly what Sourcify was asked for.</p>
             {showRaw && (
               <div className="grid2" style={{ marginTop: 12 }}>
                 <div>
@@ -361,6 +396,11 @@ function Query() {
     <>
       <div className="panel">
         <h2>Pick a question</h2>
+        <Duo
+          tone="win"
+          left={{ big: "no URL", cap: <>The columns mostly exist in their Postgres. The public API exposes no parameter, so no consumer can ask.</> }}
+          right={{ big: "1 predicate", cap: <>Each of these is one condition on an indexed attribute — and they combine.</> }}
+        />
         <div className="row" style={{ marginBottom: 14 }}>
           {PRESETS.map((p, i) => (
             <button key={p.label} className={i === active ? "" : "ghost"}
@@ -385,7 +425,6 @@ function Query() {
 
       <div className="panel">
         <h2>Or build one</h2>
-        <p className="sub">Every field here is an indexed attribute on the entity.</p>
         <div className="row">
           <div><label>chainId</label><input value={f.chainId ?? ""} onChange={(e) => set("chainId", e.target.value)} style={{ width: 90 }} /></div>
           <div>
@@ -425,11 +464,13 @@ function Query() {
               <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
               <Kpi k="Sourcify equivalent" v="none" />
             </div>
-            <p className="note">
-              Pages cap at 200 (<code>MAX_LIMIT</code>) and results come back unordered — the SDK marks
-              server-side <code>orderBy</code> deprecated because the network does not implement it.
-              Anything sorted here was sorted in JavaScript after the fetch.
-            </p>
+            <Why label="pages cap at 200, and nothing comes back ordered">
+              <p>
+                <code>MAX_LIMIT</code> is 200, and the SDK marks server-side <code>orderBy</code>
+                deprecated because the network does not implement it. Anything sorted here was sorted in
+                JavaScript after the fetch — which is exactly why the listing feed does not work.
+              </p>
+            </Why>
           </div>
 
           <div className="panel">
@@ -492,11 +533,11 @@ function FourByte() {
     <>
       <div className="panel">
         <h2>Selector → signature</h2>
-        <p className="sub">
-          What a wallet does before it shows you what you are about to sign. Sourcify runs this as a
-          separate service at roughly 7 million requests a day; here it is one equality on an indexed
-          attribute.
-        </p>
+        <Duo
+          tone="win"
+          left={{ big: "~7M/day", cap: <>A separate service on its own Postgres, consolidating openchain, 4byte.directory and etherface.</> }}
+          right={{ big: "86 B", cap: <>Median payload. One equality, one round trip — the whole 9.9M-row dictionary is about <strong>1 GB</strong>.</> }}
+        />
         <div className="row">
           <div>
             <label htmlFor="sel">4-byte selector</label>
@@ -523,36 +564,15 @@ function FourByte() {
             </div>
           </div>
           <div className="panel">
-            <h2>The same lookup, both services</h2>
-            <p className="sub">
-              This is the one part of Sourcify where the shapes genuinely match: a selector in, a set
-              of candidate texts out. No join to lose, nothing to order, nothing to count.
-            </p>
-            <div className="versus">
-              <div className="vs vs-no">
-                <div className="vshead">4byte.sourcify.dev</div>
-                <div className="vsbody">
-                  A separate service on its own Postgres, consolidating openchain, 4byte.directory
-                  and etherface. Roughly <strong>7 million requests a day</strong> &mdash; and one
-                  more database to operate.
-                </div>
-              </div>
-              <div className="vs vs-yes">
-                <div className="vshead">the same, on Arkiv</div>
-                <div className="vsbody">
-                  One equality on an indexed attribute, one round trip. Median payload{" "}
-                  <strong>86 bytes</strong>; the whole 9.9M-row dictionary is about{" "}
-                  <strong>1 GB</strong>, against 484 GB for the contract index.
-                </div>
-              </div>
-            </div>
-            <h2 style={{ marginTop: 20 }}>What came back</h2>
+            <h2>What came back</h2>
             <pre>{j(res.results)}</pre>
-            <p className="note">
-              A selector is four bytes, so collisions are real: different function texts can hash to the
-              same value. The entity holds the whole candidate set rather than picking one — in our slice,
-              2 of 12,674 selectors have more than one.
-            </p>
+            <Why label="a selector is four bytes, so collisions are real">
+              <p>
+                Different function texts can hash to the same four bytes, so the entity holds the whole
+                candidate set rather than picking one. In our slice, 2 of 12,674 selectors have more
+                than one.
+              </p>
+            </Why>
           </div>
         </>
       )}
@@ -655,10 +675,10 @@ function Explorer({ focusKey, onClearFocus }: { focusKey: string | null; onClear
     <>
       <div className="panel">
         <h2>Entities on Cheesecake</h2>
-        <p className="sub">
-          Every record below was written by this project and read back from the chain. Open one to see the
-          split the whole design turns on: <strong>attributes are searchable, the payload is not</strong>.
-        </p>
+        <Duo
+          left={{ big: "7 tables", cap: <>One verification is a row in each, tied together by foreign keys.</> }}
+          right={{ big: "1 entity", cap: <>Typed attributes you can filter on, plus a payload the database never looks inside.</> }}
+        />
         {focusKey && (
           <p className="note" style={{ marginTop: 0, marginBottom: 14 }}>
             Showing one entity, opened from its provenance line.{" "}
