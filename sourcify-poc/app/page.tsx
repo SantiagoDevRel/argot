@@ -302,7 +302,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
           <div style={{ flex: "1 1 340px" }}>
             <label htmlFor="addr">Contract address</label>
             <input id="addr" value={address} onChange={(e) => setAddress(e.target.value.trim())}
-                   placeholder="0x…" style={{ width: "100%" }} />
+                   placeholder="paste any verified Unichain address, 0x…" style={{ width: "100%" }} />
           </div>
           <div>
             <label htmlFor="depth">Compare</label>
@@ -317,6 +317,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
           </button>
         </div>
         <div className="row" style={{ marginTop: 8 }}>
+          <span className="chiplabel">or pick a contract everyone knows — it runs immediately:</span>
           {FEATURED.map((d) => (
             <button key={d.addr} className="ghost" title={d.addr} onClick={() => { setAddress(d.addr); run(d.addr, depth); }}>
               {d.name} · {d.why}
@@ -421,7 +422,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
               <div className="r">
                 <div className="who">on arkiv <span className="verb">arkiv_query</span></div>
                 <span className="q">{res.arkiv?.query ?? "—"}</span>
-                <div className="hint">Byte-identical to what the SDK puts on the wire. <code>ds = sourcify</code> is the dataset marker; <code>$owner = 0x4691…</code> is the authenticity gate — only entities signed by the publisher&apos;s key count, so anyone else writing <code>ds=sourcify</code> entities cannot change this answer.</div>
+                <div className="hint">Exactly the filter string the Arkiv SDK sends to the network. <code>ds = sourcify</code> is the dataset marker; <code>$owner = 0x4691…</code> is the authenticity gate — only entities signed by the publisher&apos;s key count, so anyone else writing <code>ds=sourcify</code> entities cannot change this answer.</div>
               </div>
             </div>
           </div>
@@ -454,7 +455,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
                 {showRaw ? "hide" : "show"}
               </button>
             </div>
-            <p className="sub">Both projected to exactly what Sourcify was asked for.</p>
+            <p className="sub">Both trimmed to exactly the fields Sourcify was asked for.</p>
             {showRaw && (
               <div className="grid2" style={{ marginTop: 12 }}>
                 <div>
@@ -530,7 +531,7 @@ function ProvChips({ items, onInspect, trailing }: { items?: ProvEntry[]; onInsp
           : [(
               <button key={kind} className={`fprov-chip ${KMOD[kind] ?? ""}`} title={list.map((p) => p.note ?? p.hash ?? "").join("\n")}
                       onClick={() => list[0].key && onInspect(list[0].key!)} disabled={!list[0].key}>
-                <span>{kind}</span><span className="n">× {list.length} · {kb(list.reduce((a, p) => a + p.bytes, 0))}</span>
+                <span>{kind}</span><span className="n">{new Set(list.map((p) => p.key ?? p.hash)).size === 1 ? `${list.length} parts of one payload` : `× ${list.length} entities`} · {kb(list.reduce((a, p) => a + p.bytes, 0))}</span>
               </button>
             )],
       )}
@@ -609,8 +610,8 @@ function CapacityPanel({ record, prov }: { record: Record<string, unknown> | nul
           return (
             <div className={`cap ${state}`} key={l.k}>
               <span className="cap-k">{l.k}</span>
-              <span className="cap-v">{used != null ? `${used.toLocaleString()} ${l.unit} ` : ""}<span className="lim">/ {l.v.toLocaleString()} {l.unit}</span></span>
-              <span className="cap-bar"><i style={{ "--pct": `${pct ?? 0}%` } as React.CSSProperties} /></span>
+              <span className="cap-v">{used != null ? `${used.toLocaleString()} ${l.unit} ` : <span className="lim">not needed by this record · </span>}<span className="lim">limit {l.v.toLocaleString()} {l.unit}</span></span>
+              {used != null && <span className="cap-bar"><i style={{ "--pct": `${pct ?? 0}%` } as React.CSSProperties} /></span>}
               <span className="cap-note">{l.note}</span>
             </div>
           );
@@ -678,6 +679,7 @@ function FullRecord({ onCompareAll, onInspect }: { onCompareAll: (address: strin
           </button>
         </div>
         <div className="row" style={{ marginTop: 8 }}>
+          <span className="chiplabel">pick a contract — it loads immediately:</span>
           {FEATURED.map((d) => (
             <button key={d.addr} className={d.addr === address ? "" : "ghost"} title={d.addr}
                     onClick={() => { setAddress(d.addr); run(d.addr); }}>
@@ -881,12 +883,12 @@ type GNode = { id: string; kind: string; key?: string; hash?: string; label: str
 
 /** The join that produced each child, written on the edge. */
 const edgeLabel = (parent: GNode, child: GNode) => {
-  if (child.kind === "compilation") return "compilationref (key attr)";
-  if (child.id === "sources") return "payload.sources → path: sha256";
-  if (child.id === "codes") return "codeRefs + recompiled hashes → keccak";
-  if (child.kind === "sourcefile") return "hash = sha256(content)";
-  if (child.kind === "code") return "hash = keccak(bytecode)";
-  if (child.kind === "blob") return "too big for one transaction → chunks, found by sha256";
+  if (child.kind === "compilation") return "linked by compilationref — a key attribute, Arkiv's foreign key";
+  if (child.id === "sources") return "linked by file path → sha256 of the file";
+  if (child.id === "codes") return "linked by bytecode hash (keccak) — onchain and recompiled, creation and runtime";
+  if (child.kind === "sourcefile") return "found by sha256 of its content";
+  if (child.kind === "code") return "found by keccak of the bytecode";
+  if (child.kind === "blob") return "too big for one transaction — split into parts, found by sha256";
   return parent.kind;
 };
 
@@ -1014,6 +1016,7 @@ function DataModel({ onInspect }: { onInspect: (key: string) => void }) {
           <button onClick={() => run(address)} disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address)}>{busy ? "walking the graph…" : "Draw it"}</button>
         </div>
         <div className="row" style={{ marginTop: 8 }}>
+          <span className="chiplabel">pick a contract — it draws immediately:</span>
           {FEATURED.map((d) => (
             <button key={d.addr} className={d.addr === address ? "" : "ghost"} title={d.addr} onClick={() => { setAddress(d.addr); run(d.addr); }}>{d.name}</button>
           ))}
@@ -1022,7 +1025,7 @@ function DataModel({ onInspect }: { onInspect: (key: string) => void }) {
         {graph && (
           <>
             <div className="kpis" style={{ marginTop: 12 }}>
-              <Kpi k="Arkiv reads to walk it" v={`${graph.reads.arkiv}${graph.reads.cacheHits ? ` (+${graph.reads.cacheHits} cached)` : ""}`} />
+              <Kpi k="Entities read to draw it" v={`${graph.reads.arkiv + (graph.reads.cacheHits ?? 0)}${graph.reads.cacheHits ? ` (${graph.reads.arkiv} fetched now, ${graph.reads.cacheHits} already cached)` : ""}`} />
               <Kpi k="Read at block" v={graph.blockNumber ?? undefined} />
               <Kpi k="Unique source files" v={String(sourcesGroup?.children?.length ?? 0)} />
               <Kpi k="Unique bytecodes" v={String(codesGroup?.children?.length ?? 0)} />
@@ -1046,7 +1049,7 @@ function DataModel({ onInspect }: { onInspect: (key: string) => void }) {
             Left: what is read, in order. Right: the field as the API returns it.</p>
           {["stdJsonOutput", "stdJsonInput", "signatures"].map((f) => (
             <div key={f} style={{ marginTop: 14 }}>
-              <ComposeFlow field={f} prov={rec.provenance?.[f]} result={rec.record?.[f]} reads={rec.reads.arkiv} onInspect={onInspect} />
+              <ComposeFlow field={f} prov={rec.provenance?.[f]} result={rec.record?.[f]} reads={rec.reads.arkiv + (rec.reads.cacheHits ?? 0)} onInspect={onInspect} />
             </div>
           ))}
         </div>
@@ -1275,9 +1278,9 @@ function FourByte() {
       <div className="panel">
         <h2>Selector → signature</h2>
         <Duo
-          tone="win"
-          left={{ big: "9.9 M rows", cap: <>Their dictionary: a separate Postgres service serving ~7 M requests a day (Sourcify&apos;s own figure), consolidated from openchain, 4byte.directory and etherface.</> }}
-          right={{ big: "1 read · 86 B", cap: <>One equality on one attribute, median payload 86 bytes. Their whole dictionary would be about <strong>1 GB of payload</strong> (~18 GB written, once each entity&apos;s attributes are counted) — still the cheapest thing here to move.</> }}
+          tone="neutral"
+          left={{ big: "9.9 M rows · ~7 M lookups/day", cap: <>Their dictionary: a separate Postgres service (Sourcify&apos;s own figures), consolidated from openchain, 4byte.directory and etherface.</> }}
+          right={{ big: "1 tiny entity per selector", cap: <>One equality on one attribute, median payload 86 bytes. Their whole dictionary would be about <strong>1 GB of payload</strong> (~18 GB written, once each entity&apos;s attributes are counted) — still the cheapest thing here to move.</> }}
         />
         <div className="row">
           <div>
@@ -1311,7 +1314,7 @@ function FourByte() {
               <div className="r">
                 <div className="who">on arkiv <span className="verb">arkiv_query</span></div>
                 <span className="q">{res.arkivQuery}</span>
-                <div className="hint">Byte-identical to what the SDK puts on the wire.</div>
+                <div className="hint">Exactly the filter string the Arkiv SDK sends to the network.</div>
               </div>
             </div>
             <div className="kpis" style={{ marginTop: 14 }}>
@@ -1376,7 +1379,7 @@ function FourByte() {
 
 const KINDS = [
   { id: "verified_contract", label: "verified_contract", note: "One per (chain, address) — 25 searchable attributes after pass 1, 28 after pass 2 (+ compilationfp, creationcodehash, runtimecodehash), plus the 7-field lookup answer and the ABI as payload." },
-  { id: "compilation", label: "compilation", note: "Deduplicated by compilation fingerprint, the way Postgres dedupes compiled_contracts — carries metadata, layouts, docs, artifacts and the path→hash source map." },
+  { id: "compilation", label: "compilation", note: "One per distinct compilation — the same compiler input and output stored once, the way Postgres dedupes compiled_contracts — carries metadata, layouts, docs, artifacts and the path→hash source map." },
   { id: "signature", label: "signature", note: "One per 4-byte selector — the smallest entity here, 86 bytes of payload at the median." },
   { id: "sourcefile", label: "sourcefile", note: "One per UNIQUE source file, sha256 content-addressed — OpenZeppelin's ERC20.sol exists on-chain exactly once." },
   { id: "code", label: "code", note: "One per unique bytecode, keccak content-addressed — onchain and recompiled, creation and runtime, all dedup here." },

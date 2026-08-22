@@ -137,7 +137,8 @@ Without an API key the Bouncer meters **everything** — `eth_sendRawTransaction
 send is a crawler (~45 txs per hourly window, ~2 days); with `ARKIV_API_KEY` it is ~100 minutes.
 Also measured: viem's default retry **honors the up-to-one-hour `Retry-After`** silently, which
 reads as a hang — the writer runs its transport with `retryCount: 0` and does its own visible
-waiting.
+waiting. With a key the per-second limit is 9,999 but a cost-based limiter still trips after
+~25 consecutive sends; measured end-to-end throughput with the key: ~1,160 transactions/hour.
 
 ### 4. Serve
 

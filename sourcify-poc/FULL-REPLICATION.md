@@ -122,8 +122,7 @@ in: viem's default retry silently honors the up-to-13-minute `Retry-After` (read
 so the transport runs `retryCount: 0` and a visible `rateRetry()` owns all waiting; and
 anonymously this writer is a **crawler** — ~45 transactions per hourly window, checkpointed,
 resumable, ~2 days for the full pass. With `ARKIV_API_KEY` set it is a ~100-minute run.
-**The API key for the publisher wallet is the single unblocker** (the old
-`devnet.hub.arkiv.network` is gone; the Cheesecake hub URL needs to come from the team).
+**With a key (issued at `stage.hub.arkiv.network/api-keys` — keys created before Cheesecake existed are rejected with `INVALID_KEY`): `ratelimit: limit=9999` per second, but a second, cost-based limiter trips after ~21–29 consecutive sends; the writer backs off 20 s→2 min and measured ~1,160 transactions per hour end to end. The API also reports `arkiv-quota-used-percent` per call.**
 
 ### Lifetime policy (review finding, applied)
 
@@ -176,7 +175,10 @@ utilisation — data for the product conversation, run separately, never the rep
 ## 7. Status log
 
 - 2026-08-20 — v1 write: 2,801 vc + 1,127 compilations + 12,674 signatures, 568 txs (real).
-- 2026-08-21 — full fetch (420 MB, 2,986 records), 120-record `fields=all` ground truth,
-  composition verified, v2 transform + dry run (numbers above), send started. Blob lane
-  confirmed live on-chain (parts visible through the deployed explorer). Send proceeds in
-  crawl mode pending the API key; fully checkpointed and resumable.
+- 2026-08-21 — full fetch (420 MB), 120-record `fields=all` ground truth, composition verified,
+  v2 transform + dry run, send started anonymously (crawl). Coverage re-audited against the live
+  feed: 3,131 distinct addresses, topped up until the diff was zero. Seven named contracts written
+  end-to-end by the priority sender and verified `identical` on all 24 fields against sourcify.dev.
+- 2026-08-21/22 — API key issued; keyed send at ~1,160 txs/hour. Column-complete schema map (86
+  columns from the official DDLs), provenance per field, entity graph, and a four-lens clarity
+  review applied to both surfaces.
