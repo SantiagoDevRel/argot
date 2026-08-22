@@ -43,6 +43,7 @@ export type Filters = {
   compilerVersion?: string; language?: string; isProxy?: string;
   minFns?: string; maxFns?: string; optimizer?: string; namePrefix?: string;
   verifiedAfter?: string; deployer?: string; hash?: string;
+  abiHash?: string; runtimeCodeHash?: string; creationCodeHash?: string;
 };
 
 /** Translate the UI's filter bag into an Arkiv predicate. Unset fields are simply absent. */
@@ -60,6 +61,9 @@ export function buildPredicate(f: Filters, kind = "verified_contract") {
   if (f.deployer) p.push(eq("deployer", addr(f.deployer.toLowerCase() as `0x${string}`)));
   // content-addressed lanes (sourcefile / code / blob) are found by this, never by key
   if (f.hash) p.push(eq("hash", str(f.hash)));
+  if (f.abiHash) p.push(eq("abihash", str(f.abiHash)));
+  if (f.runtimeCodeHash) p.push(eq("runtimecodehash", str(f.runtimeCodeHash)));
+  if (f.creationCodeHash) p.push(eq("creationcodehash", str(f.creationCodeHash)));
   if (f.minFns) p.push(gte("fncount", i32(Number(f.minFns))));
   if (f.maxFns) p.push(lte("fncount", i32(Number(f.maxFns))));
   if (f.verifiedAfter) p.push(gte("verifiedat", u64(BigInt(Math.floor(new Date(f.verifiedAfter).getTime() / 1000)))));

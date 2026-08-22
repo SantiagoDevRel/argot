@@ -419,7 +419,7 @@ export async function buildGraph(row: Row, ledger: ReadLedger): Promise<GraphNod
   ];
   const codeHashes = [...new Set(roles.map(([, h]) => h).filter(Boolean) as string[])];
   const codePieces = await fetchManyByHash("code", codeHashes, ledger);
-  const codeNode: GraphNode = { id: "codes", kind: "group", label: `${codeHashes.length} unique bytecodes · ${roles.filter(([, h]) => h).length} roles`, children: [] };
+  const codeNode: GraphNode = { id: "codes", kind: "group", label: `${codeHashes.length} unique bytecodes · ${roles.filter(([, h]) => h).length} uses (onchain / recompiled × creation / runtime)`, children: [] };
   for (const h of codeHashes) {
     const piece = codePieces.get(h);
     codeNode.children.push({

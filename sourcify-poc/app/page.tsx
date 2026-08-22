@@ -8,22 +8,22 @@ const TABS: { id: Tab; label: string; blurb: string }[] = [
   {
     id: "parity",
     label: "Same question, two databases",
-    blurb: "Sourcify's most-used endpoint, answered by Postgres and by Arkiv, diffed field by field at the same projection — up to all 24 fields=all fields.",
+    blurb: "Ask Sourcify's busiest endpoint the same question twice — once to their Postgres, once to Arkiv — and compare the answers field by field. Up to all 24 fields.",
   },
   {
     id: "record",
     label: "The whole record",
-    blurb: "Every fields=all field of one contract — sources, bytecodes, metadata, stdJsonInput/Output — served from Arkiv entities, with per-field status and the read fan-out on display.",
+    blurb: "All 24 fields of one contract — sources, bytecodes, metadata, compiler input and output — served from Arkiv. Each field shows which entities it was read from and how many reads that took.",
   },
   {
     id: "model",
     label: "The data model",
-    blurb: "How Sourcify's ten tables become six entity kinds, one real contract drawn as the entities that hold it, and how a composed field is rebuilt from them.",
+    blurb: "How Sourcify's ten Postgres tables become six kinds of Arkiv entity; one real contract drawn as the entities that hold it; and how a field that is never stored gets assembled on request.",
   },
   {
     id: "query",
     label: "Questions Sourcify has no URL for",
-    blurb: "Not that Postgres could not answer these — that the public API exposes no way to ask them. Against Arkiv each one is a single predicate.",
+    blurb: "Sourcify's database could answer most of these. Its public API has no URL for them. On Arkiv each one is a single filter, and filters combine.",
   },
   {
     id: "fourbyte",
@@ -33,7 +33,7 @@ const TABS: { id: Tab; label: string; blurb: string }[] = [
   {
     id: "explorer",
     label: "Browse the entities",
-    blurb: "What is physically stored on the chain: typed attributes and the payload, one record at a time.",
+    blurb: "What is actually stored in Arkiv, one entity at a time: the searchable attributes and the payload.",
   },
 ];
 
@@ -116,17 +116,29 @@ export default function Page() {
         <div className="brand">[ ARKIV ] × Sourcify — proof of concept</div>
         <h1>Sourcify&apos;s read path, served from Arkiv</h1>
         <p className="lede">
-          One whole chain of Sourcify, living in Arkiv — and diffed against their live API on every
-          request, so nothing here has to be taken on trust.
+          <strong>Proven:</strong> Sourcify&apos;s busiest endpoint (<code>GET /v2/contract/&#123;chain&#125;/&#123;address&#125;</code>)
+          answered from Arkiv for every verified contract on <strong>Unichain (chain 130)</strong>, and checked
+          field by field against sourcify.dev on every request.
+        </p>
+        <p className="lede">
+          <strong>Still missing, by design of the network:</strong> Arkiv has no <code>ORDER BY</code> and no
+          <code>COUNT</code>, so Sourcify&apos;s newest-first listing feed and its stats counters cannot be served
+          from it today — those are the two asks to engineering. Cheesecake is Arkiv&apos;s shared devnet.
         </p>
       </header>
 
       <div className="kpis" style={{ marginBottom: 18 }}>
-        <Kpi k="Arkiv chain head" v={stats?.chainHeadBlock as string | undefined} />
-        <Kpi k="Contracts in Arkiv" v={num(stats?.sourcifyContracts)} />
+        <Kpi k="Contracts on Unichain, in Arkiv" v={stats?.v2 ? num((stats.v2 as { lanes: Record<string, { total: number }> }).lanes.verified_contract.total) : num(stats?.sourcifyContracts)} />
         <Kpi k="4-byte selectors" v={num(stats?.sourcifySignatures)} />
-        <Kpi k="Entities on Cheesecake" v={num(stats?.entitiesOnChain)} />
+        <Kpi k="Entities this POC wrote" v={stats?.v2
+          ? num((stats.sourcifySignatures as number) + Object.values((stats.v2 as { lanes: Record<string, { done: number }> }).lanes).reduce((a, l) => a + l.done, 0))
+          : undefined} />
+        <Kpi k="Entities on the whole devnet" v={num(stats?.entitiesOnChain)} />
       </div>
+      <p className="caption" style={{ marginTop: -8, marginBottom: 14 }}>
+        Contracts: 2,801 in pass 1, 330 added by pass 2 — 3,131 in total. &ldquo;Onchain&rdquo; on these pages means Unichain, where the contracts live; &ldquo;in Arkiv&rdquo; means stored as Cheesecake entities. The devnet total counts
+        every dataset on Cheesecake, not just ours. Read at devnet block {stats?.chainHeadBlock ? num(Number(stats.chainHeadBlock)) : "—"}.
+      </p>
       {stats?.v2 ? (() => {
         const v2 = stats.v2 as { txsSent: number; txsPlanned: number; updatedAt: string; completeContracts: string[]; lanes: Record<string, { done: number; total: number }>; anonymousRateLimit: boolean };
         const pct = Math.min(100, Math.round((v2.txsSent / v2.txsPlanned) * 100));
@@ -134,23 +146,24 @@ export default function Page() {
           <div className="v2bar">
             <div className="v2head">
               <span>{pct >= 100
-                ? <><strong>The 100% pass has landed.</strong> Every field of every contract on Unichain is served from Arkiv entities — v1 (20 Aug) wrote the lookup answer, v2 wrote the rest.</>
-                : <><strong>The 100% pass is landing.</strong> v1 (20 Aug) wrote the lookup answer; v2 writes every other field — sources, bytecodes, metadata, docs.</>}</span>
+                ? <><strong>Both passes have landed.</strong> Pass 1 (20 Aug) wrote the 7 fields a plain lookup returns. Pass 2 wrote everything else — sources, bytecodes, metadata, docs. (&ldquo;v2&rdquo; on this page means Sourcify&apos;s API v2, not a write.)</>
+                : <><strong>The full-record pass is landing.</strong> Pass 1 (20 Aug) wrote the 7 fields a plain lookup returns. Pass 2 (in progress) writes everything else — sources, bytecodes, metadata, docs. (&ldquo;v2&rdquo; on this page means Sourcify&apos;s API v2, not a write.)</>}</span>
               <span className="pill">{v2.txsSent.toLocaleString()} / {v2.txsPlanned.toLocaleString()} txs · {pct}% · as of {new Date(v2.updatedAt).toISOString().slice(0, 16).replace("T", " ")} UTC</span>
             </div>
             <div className="v2track"><span style={{ width: `${pct}%` }} /></div>
             <div className="v2lanes">
+              <span className="v2lane"><span className="k">entities written, by kind:</span></span>
               {Object.entries(v2.lanes).map(([k, l]) => (
-                <span key={k} className="v2lane"><span className="k">{k}</span> {l.done.toLocaleString()}/{l.total.toLocaleString()}</span>
+                <span key={k} className="v2lane"><span className="k">{k === "blob" ? "chunk" : k}</span> {l.done.toLocaleString()}/{l.total.toLocaleString()}</span>
               ))}
               <span className="v2lane"><span className="k">complete contracts</span> {v2.completeContracts.length}</span>
             </div>
-            {v2.anonymousRateLimit && pct < 100 && <div className="hint">Paced by the devnet&apos;s anonymous meter (50 requests/hour per IP, sends included) — ~45 transactions an hour. With an API key the remainder lands in ~100 minutes.</div>}
+            {v2.anonymousRateLimit && pct < 100 && <div className="hint">The devnet allows 50 anonymous requests an hour per IP and each transaction counts as one — about 45 transactions an hour. With an API key the rest lands in about 100 minutes.</div>}
           </div>
         );
       })() : null}
       {stats?.countCostRoundTrips ? (
-        <Why label={`those counts are not live — and that is the point (${num(stats.countCostRoundTrips)} round trips)`}>
+        <Why label={`why the contract and selector counts come from the write log, not live — Arkiv has no COUNT (counting here = ${num(stats.countCostRoundTrips)} round trips)`}>
           <p>
             Arkiv has no <code>COUNT</code>. Asking how many entities match means walking every page of
             200 and adding them up — {num(stats.countCostRoundTrips)} round trips for this small slice,
@@ -238,8 +251,8 @@ const GROUP_LABEL: Record<string, string> = {
   abi: "ABI",
   compilation: "Compilation",
   deployment: "Deployment",
-  content: "Whole record — every fields=all field, as canonical digests",
-  "byte-exact": "Byte-exact probes",
+  content: "Every other field — compared by a sha256 of its content (equal hash = byte-identical), with its size in bytes",
+  "byte-exact": "Byte-for-byte check — the compiler's metadata string inside stdJsonOutput, compared as raw text",
 };
 
 function Parity({ onInspect, preset, onPresetConsumed }: {
@@ -282,8 +295,8 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
       <div className="panel">
         <h2>GET /v2/contract/130/&#123;address&#125;</h2>
         <Duo
-          left={{ cap: <>Their busiest read. A join across the deployment, the compilation and the match.</> }}
-          right={{ cap: <>One equality on indexed attributes. Same response shape, same field names.</> }}
+          left={{ cap: <>Their busiest endpoint. Postgres joins three tables to answer it.</> }}
+          right={{ cap: <>Arkiv stores each contract as one entity: a few searchable attributes plus a payload — the JSON answer, which the database never reads. This endpoint is one filter on those attributes. Same JSON shape, same field names.</> }}
         />
         <div className="row">
           <div style={{ flex: "1 1 340px" }}>
@@ -294,9 +307,9 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
           <div>
             <label htmlFor="depth">Compare</label>
             <select id="depth" value={depth} onChange={(e) => setDepth(e.target.value as "identity" | "full" | "all")}>
-              <option value="identity">identity — 7 fields</option>
-              <option value="full">+ ABI, compilation, deployment</option>
-              <option value="all">everything — all 24 fields=all fields</option>
+              <option value="identity">the default answer — 7 fields</option>
+              <option value="full">+ ABI, compilation, deployment — 18 fields</option>
+              <option value="all">all 24 fields (what ?fields=all returns)</option>
             </select>
           </div>
           <button onClick={() => run(address, depth)} disabled={busy || !/^0x[0-9a-fA-F]{40}$/.test(address)}>
@@ -310,12 +323,12 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
             </button>
           ))}
         </div>
-        <Why label="why seven fields is the whole record, not a sample">
+        <Why label="why seven fields is the whole default answer, not a sample">
           <p>
             Seven is everything Sourcify returns when you do not pass <code>fields</code>:{" "}
             <code>match</code>, <code>creationMatch</code>, <code>runtimeMatch</code>,{" "}
             <code>chainId</code>, <code>address</code>, <code>verifiedAt</code>, <code>matchId</code>.
-            Not a sample of the answer — the answer.
+            Not a sample of the answer — the entire answer Sourcify gives when you do not ask for more.
           </p>
           <p>Switch the dropdown to compare the ABI, the compilation and the deployment too: 18 fields.</p>
         </Why>
@@ -326,21 +339,32 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
         <>
           <div className="panel">
             <h2>Verdict</h2>
-            <span className={`verdict ${res.verdict}`}>{String(res.verdict).replace(/_/g, " ")}</span>
-            <div className="kpis" style={{ marginTop: 14 }}>
-              <Kpi k="Fields compared" v={String(res.comparedFields ?? 0)} />
-              <Kpi k="Mismatches" v={String(res.mismatches?.length ?? 0)} />
-              <Kpi k="Sourcify (Postgres)" v={res.sourcify?.ms != null ? `${res.sourcify.ms} ms` : undefined} />
-              <Kpi k="Arkiv (Cheesecake)" v={res.arkiv?.ms != null ? `${res.arkiv.ms} ms` : undefined} />
-              {res.reads && <Kpi k="Arkiv point reads" v={`${res.reads.arkiv}${res.reads.cacheHits ? ` (+${res.reads.cacheHits} cached)` : ""}`} />}
-            </div>
+            {(() => {
+              const pendingFields = res.reads?.unavailable?.length ? (res.fields as { equal: boolean; arkiv: string | null }[]).filter((f) => !f.equal && f.arkiv == null).length : 0;
+              const nulls = (res.fields as { sourcify: string | null; arkiv: string | null }[]).filter((f) => f.sourcify == null && f.arkiv == null).length;
+              const total = (res.fields as unknown[]).length;
+              return (
+                <>
+                  <span className={`verdict ${pendingFields ? "inconclusive" : res.verdict}`}>
+                    {pendingFields ? "identical where written · rest not on-chain yet" : String(res.verdict).replace(/_/g, " ")}
+                  </span>
+                  <div className="kpis" style={{ marginTop: 14 }}>
+                    <Kpi k="Fields compared" v={`${res.comparedFields ?? 0} of ${total}${nulls ? ` · ${nulls} empty on both sides` : ""}`} />
+                    <Kpi k={pendingFields ? "Not yet written" : "Mismatches"} v={String(pendingFields || (res.mismatches?.length ?? 0))} />
+                    <Kpi k="sourcify.dev (production Postgres)" v={res.sourcify?.ms != null ? `${res.sourcify.ms} ms` : undefined} />
+                    <Kpi k="Arkiv (public devnet, not a benchmark)" v={res.arkiv?.ms != null ? `${res.arkiv.ms} ms` : undefined} />
+                    {res.reads && <Kpi k="Entity reads" v={`${res.reads.arkiv + (res.reads.cacheHits ?? 0)}${res.reads.cacheHits ? ` (${res.reads.arkiv} fetched now, ${res.reads.cacheHits} already cached)` : ""}`} />}
+                  </div>
+                  <p className="caption">Both timings measured from this server on the same request. Arkiv&apos;s includes a hop to a public devnet behind Cloudflare — shown for shape, not speed.</p>
+                  <p className="caption"><em>identical</em> = every compared field equal. The 7 identity fields compare as strings; every other field as a sha256 of its JSON with keys sorted (order-insensitive); signatures as a set (Sourcify&apos;s array order is its database row order); the compiler&apos;s metadata string byte for byte. B = UTF-8 bytes of the field&apos;s JSON on each side.</p>
+                </>
+              );
+            })()}
             {res.reads?.unavailable?.length ? (
               <div className="note" style={{ marginTop: 10 }}>
-                <strong>Why the heavy fields differ for this contract:</strong> its full record has not landed on-chain
-                yet. The first write (20 Aug, &ldquo;v1&rdquo;) stored only the lookup answer; the 100% pass
-                (&ldquo;v2&rdquo;: sources, bytecodes, metadata, docs) is being written now, paced by the devnet&rsquo;s
-                anonymous 50-requests/hour meter. The named quick-picks above were written end-to-end first and
-                compare <em>identical</em>. Detail: {res.reads.unavailable.join(" · ")}
+                <strong>This is not a data error.</strong> The 7 default-lookup fields match exactly. The heavy fields
+                (sources, bytecodes, metadata, docs) show a dash on the Arkiv side because this contract&apos;s pass 2
+                has not landed in Arkiv yet. The named contracts above were written first and compare identical.
               </div>
             ) : null}
 
@@ -397,7 +421,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
               <div className="r">
                 <div className="who">on arkiv <span className="verb">arkiv_query</span></div>
                 <span className="q">{res.arkiv?.query ?? "—"}</span>
-                <div className="hint">Byte-identical to what the SDK puts on the wire.</div>
+                <div className="hint">Byte-identical to what the SDK puts on the wire. <code>ds = sourcify</code> is the dataset marker; <code>$owner = 0x4691…</code> is the authenticity gate — only entities signed by the publisher&apos;s key count, so anyone else writing <code>ds=sourcify</code> entities cannot change this answer.</div>
               </div>
             </div>
           </div>
@@ -406,9 +430,8 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
             <h2>Provenance</h2>
             <p className="sub">Where Arkiv&apos;s answer physically came from.</p>
             <p className="sub" style={{ marginTop: -6 }}>
-              The key opens that record on the Browse tab. There is no block explorer for this
-              network to link at &mdash; the indexer on that host is a gas-price tracker &mdash; so
-              this app is the explorer.
+              Click the key to open that exact record on tab 06 and see its attributes and payload as
+              stored. This devnet has no block explorer, so this app is the explorer.
             </p>
             <dl className="prov">
               <dt>entity key</dt>
@@ -419,7 +442,7 @@ function Parity({ onInspect, preset, onPresetConsumed }: {
                   </button>
                 ) : "—"}
               </dd>
-              <dt>owner</dt><dd><Mono wrap>{res.arkiv?.owner ?? "—"}</Mono></dd>
+              <dt>owner (the address that signed the write)</dt><dd><Mono wrap>{res.arkiv?.owner ?? "—"}</Mono></dd>
               <dt>read at block</dt><dd><Mono>{res.arkiv?.blockNumber ?? "—"}</Mono></dd>
             </dl>
           </div>
@@ -482,7 +505,7 @@ const GROUPS: { title: string; fields: string[] }[] = [
   { title: "Compilation, metadata & docs", fields: ["compilation", "metadata", "userdoc", "devdoc", "storageLayout", "transientStorageLayout", "sourceIds"] },
   { title: "Bytecode — onchain and recompiled", fields: ["creationBytecode", "runtimeBytecode"] },
   { title: "Deployment & proxy", fields: ["deployment", "proxyResolution", "additionalInput"] },
-  { title: "The compiler's own I/O — composed, the way Sourcify composes it", fields: ["stdJsonInput", "stdJsonOutput"] },
+  { title: "Compiler input and output (stdJsonInput, stdJsonOutput) — assembled on request, exactly as Sourcify assembles them", fields: ["stdJsonInput", "stdJsonOutput"] },
 ];
 const COMPOSED = new Set(["signatures", "stdJsonInput", "stdJsonOutput"]);
 
@@ -525,8 +548,8 @@ function FieldCard({ name, value, pendingV2, composed, prov, links, onInspect }:
   const size = bytesOf(value);
   const isNull = value == null;
   const status = value != null
-    ? (composed ? "composed at read time" : "served from Arkiv")
-    : pendingV2 ? "pending — v2 write still landing" : "null (same as Sourcify)";
+    ? (composed ? "assembled on request (not stored — Sourcify does not store it either)" : "served from Arkiv")
+    : pendingV2 ? "not in Arkiv yet — pass 2 in progress" : "empty on both sides";
   const tone = value != null ? (composed ? "compose" : "ok") : pendingV2 ? "pend" : "nul";
   const text = value == null ? "" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
   const LIMIT = 6000;
@@ -560,11 +583,11 @@ function FieldCard({ name, value, pendingV2, composed, prov, links, onInspect }:
 /** Arkiv's limits, from the SDK constants and the measured transaction cap. */
 const LIMITS: { k: string; v: number; unit: string; note: string; uses: (ctx: { biggest: number; attrs: number }) => number | null }[] = [
   { k: "largest entity payload this record needed", v: 122_880, unit: "B", note: "131,072 B per transaction minus ~8 KB of envelope + attributes", uses: (c) => c.biggest },
-  { k: "one transaction", v: 131_072, unit: "B", note: "the node rejects anything larger — payload, attributes and envelope share it", uses: (c) => c.biggest + 1_800 },
-  { k: "one blob chunk", v: 100_000, unit: "B", note: "a spilled component is cut into raw-byte parts of this size", uses: () => null },
-  { k: "attributes on the contract entity", v: 32, unit: "", note: "27 spent; every new filter costs one", uses: (c) => c.attrs },
+  { k: "one transaction", v: 131_072, unit: "B", note: "the node rejects anything larger — payload, attributes and envelope share it; shown: this record's largest payload + ~1.8 KB of attributes and envelope", uses: (c) => c.biggest + 1_800 },
+  { k: "one chunk", v: 100_000, unit: "B", note: "a piece too big for one transaction is cut into chunks of this size", uses: () => null },
+  { k: "attributes on the contract entity", v: 32, unit: "", note: "25 after pass 1, 28 after pass 2 (+ compilationfp, creationcodehash, runtimecodehash); every new filter costs one", uses: (c) => c.attrs },
   { k: "one string attribute", v: 128, unit: "B", note: "hashes are 66 B; long names truncate visibly", uses: () => 66 },
-  { k: "rows per query page", v: 200, unit: "", note: "no COUNT, no ORDER BY — pages are walked", uses: () => null },
+  { k: "rows per query page", v: 200, unit: "", note: "the server cannot count or sort — you read page after page", uses: () => null },
 ];
 
 function CapacityPanel({ record, prov }: { record: Record<string, unknown> | null; prov: Record<string, ProvEntry[]> }) {
@@ -572,7 +595,7 @@ function CapacityPanel({ record, prov }: { record: Record<string, unknown> | nul
   const biggest = pieces.reduce((m, p) => (p.bytes > (m?.bytes ?? 0) ? p : m), null as ProvEntry | null);
   const spilled = pieces.filter((p) => p.kind === "blob");
   const wholeBytes = record ? bytesOf(record) : 0;
-  const ctx = { biggest: biggest?.bytes ?? 0, attrs: 27 };
+  const ctx = { biggest: biggest?.bytes ?? 0, attrs: 28 };
   return (
     <div className="panel">
       <div className="eyebrow">capacity — what this record uses of the protocol&apos;s limits</div>
@@ -596,8 +619,8 @@ function CapacityPanel({ record, prov }: { record: Record<string, unknown> | nul
       <p className="caption" style={{ marginTop: 10 }}>
         {biggest ? <>Largest piece: <strong>{biggest.kind}</strong> at {kb(biggest.bytes)}{biggest.note ? ` (${biggest.note})` : ""}. </> : null}
         {spilled.length
-          ? <>{spilled.length} component{spilled.length > 1 ? "s" : ""} exceeded one transaction and was split into blob chunks — reassembled in order and verified against its sha256 before being served.</>
-          : <>Nothing here exceeded one transaction, so the chunk lane was not needed. Across the whole chain it carries 40 of 6,119 source files and 51 of 3,129 metadatas.</>}
+          ? <>{spilled.length} piece{spilled.length > 1 ? "s" : ""} of this record exceeded one transaction and was stored as ~100 KB chunks — re-joined in order and checked against its sha256 before it is served.</>
+          : <>Nothing in this record needed chunking. Across the whole chain only 40 of 6,119 source files and 51 of 3,129 metadata blobs did — each stored as ~100 KB chunks, re-joined and checked against its sha256 before it is served.</>}
       </p>
     </div>
   );
@@ -643,7 +666,7 @@ function FullRecord({ onCompareAll, onInspect }: { onCompareAll: (address: strin
         <h2>GET /v2/contract/130/&#123;address&#125;?fields=all</h2>
         <Duo
           left={{ cap: <>One SQL join across eight tables, assembled by their server.</> }}
-          right={{ cap: <>Point reads over content-addressed entities, assembled by this adapter — every field says which entities built it.</> }}
+          right={{ cap: <>Several small reads — one entity each — assembled by this server. Under every field: the entities it was read from.</> }}
         />
         <div className="row">
           <div style={{ flex: "1 1 340px" }}>
@@ -669,17 +692,17 @@ function FullRecord({ onCompareAll, onInspect }: { onCompareAll: (address: strin
         <>
           <div className="panel">
             <div className="kpis">
-              <Kpi k="Fields present" v={`${presentCount} / 24`} />
+              <Kpi k="Fields served" v={pendingV2 ? `${presentCount} / 24 · rest not in Arkiv yet` : `24 / 24${24 - presentCount ? ` · ${24 - presentCount} null, same as sourcify.dev` : ""}`} />
               <Kpi k="Whole record" v={kb(totalBytes)} />
               <Kpi k="Entities it lives in" v={String(entityCount)} />
-              <Kpi k="Arkiv reads" v={`${res.reads.arkiv}${res.reads.cacheHits ? ` (+${res.reads.cacheHits} cached)` : ""} · ${res.reads.ms} ms`} />
+              <Kpi k="Entity reads for this record" v={`${res.reads.arkiv + (res.reads.cacheHits ?? 0)}${res.reads.cacheHits ? ` (${res.reads.arkiv} live, ${res.reads.cacheHits} cached)` : ""} · ${res.reads.ms} ms`} />
             </div>
+            <p className="caption" style={{ marginTop: 8 }}>Cached pieces are stored under the hash of their own bytes and never change, so this server keeps them after the first fetch. Cold, every piece is one single-entity read, all in parallel.</p>
             {pendingV2 && (
               <p className="note" style={{ marginTop: 12 }}>
-                <strong>This contract&apos;s heavy fields are still landing.</strong> The first write (20 Aug, &ldquo;v1&rdquo;) stored the
-                lookup answer; the 100% pass (&ldquo;v2&rdquo;: sources, bytecodes, metadata, docs) is being written now at the
-                devnet&apos;s anonymous pace of ~45 transactions an hour. The named quick-picks were written end-to-end first.
-                Fields marked <em>pending</em> flip to served automatically as their entities arrive.
+                <strong>This contract&apos;s heavy fields are still landing.</strong> Pass 1 (20 Aug) stored the 7-field lookup
+                answer; pass 2 (sources, bytecodes, metadata, docs) is being written now. The named quick-picks were written
+                end-to-end first. Fields marked <em>not in Arkiv yet</em> flip to served automatically as their entities arrive.
               </p>
             )}
             <div className="row" style={{ marginTop: 12 }}>
@@ -712,7 +735,7 @@ function FullRecord({ onCompareAll, onInspect }: { onCompareAll: (address: strin
 
           <div className="panel">
             <div className="eyebrow">
-              Source files {sources ? <span className="pill">{Object.keys(sources).length} files · one sourcefile entity each</span> : null}
+              Source files {sources ? <span className="pill">{Object.keys(sources).length} files · one sourcefile entity each, stored under the sha256 of its own bytes, so a shared file exists once</span> : null}
             </div>
             {sources && Object.keys(sources).length ? (
               <div className="flist">
@@ -722,7 +745,7 @@ function FullRecord({ onCompareAll, onInspect }: { onCompareAll: (address: strin
                 })}
               </div>
             ) : (
-              <p className="caption">{pendingV2 ? "Source bodies live as content-addressed sourcefile entities — this contract's are still landing." : "No sources returned."}</p>
+              <p className="caption">{pendingV2 ? "Source bodies live as sourcefile entities keyed by the hash of their bytes — this contract's have not landed in Arkiv yet." : "No sources returned."}</p>
             )}
           </div>
 
@@ -748,12 +771,12 @@ const TABLES: { id: string; label: string; n: string }[] = [
   { id: "compiled_contracts_signatures", label: "compiled_contracts_signatures", n: "selector → compilation join" },
 ];
 const KIND_NODES: { id: string; label: string; n: string }[] = [
-  { id: "verified_contract", label: "verified_contract", n: "3,131 · 27 typed attrs · the lookup answer" },
-  { id: "compilation", label: "compilation", n: "1,505 · deduped by content fingerprint" },
+  { id: "verified_contract", label: "verified_contract", n: "3,131 · 25–28 searchable attrs · the lookup answer" },
+  { id: "compilation", label: "compilation", n: "1,505 · one per distinct compiler input + output" },
   { id: "sourcefile", label: "sourcefile", n: "6,119 unique files · sha256" },
   { id: "code", label: "code", n: "4,927 unique bytecodes · keccak" },
   { id: "signature", label: "signature", n: "12,674 · one per selector" },
-  { id: "blob", label: "blob", n: "375 chunks · the oversized tail" },
+  { id: "blob", label: "blob (chunks)", n: "375 · pieces too big for one transaction" },
 ];
 const LINKS: [string, string][] = [
   ["contract_deployments", "verified_contract"], ["verified_contracts", "verified_contract"],
@@ -762,7 +785,7 @@ const LINKS: [string, string][] = [
   ["sources", "sourcefile"], ["sources", "blob"], ["code", "code"], ["signatures", "signature"],
   ["compiled_contracts_signatures", "verified_contract"],
 ];
-const MAP_DETAIL: Record<string, { t: string; n: string; h: string[]; r: string[][] }> = {"t:contract_deployments":{"t":"contract_deployments → verified_contract","n":"The deployment identity becomes typed, indexed attributes — which is what makes them filterable. The id is the entity key.","r":[["id","key","the verified_contract entity key","identity of the row = identity of the entity"],["chain_id","attr","chainid (u64)","numeric → range queries"],["address","attr","address (addr) + chainaddr (str)","the primary lookup"],["transaction_hash","payload","payload.deployment.transactionHash","returned, never filtered on"],["block_number","attr","blocknumber (u64) + payload.deployment","ranges"],["transaction_index","payload","payload.deployment.transactionIndex",""],["deployer","attr","deployer (addr) + payload.deployment","“everything this deployer shipped”"],["contract_id","folded","→ contracts → the two code-hash attrs","a FK into a pure join table"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:verified_contracts":{"t":"verified_contracts → verified_contract","n":"The central link IS the entity — one per (chain, address). Sourcify's API folds each match boolean pair into one string; the audit columns never leave their Postgres.","r":[["id","internal","—","internal id; the public matchId comes from sourcify_matches.id"],["deployment_id","key","the entity itself","this row *is* the deployment↔compilation link"],["compilation_id","key","compilationref (key attr)","the foreign key as a native pointer → compilation entity"],["creation_match","folded","creationmatch (str)","true+metadata → exact_match · true → match · false → null — the API's own folding"],["creation_metadata_match","folded","creationmatch (str)","folded with creation_match"],["creation_transformations","payload","payload.creationTransformations","served in creationBytecode.transformations"],["creation_values","payload","payload.creationTransformationValues","served in creationBytecode.transformationValues"],["runtime_match","folded","runtimematch (str)","same folding"],["runtime_metadata_match","folded","runtimematch (str)","folded with runtime_match"],["runtime_transformations","payload","payload.runtimeTransformations","served in runtimeBytecode.transformations"],["runtime_values","payload","payload.runtimeTransformationValues","served in runtimeBytecode.transformationValues"],["created_at","internal","—","audit; the public verifiedAt is sourcify_matches.created_at"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:sourcify_matches":{"t":"sourcify_matches → two places","n":"Sourcify's own table on top of the Verifier Alliance schema. Identity numbers stay on the contract; the metadata JSON moves to the compilation, where it deduplicates.","r":[["id","attr","matchid (u64)","the public matchId — the cursor Sourcify pages by"],["verified_contract_id","key","the verified_contract entity","1:1 with the link row"],["creation_match","attr","creationmatch (str)","the public string (exact_match / match / null)"],["runtime_match","attr","runtimematch (str)","the public string"],["created_at","attr","verifiedat (u64)","the public verifiedAt — date ranges"],["metadata","payload","compilation payload.metadata","identical for every contract sharing the compilation — stored once; JSON.stringify reproduces the compiler's string byte-for-byte"],["updated_at","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:contracts":{"t":"contracts → folded into verified_contract","n":"A pure join table needs no entity of its own — its two real columns become two attributes.","r":[["id","folded","—","referenced by contract_deployments.contract_id; no entity needed"],["creation_code_hash","attr","creationcodehash (str)","join into the code lane"],["runtime_code_hash","attr","runtimecodehash (str)","“every deployment of this exact bytecode”"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:compiled_contracts":{"t":"compiled_contracts → compilation (+ code)","n":"Deduplicated by a CONTENT fingerprint over inputs AND outputs — v1's weaker key conflated 99 distinct compilations on this chain.","r":[["id","key","the compilation entity key","pointed at by compilationref"],["compiler","attr","compiler (str), echoed on the contract","filterable"],["version","attr","compilerversion (str), echoed on the contract","startsWith('0.8.') across a minor line"],["language","attr","language (str), echoed on the contract","Solidity / Vyper"],["name","attr","name (str), echoed on the contract","prefix search"],["fully_qualified_name","payload","payload.fullyQualifiedName","path:Name; 128-byte attr cap would truncate it"],["compiler_settings","payload","payload.compilerSettings (+ attrs optimizer, optimizerruns, evmversion)","settings lifted to filters"],["compilation_artifacts","payload","abi → contract payload · userdoc, devdoc, storageLayout, sourceIds → compilation payload","abi rides the hot path"],["creation_code_hash","entity","payload.recompiledCreationHash → code entity","recompiled creation bytecode, content-addressed"],["creation_code_artifacts","payload","payload.creationCodeArtifacts","sourceMap, linkReferences, cborAuxdata"],["runtime_code_hash","entity","payload.recompiledRuntimeHash → code entity","recompiled runtime bytecode"],["runtime_code_artifacts","payload","payload.runtimeCodeArtifacts","sourceMap, linkReferences, immutableReferences, cborAuxdata"],["additional_input","payload","contract payload.additionalInput","the API field; null on every Unichain contract"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:compiled_contracts_sources":{"t":"compiled_contracts_sources → the path→hash map","n":"Attributes cap at 32 and a compilation can reference 93 files, so the join is a small map on the compilation payload — exactly how Sourcify's table references into its deduplicated sources.","r":[["id","folded","—","no entity; the row is one entry of a map"],["compilation_id","folded","the compilation that carries the map","implicit"],["path","payload","a key of payload.sources","path → sha256"],["source_hash","payload","a value of payload.sources","the sourcefile entity's address"],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:sources":{"t":"sources → sourcefile (+ blob for the tail)","n":"One entity per UNIQUE file body — OpenZeppelin's ERC20.sol exists on-chain exactly once.","r":[["source_hash","attr","hash (str, sha256)","what readers query by"],["source_hash_keccak","derived","—","derivable from content; not stored"],["content","payload","sourcefile payload.content (→ blob parts when > ~123 KB)","45.4 MB across 6,119 unique files; 40 spill"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:code":{"t":"code → code","n":"The most direct translation: content-addressed bytecode on both sides. A factory's clones collapse to one entity.","r":[["code_hash","derived","—","sha256 PK; we address by keccak — derivable from the bytes"],["code_hash_keccak","attr","hash (str, keccak)","chain-native address"],["code","payload","raw bytes (octet-stream)","half the bytes of hex"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:signatures":{"t":"signatures → signature","n":"One entity per selector — the best-shaped workload here (86-byte median payload, one equality).","r":[["signature_hash_4","attr","selector (str)","the lookup key"],["signature_hash_32","payload","payload · per candidate","collisions are real, the whole set is stored"],["signature","payload","payload · candidate text",""],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"t:compiled_contracts_signatures":{"t":"compiled_contracts_signatures → derived","n":"Not stored: the signatures field is recomputed from the ABI at read time — Sourcify composes it too.","r":[["id","derived","—","no row needed"],["compilation_id","derived","—","the ABI on the contract already says which"],["signature_hash_32","derived","keccak over the canonical text, at read time","measured identical as sets, 120/120"],["signature_type","derived","function / event / error, from the ABI entry",""],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","fate","lands as","note"]},"k:verified_contract":{"t":"verified_contract ← four tables","n":"One per (chain, address). 27 of 32 attributes spent. The payload answers the default lookup in one read.","r":[["contract_deployments","attr","attrs + payload.deployment","indexed identity"],["verified_contracts","key","the entity + payload","matches as attrs, transformations in payload"],["sourcify_matches","attr","matchid, verifiedat","metadata → compilation"],["contracts","attr","creationcodehash, runtimecodehash","join into code"]],"h":["column","fate","lands as","note"]},"k:compilation":{"t":"compilation ← three tables","n":"Deduplicated by inputs + outputs. Carries settings, metadata, docs, layouts, artifacts, sourceIds, the path→hash source map, refs to recompiled code.","r":[["compiled_contracts","payload","attrs + payload","the dedup Sourcify already does"],["compiled_contracts_sources","payload","payload.sources map","path → sha256"],["sourcify_matches.metadata","payload","payload.metadata","JSON.stringify(metadata) IS the compiler's string — 120/120"]],"h":["column","fate","lands as","note"]},"k:sourcefile":{"t":"sourcefile ← sources","n":"Unique file bodies, content-addressed, immutable — so a cache never invalidates.","r":[["sources","entity","one entity per unique sha256","queried by attr hash"]],"h":["column","fate","lands as","note"]},"k:code":{"t":"code ← code","n":"Onchain + recompiled, creation + runtime — one dedup pool.","r":[["code","entity","one entity per keccak","runtime onchain == runtime recompiled when nothing was transformed — then they are the same entity"]],"h":["column","fate","lands as","note"]},"k:signature":{"t":"signature ← signatures","n":"12,674 selectors from this chain's verified ABIs — written in the v1 pass.","r":[["signatures (our slice)","entity","one entity per selector","median payload 86 B"]],"h":["column","fate","lands as","note"]},"k:blob":{"t":"blob — no Postgres equivalent","n":"The chunk lane the 131,072-byte transaction cap forces: a component too big for one transaction is split into ~100 KB raw-byte parts, found by kind+hash, reassembled in order and verified against its sha256 before anything is served.","r":[["190 oversized components","payload","375 chunk entities · 28.6 MB","the tail, not the norm"]],"h":["column","fate","lands as","note"]}};
+const MAP_DETAIL: Record<string, { t: string; n: string; h: string[]; r: string[][] }> = {"t:contract_deployments":{"t":"contract_deployments → verified_contract","n":"The deployment identity becomes typed, indexed attributes — which is what makes them filterable. The id is the entity key.","r":[["id","internal","dropped — Arkiv assigns the entity key at write","the row's identity survives as the (chainid, address) attributes, which is what the id identified"],["chain_id","attr","chainid (u64)","numeric → range queries"],["address","attr","address (addr) + chainaddr (str)","the primary lookup"],["transaction_hash","payload","payload.deployment.transactionHash","returned, never filtered on"],["block_number","attr","blocknumber (u64) + payload.deployment","ranges"],["transaction_index","payload","payload.deployment.transactionIndex",""],["deployer","attr","deployer (addr) + payload.deployment","“everything this deployer shipped”"],["contract_id","folded","→ contracts → the two code-hash attrs","a FK into a pure join table"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:verified_contracts":{"t":"verified_contracts → verified_contract","n":"The central link IS the entity — one per (chain, address). Sourcify's API folds each match boolean pair into one string; the audit columns never leave their Postgres.","r":[["id","internal","—","internal id; the public matchId comes from sourcify_matches.id"],["deployment_id","key","the entity itself","this row *is* the deployment↔compilation link; the Postgres id is dropped"],["compilation_id","key","compilationref (key attr)","the foreign key as a native pointer → compilation entity"],["creation_match","folded","creationmatch (str)","true+metadata → \"exact_match\" · true → \"match\" · false → the literal string \"null\" (kept as a string so it stays filterable; the API turns it back into JSON null) — the API's own folding"],["creation_metadata_match","folded","creationmatch (str)","folded with creation_match"],["creation_transformations","payload","payload.creationTransformations","served in creationBytecode.transformations"],["creation_values","payload","payload.creationTransformationValues","served in creationBytecode.transformationValues"],["runtime_match","folded","runtimematch (str)","same folding"],["runtime_metadata_match","folded","runtimematch (str)","folded with runtime_match"],["runtime_transformations","payload","payload.runtimeTransformations","served in runtimeBytecode.transformations"],["runtime_values","payload","payload.runtimeTransformationValues","served in runtimeBytecode.transformationValues"],["created_at","internal","—","audit; the public verifiedAt is sourcify_matches.created_at"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:sourcify_matches":{"t":"sourcify_matches → two places","n":"Sourcify's own table on top of the Verifier Alliance schema. Identity numbers stay on the contract; the metadata JSON moves to the compilation, where it deduplicates.","r":[["id","attr","matchid (u64)","the public matchId — the cursor Sourcify pages by"],["verified_contract_id","key","the verified_contract entity","1:1 with the link row; the Postgres id is dropped"],["creation_match","attr","creationmatch (str)","the public string (exact_match / match / null)"],["runtime_match","attr","runtimematch (str)","the public string"],["created_at","attr","verifiedat (u64)","the public verifiedAt — date ranges"],["metadata","payload","compilation payload.metadata","identical for every contract sharing the compilation — stored once; JSON.stringify reproduces the compiler's string byte-for-byte"],["updated_at","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:contracts":{"t":"contracts → folded into verified_contract","n":"A pure join table needs no entity of its own — its two real columns become two attributes.","r":[["id","folded","—","referenced by contract_deployments.contract_id; no entity needed"],["creation_code_hash","attr","creationcodehash (str)","join into the code lane"],["runtime_code_hash","attr","runtimecodehash (str)","“every deployment of this exact bytecode”"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:compiled_contracts":{"t":"compiled_contracts → compilation (+ code)","n":"Deduplicated by a CONTENT fingerprint over inputs AND outputs — 99 of the 1,127 pass-1 fingerprints each hid more than one genuinely different compilation (one hid five); splitting them moves the count from 1,127 to 1,505.","r":[["id","key","the compilation entity key","pointed at by compilationref"],["compiler","attr","compiler (str), echoed on the contract","filterable"],["version","attr","compilerversion (str), echoed on the contract","startsWith('0.8.') across a minor line"],["language","attr","language (str), echoed on the contract","Solidity / Vyper"],["name","attr","name (str), echoed on the contract","prefix search"],["fully_qualified_name","payload","payload.fullyQualifiedName","path:Name; 128-byte attr cap would truncate it"],["compiler_settings","payload","payload.compilerSettings (+ attrs optimizer, optimizerruns, evmversion)","settings lifted to filters"],["compilation_artifacts","payload","abi → contract payload · userdoc, devdoc, storageLayout, sourceIds → compilation payload","abi rides the hot path"],["creation_code_hash","entity","payload.recompiledCreationHash → code entity","recompiled creation bytecode, content-addressed"],["creation_code_artifacts","payload","payload.creationCodeArtifacts","sourceMap, linkReferences, cborAuxdata"],["runtime_code_hash","entity","payload.recompiledRuntimeHash → code entity","recompiled runtime bytecode"],["runtime_code_artifacts","payload","payload.runtimeCodeArtifacts","sourceMap, linkReferences, immutableReferences, cborAuxdata"],["additional_input","payload","contract payload.additionalInput","the API field; null on every Unichain contract"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:compiled_contracts_sources":{"t":"compiled_contracts_sources → the path→hash map","n":"Attributes cap at 32 and a compilation can reference 93 files, so the join is a small map on the compilation payload — exactly how Sourcify's table references into its deduplicated sources.","r":[["id","folded","—","no entity; the row is one entry of a map"],["compilation_id","folded","the compilation that carries the map","implicit"],["path","payload","a key of payload.sources","path → sha256"],["source_hash","payload","a value of payload.sources","the sourcefile entity's address"],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:sources":{"t":"sources → sourcefile (+ blob for the tail)","n":"One entity per UNIQUE file body — OpenZeppelin's ERC20.sol exists on-chain exactly once.","r":[["source_hash","attr","hash (str, sha256)","what readers query by"],["source_hash_keccak","derived","—","derivable from content; not stored"],["content","payload","sourcefile payload.content (→ blob parts when > ~123 KB)","45.4 MB across 6,119 unique files; 40 spill"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:code":{"t":"code → code","n":"The most direct translation: content-addressed bytecode on both sides. A factory's clones collapse to one entity.","r":[["code_hash","derived","—","sha256 PK; we address by keccak — derivable from the bytes"],["code_hash_keccak","attr","hash (str, keccak)","chain-native address"],["code","payload","raw bytes (octet-stream)","half the bytes of hex"],["created_at","internal","—","audit column; not served by the public API"],["updated_at","internal","—","audit column; not served by the public API"],["created_by","internal","—","audit column; not served by the public API"],["updated_by","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:signatures":{"t":"signatures → signature","n":"One entity per selector — the best-shaped workload here (86-byte median payload, one equality).","r":[["signature_hash_4","attr","selector (str)","the lookup key"],["signature_hash_32","payload","payload · per candidate","collisions are real, the whole set is stored"],["signature","payload","payload · candidate text",""],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"t:compiled_contracts_signatures":{"t":"compiled_contracts_signatures → derived","n":"Not stored: the signatures field is recomputed from the ABI at read time — Sourcify composes it too.","r":[["id","derived","—","no row needed"],["compilation_id","derived","—","the ABI on the contract already says which"],["signature_hash_32","derived","keccak over the canonical text, at read time","measured identical as sets, 120/120"],["signature_type","derived","function / event / error, from the ABI entry",""],["created_at","internal","—","audit column; not served by the public API"]],"h":["column","where it goes","lands as","note"]},"k:verified_contract":{"t":"verified_contract ← four tables","n":"One per (chain, address). 25 of 32 attributes after pass 1, 28 after pass 2. The payload answers the default lookup in one read.","r":[["contract_deployments","attr","attrs + payload.deployment","indexed identity"],["verified_contracts","key","the entity + payload","matches as attrs, transformations in payload"],["sourcify_matches","attr","matchid, verifiedat","metadata → compilation"],["contracts","attr","creationcodehash, runtimecodehash","join into code"]],"h":["column","where it goes","lands as","note"]},"k:compilation":{"t":"compilation ← three tables","n":"Deduplicated by inputs + outputs. Carries settings, metadata, docs, layouts, artifacts, sourceIds, the path→hash source map, refs to recompiled code.","r":[["compiled_contracts","payload","attrs + payload","the dedup Sourcify already does"],["compiled_contracts_sources","payload","payload.sources map","path → sha256"],["sourcify_matches.metadata","payload","payload.metadata","JSON.stringify(metadata) IS the compiler's string — 120/120"]],"h":["column","where it goes","lands as","note"]},"k:sourcefile":{"t":"sourcefile ← sources","n":"Unique file bodies, content-addressed, immutable — so a cache never invalidates.","r":[["sources","entity","one entity per unique sha256","queried by attr hash"]],"h":["column","where it goes","lands as","note"]},"k:code":{"t":"code ← code","n":"Onchain + recompiled, creation + runtime — one dedup pool.","r":[["code","entity","one entity per keccak","runtime onchain == runtime recompiled when nothing was transformed — then they are the same entity"]],"h":["column","where it goes","lands as","note"]},"k:signature":{"t":"signature ← signatures","n":"12,674 selectors from this chain's verified ABIs — written in the v1 pass.","r":[["signatures (our slice)","entity","one entity per selector","median payload 86 B"]],"h":["column","where it goes","lands as","note"]},"k:blob":{"t":"blob — no Postgres equivalent","n":"The chunk lane the 131,072-byte transaction cap forces: a component too big for one transaction is split into ~100 KB raw-byte parts, found by kind+hash, reassembled in order and verified against its sha256 before anything is served.","r":[["190 oversized components","payload","375 chunk entities · 28.6 MB","the tail, not the norm"]],"h":["column","where it goes","lands as","note"]}};
 /** 86 columns, from the official DDLs (verifier-alliance/database-specs + argotorg/sourcify migrations). */
 const COLMAP_CAPTION = "86 columns across the ten tables: 57 carry public data and every one of them lands in an entity (17 as typed attributes, 19 in payloads, 7 as keys or entity refs, 8 folded, 6 derived at read time); 29 are internal audit columns — created_at, updated_at, created_by, updated_by and private ids — that the public API never serves, so no API-based replica can hold them; only the Parquet export does.";
 /** The kind a map selection colours everything with: the kind itself, or a table's first target. */
@@ -848,7 +871,8 @@ function SchemaMap() {
           </div>
         </div>
       ) : <p className="caption" style={{ marginTop: 8 }}>Click any table or entity kind to see where every column physically lives on the other side.</p>}
-      <p className="caption" style={{ marginTop: 10 }}>{COLMAP_CAPTION}</p>
+      <p className="caption" style={{ marginTop: 10 }}>86 columns across the ten tables. 57 carry public data, and every one lands in an entity: 17 as searchable attributes, 19 inside payloads, 7 as keys or pointers, 8 merged into another attribute, 6 recomputed on request. The other 29 are audit columns (created_at, updated_at, created_by, updated_by, private ids): the public API never serves them, so no API-fed copy can hold them — only the Parquet export does.</p>
+      <p className="caption">Legend for &ldquo;where it goes&rdquo;: <em>attr</em> = searchable attribute · <em>payload</em> = inside the entity&apos;s JSON · <em>key</em> = the entity&apos;s key or a pointer to one · <em>entity</em> = its own content-addressed entity · <em>folded</em> = merged into another attribute · <em>derived</em> = recomputed on request · <em>internal</em> = Postgres-only audit column.</p>
     </>
   );
 }
@@ -862,7 +886,7 @@ const edgeLabel = (parent: GNode, child: GNode) => {
   if (child.id === "codes") return "codeRefs + recompiled hashes → keccak";
   if (child.kind === "sourcefile") return "hash = sha256(content)";
   if (child.kind === "code") return "hash = keccak(bytecode)";
-  if (child.kind === "blob") return `$spill → parts[] · hash = sha256`;
+  if (child.kind === "blob") return "too big for one transaction → chunks, found by sha256";
   return parent.kind;
 };
 
@@ -885,7 +909,7 @@ function GraphNodeView({ n, depth, onInspect }: { n: GNode; depth: number; onIns
       </button>
       {!isGroup && n.key && (
         <div className="enode-actions">
-          <button className="keylink small" onClick={() => onInspect(n.key!)}>open this entity in the browser →</button>
+          <button className="keylink small" onClick={() => onInspect(n.key!)}>open on tab 06 · Browse the entities →</button>
           {n.components?.length ? <button className="keylink small" onClick={() => setShowComp((v) => !v)}>{showComp ? "hide payload breakdown" : "payload breakdown"}</button> : null}
         </div>
       )}
@@ -916,7 +940,7 @@ function GraphNodeView({ n, depth, onInspect }: { n: GNode; depth: number; onIns
 }
 
 const COMPOSE_STEPS: Record<string, string[]> = {
-  stdJsonOutput: ["verified_contract — follow compilationref; take abi", "compilation — sourceIds, metadata (re-serialized byte-exact), docs, layouts, code artifacts", "code × 2 — recompiled creation + runtime bytecode, hex without 0x", "assemble { sources: sourceIds, contracts: { path: { name: { abi, metadata, userdoc, devdoc, storageLayout, evm } } } }"],
+  stdJsonOutput: ["verified_contract — follow compilationref; take abi", "compilation — sourceIds, metadata (re-serialized to the compiler's exact bytes), docs, layouts, code artifacts", "code × 2 — recompiled creation + runtime bytecode, hex without 0x", "assemble { sources: sourceIds, contracts: { path: { name: { abi, metadata, userdoc, devdoc, storageLayout, evm } } } }"],
   stdJsonInput: ["verified_contract — follow compilationref", "compilation — language + compilerSettings + the path → sha256 map", "sourcefile × N — batched by hash (≤20 per query), bodies reassembled from blob parts if spilled", "assemble { language, sources: { path: { content } }, settings }"],
   signatures: ["verified_contract — take payload.abi", "derive function/event/error signatures: keccak over the canonical text, tuples expanded", "assemble { function[], event[], error[] } in ABI order (Sourcify's order is its DB row order — compared as sets)"],
 };
@@ -931,12 +955,12 @@ function ComposeFlow({ field, prov, result, reads, onInspect }: { field: string;
         <ol className="compose-steps">{COMPOSE_STEPS[field].map((s, i) => <li key={i}><span>{s}</span></li>)}</ol>
         {prov?.length ? <ProvChips items={prov} onInspect={onInspect} /> : <p className="caption">not landed yet for this contract</p>}
       </div>
-      <div className="compose-arrow"><span>composed at read time</span><span>{reads} Arkiv reads for the whole record</span></div>
+      <div className="compose-arrow"><span>assembled on request</span><span>{reads} entity reads for the whole record</span></div>
       <div className="compose-result">
         <div className="eyebrow blue">the field</div>
         <div className="compose-field">{field}</div>
-        <div className="esize">{kb(rb)}{result != null ? " · identical to sourcify.dev on the parity tab" : " · pending"}</div>
-        <p className="caption">Sourcify&apos;s server does the same assembly from its Postgres tables — neither side stores this as a blob.</p>
+        <div className="esize">{kb(rb)}{result != null ? " · identical to sourcify.dev on tab 01" : " · not written yet"}</div>
+        <p className="caption">Sourcify&apos;s server does the same assembly from its Postgres tables — neither side stores this field.</p>
         {result != null && <button className="keylink small" onClick={() => setOpen((v) => !v)}>{open ? "hide result" : "show result"}</button>}
         {open && <pre className="fbody">{JSON.stringify(result, null, 2).slice(0, 5000)}{rb > 5000 ? "\n…" : ""}</pre>}
       </div>
@@ -980,8 +1004,8 @@ function DataModel({ onInspect }: { onInspect: (key: string) => void }) {
 
       <div className="panel">
         <h2>One real contract, as the entities that hold it</h2>
-        <p className="caption">Every node is a real entity on Cheesecake; the join that produced it is written on the edge. Click a node to expand it,
-          &ldquo;open this entity&rdquo; to see it raw in the browser tab.</p>
+        <p className="caption">Every node is a real entity in Arkiv (on the Cheesecake devnet); the join that produced it is written on the edge. Click a node to expand it,
+          &ldquo;open on tab 06&rdquo; to see it raw.</p>
         <div className="row">
           <div style={{ flex: "1 1 340px" }}>
             <label htmlFor="gaddr">Contract address</label>
@@ -1018,8 +1042,8 @@ function DataModel({ onInspect }: { onInspect: (key: string) => void }) {
       {rec && (
         <div className="panel">
           <h2>How a composed field is rebuilt</h2>
-          <p className="caption">Three fields are never stored as blobs — by Sourcify either. They are assembled from the pieces above on every request.
-            Left: what is read, in order. Right: the field, as the API returns it.</p>
+          <p className="caption">Neither side stores these three fields. Both assemble them on every request from the pieces above.
+            Left: what is read, in order. Right: the field as the API returns it.</p>
           {["stdJsonOutput", "stdJsonInput", "signatures"].map((f) => (
             <div key={f} style={{ marginTop: 14 }}>
               <ComposeFlow field={f} prov={rec.provenance?.[f]} result={rec.record?.[f]} reads={rec.reads.arkiv} onInspect={onInspect} />
@@ -1103,7 +1127,7 @@ function Query() {
         <Duo
           tone="win"
           left={{ big: "no URL", cap: <>The columns mostly exist in their Postgres. The public API exposes no parameter, so no consumer can ask.</> }}
-          right={{ big: "1 predicate", cap: <>Each of these is one condition on an indexed attribute — and they combine.</> }}
+          right={{ big: "1 filter", cap: <>One condition on a searchable attribute — and conditions combine.</> }}
         />
         <div className="row" style={{ marginBottom: 14 }}>
           {PRESETS.map((p, i) => (
@@ -1163,16 +1187,17 @@ function Query() {
             <h2>The query that went to the network</h2>
             <pre className="wire">{res.arkivQuery}</pre>
             <div className="kpis" style={{ marginTop: 12 }}>
-              <Kpi k="Results" v={`${res.count}${res.truncated ? " (page cap)" : ""}`} />
+              <Kpi k="Results" v={`${res.count}${res.truncated ? "+ (first page only — no COUNT, so the total is unknown)" : " (all)"}`} />
               <Kpi k="Round trip" v={`${res.ms} ms`} />
               <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
               <Kpi k="Sourcify equivalent" v="none" />
             </div>
-            <Why label="pages cap at 200, and nothing comes back ordered">
+            <Why label="What Arkiv cannot do here: no ORDER BY and pages of 200 — Sourcify's newest-first listing feed does not work">
               <p>
                 <code>MAX_LIMIT</code> is 200, and the SDK marks server-side <code>orderBy</code>
                 deprecated because the network does not implement it. Anything sorted here was sorted in
-                JavaScript after the fetch — which is exactly why the listing feed does not work.
+                JavaScript after the fetch. That is why Sourcify&apos;s newest-first listing endpoint
+                (<code>GET /v2/contracts/&#123;chain&#125;?sort=desc</code>) cannot be served from Arkiv today.
               </p>
             </Why>
           </div>
@@ -1217,10 +1242,10 @@ const SAMPLE_SELECTORS = ["0xa9059cbb", "0x095ea7b3", "0x23b872dd", "0x70a08231"
 const VERDICT: Record<string, string> = {
   identical: "Same answer, both services.",
   same_plus_their_wider_dictionary:
-    "Everything we return, they confirm. They also know texts outside our one-chain slice.",
+    "Everything we return, they confirm. They also know texts from chains and sources we did not load.",
   we_know_something_they_do_not:
     "We return a text they do not confirm — worth a look, since our source is their own verified ABIs.",
-  not_in_our_slice: "Not in our slice: this selector is not in Unichain's verified ABIs.",
+  not_in_our_slice: "Not here: this selector does not appear in Unichain's verified ABIs.",
   sourcify_unreachable: "Their service did not answer, so there is nothing to compare against.",
   no_sourcify_equivalent: "Prefix search has no equivalent on their API — this one is Arkiv only.",
 };
@@ -1251,8 +1276,8 @@ function FourByte() {
         <h2>Selector → signature</h2>
         <Duo
           tone="win"
-          left={{ big: "~7M/day", cap: <>A separate service on its own Postgres, consolidating openchain, 4byte.directory and etherface.</> }}
-          right={{ big: "86 B", cap: <>Median payload. One equality, one round trip — the whole 9.9M-row dictionary is about <strong>1 GB</strong>.</> }}
+          left={{ big: "9.9 M rows", cap: <>Their dictionary: a separate Postgres service serving ~7 M requests a day (Sourcify&apos;s own figure), consolidated from openchain, 4byte.directory and etherface.</> }}
+          right={{ big: "1 read · 86 B", cap: <>One equality on one attribute, median payload 86 bytes. Their whole dictionary would be about <strong>1 GB of payload</strong> (~18 GB written, once each entity&apos;s attributes are counted) — still the cheapest thing here to move.</> }}
         />
         <div className="row">
           <div>
@@ -1291,7 +1316,7 @@ function FourByte() {
             </div>
             <div className="kpis" style={{ marginTop: 14 }}>
               <Kpi k="Sourcify (4-byte service)" v={res.sourcify?.ms != null ? `${res.sourcify.ms} ms` : undefined} />
-              <Kpi k="Arkiv (Cheesecake)" v={res.ms != null ? `${res.ms} ms` : undefined} />
+              <Kpi k="Arkiv (public devnet, not a benchmark)" v={res.ms != null ? `${res.ms} ms` : undefined} />
               <Kpi k="Matches" v={String(res.count ?? 0)} />
               <Kpi k="Read at block" v={res.blockNumber ?? undefined} />
             </div>
@@ -1323,7 +1348,7 @@ function FourByte() {
                     ))}
                   </ul>
                 ) : (
-                  <span className="q">not in our slice</span>
+                  <span className="q">not in this chain&apos;s verified ABIs</span>
                 )}
               </div>
             </div>
@@ -1350,12 +1375,12 @@ function FourByte() {
 /* ---------------------------------------------------------------- explorer */
 
 const KINDS = [
-  { id: "verified_contract", label: "verified_contract", note: "One per (chain, address) — 27 typed attributes and the lookup answer as payload." },
+  { id: "verified_contract", label: "verified_contract", note: "One per (chain, address) — 25 searchable attributes after pass 1, 28 after pass 2 (+ compilationfp, creationcodehash, runtimecodehash), plus the 7-field lookup answer and the ABI as payload." },
   { id: "compilation", label: "compilation", note: "Deduplicated by compilation fingerprint, the way Postgres dedupes compiled_contracts — carries metadata, layouts, docs, artifacts and the path→hash source map." },
   { id: "signature", label: "signature", note: "One per 4-byte selector — the smallest entity here, 86 bytes of payload at the median." },
   { id: "sourcefile", label: "sourcefile", note: "One per UNIQUE source file, sha256 content-addressed — OpenZeppelin's ERC20.sol exists on-chain exactly once." },
   { id: "code", label: "code", note: "One per unique bytecode, keccak content-addressed — onchain and recompiled, creation and runtime, all dedup here." },
-  { id: "blob", label: "blob", note: "The chunk lane: a component too big for one transaction, split into parts and reassembled (and hash-verified) at read time." },
+  { id: "blob", label: "blob (chunk)", note: "A piece too big for one transaction (131,072 B), cut into ~100 KB chunks and re-joined on read, checked against its sha256 — 375 of them for this chain." },
 ];
 
 /** Every pointer an entity carries, so the browser can follow it: key refs and content hashes. */
@@ -1442,7 +1467,7 @@ function EntityCard({ e, index, onKey, onHash }: {
           ) : null}
 
           <div className="grouphead" style={{ marginTop: 14 }}>
-            Payload <span className="pill">opaque to the database</span>
+            Payload <span className="pill">returned whole, never read by the database</span>
           </div>
           <pre>{j(e.payload)}</pre>
         </div>
@@ -1506,11 +1531,11 @@ function Explorer({ focusKey, onClearFocus }: { focusKey: string | null; onClear
         <h2>Entities on Cheesecake</h2>
         <Duo
           left={{ big: "10 tables", cap: <>The whole normalized schema — one verification is a join across eight of them.</> }}
-          right={{ big: "6 entity kinds", cap: <>Typed attributes you can filter on, plus payloads the database never looks inside — same normalization, content-addressed. Every reference an entity carries is a button here: follow a <code>compilationref</code> key, a source hash, a bytecode hash, a blob spill.</> }}
+          right={{ big: "6 entity kinds", cap: <>Searchable attributes you can filter on, plus a payload the database never reads. Same deduplication as Postgres, keyed by content hash. Every pointer an entity carries is a button here — follow a <code>compilationref</code> key, a source hash, a bytecode hash, a chunk.</> }}
         />
         {focusKey && (
           <p className="note" style={{ marginTop: 0, marginBottom: 14 }}>
-            Showing one entity, opened from its provenance line.{" "}
+            Showing one entity, opened from a link on another tab.{" "}
             <button className="keylink" onClick={() => { onClearFocus(); run(kind, limit); }}>
               Back to browsing all of them
             </button>
