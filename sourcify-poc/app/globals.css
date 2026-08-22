@@ -588,3 +588,18 @@ tr.fate-internal td { color: var(--muted); opacity: .65; }
   .fprov-chip > span:first-child { overflow-wrap: anywhere; }
   .compose-from { min-width: 0; }
 }
+
+@media (max-width: 640px) {
+  select, input { max-width: 100%; box-sizing: border-box; }
+  .row > div { min-width: 0; max-width: 100%; }
+}
+/* phone width: nothing in the data-model tab may widen the page */
+.compose-from, .compose-result { grid-template-columns: minmax(0, 1fr); }
+.compose-from > *, .compose-result > * { min-width: 0; max-width: 100%; }
+@media (max-width: 640px) {
+  .eedge { white-space: normal; overflow-wrap: anywhere; }
+  .fprov { flex-wrap: wrap; }
+  .enode { max-width: 100%; min-width: 0; }
+  .enode > * { overflow-wrap: anywhere; }
+}
+@media (max-width: 640px) { .fstatus { white-space: normal; max-width: 100%; overflow-wrap: anywhere; } }

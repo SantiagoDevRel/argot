@@ -31,7 +31,7 @@ composed = assembled at read time (exactly what Sourcify does for the same field
 | sources | `sourcefile` entities | one per unique sha256; compilation carries path→hash |
 | metadata, storageLayout, transientStorageLayout, userdoc, devdoc, sourceIds | payload (`compilation`) | per-compilation, dedup with it; `sourceIds` is compiler-assigned, NOT derivable |
 | creationBytecode, runtimeBytecode | `code` entities + payloads | onchain code refs on vc attrs; recompiled refs + sourceMap/linkReferences/cborAuxdata/immutableReferences on compilation; transformations on vc |
-| additionalInput | payload (vc) | null on all 3,131 Unichain contracts, handled anyway |
+| additionalInput | payload (vc) | null on all 3,144 Unichain contracts, handled anyway |
 | stdJsonInput | **composed** | `{language, sources, settings}` — measured byte-equal parts, 120/120 |
 | stdJsonOutput | **composed** | sourceIds + abi + metadata-string + docs + layouts + `evm.*` = recompiled code without `0x` — all shapes measured, 120/120 |
 | signatures | **composed** from abi | ABI order, tuple-expanded keccak — measured identical 120/120; plus 12,674 standalone `signature` entities for the 4-byte service |
@@ -43,16 +43,16 @@ defaulting to the identity fields like Sourcify does.
 ## 2. Entity model v2 (six kinds), as built
 
 ```
-verified_contract  3,131 (2,801 patched + 330 created for post-v1 verifications)
+verified_contract  3,144 (2,801 patched + 343 created for post-v1 verifications; final 22 Aug audit)
                    +creationcodehash +runtimecodehash (+compilationfp re-set) → 28/32 attrs
                    payload += transformations, code refs, additionalInput
-compilation        1,505 (1,346 patched + 159 created)
+compilation        1,517 (1,346 patched + 171 created)
                    payload += metadata, layouts, docs, sourceIds, code artifacts,
                    recompiled-code refs, sources path→sha256 map
-sourcefile         6,119 unique files, 45.4 MB, sha256 content-addressed
-code               4,927 unique bytecodes, 43.3 MB RAW bytes (octet-stream)
+sourcefile         6,142 unique files, 45.6 MB, sha256 content-addressed
+code               4,971 unique bytecodes, 43.6 MB RAW bytes (octet-stream)
 signature          12,674 (v1, unchanged)
-blob               375 chunks carrying 190 spilled components, 28.6 MB
+blob               377 chunks carrying 192 spilled components, 28.7 MB
 ```
 
 ### The fingerprint fix — a real bug, measured
@@ -99,7 +99,8 @@ metadatas (1.6%)** need the lane. It is the escape hatch for the tail, not the d
 ## 4. Write plan, as built (8-write-full.mjs)
 
 Dry run first (`buildMutation`, zero RPC): **222.72 MB calldata · 17.82 B gas (495 blocks) ·
-1.247e-7 GLM at 7 wei · 2,495 transactions**.
+1.247e-7 GLM at 7 wei · 2,495 transactions** for the 3,131-contract snapshot; the final population
+(3,144 after the 22 Aug top-up) landed in **2,597 transactions, ~224.5 MB, ~18.0 B gas**.
 
 1. **Key recovery**: one cursor-paginated, attribute-only, `ownedBy`-filtered sweep (21 reads)
    rebuilt `address→key` and `fp→key`; it collects ALL keys per identity and retires
@@ -182,3 +183,8 @@ utilisation — data for the product conversation, run separately, never the rep
 - 2026-08-21/22 — API key issued; keyed send at ~1,160 txs/hour. Column-complete schema map (86
   columns from the official DDLs), provenance per field, entity graph, and a four-lens clarity
   review applied to both surfaces.
+- **2026-08-22 — LANDED.** Pass 2 complete: 377 blobs · 4,971 codes · 6,142 source files · 1,517
+  compilations · 3,144 contracts, 2,597 transactions. Final audit against the live feed found 13
+  contracts verified overnight; topped up (22 txs) to a zero diff. Random sample of 25 contracts,
+  all 24 fields, against sourcify.dev: **25/25 identical**. Both surfaces redeployed with the
+  landed numbers.

@@ -13,11 +13,11 @@ limits and the scope. This folder is the thing that runs.
 
 | | |
 |---|---|
-| Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **3,131** verified contracts — coverage re-audited against the live cursor feed until the diff is zero (etl/audit-coverage.mjs + topup.mjs) |
+| Source data | live `sourcify.dev/server/v2`, chain **130 (Unichain)**, all **3,144** verified contracts (22 Aug audit) — coverage re-audited against the live cursor feed until the diff is zero (etl/audit-coverage.mjs + topup.mjs) |
 | Target | **Arkiv Cheesecake devnet**, chain `7733102`, `https://rpc.cheesecake.db-chain.devnet.gobas.me` |
 | SDK | `@arkiv-network/sdk@0.8.0-advanced.2` — the version carrying the new frozen contract (typed attributes). `0.7.0` is the old string/numeric shape and will not do. |
 | Entity types | **six kinds**: `verified_contract` (28 typed attributes), `compilation` (deduplicated by a content-strong fingerprint), `sourcefile` (one per unique file, sha256-addressed), `code` (one per unique bytecode, keccak-addressed, raw bytes), `signature` (one per 4-byte selector), `blob` (the chunk lane for the oversized tail) |
-| Written | v1 (2026-08-20): 2,801 contracts + 1,127 compilations + 12,674 selectors in 568 transactions. **v2 — the 100% pass (2026-08-21)**: everything else — 6,119 source files, 4,927 bytecodes, 1,505 compilations (99 v1 fingerprints split), 375 blob chunks, 3,131 contracts = **222.7 MB, 2,495 transactions**, dry-run measured exactly; the send is checkpointed and rate-limit-aware (see *The RPC reality* below) |
+| Written | v1 (2026-08-20): 2,801 contracts + 1,127 compilations + 12,674 selectors in 568 transactions. **v2 — the full-record pass (sent 21–22 Aug, LANDED 2026-08-22)**: everything else — 6,142 source files, 4,971 bytecodes, 1,517 compilations (99 v1 fingerprints split), 377 blob chunks, 3,144 contracts = **224.5 MB, 2,597 transactions**; every lane 100%, re-audited to a zero diff against the live feed, and 25 random contracts verified `identical` on every field against sourcify.dev (`etl/verify-sample.mjs`) |
 | Not stored on-chain | only what Sourcify itself does not store: `stdJsonInput`, `stdJsonOutput` and `signatures` are **composed at read time** from the normalized entities — verified byte-faithful against 120 verbatim `fields=all` answers (`etl/composecheck.mjs`) |
 
 ## Also in scope, after a rethink
