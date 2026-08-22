@@ -571,3 +571,10 @@ details.why .body p:last-child { margin-bottom: 0; }
 .refhash { color: var(--muted); margin-left: 6px; }
 .vlink { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--blue); }
 .vlink:hover { color: var(--blue); }
+/* ---- schema map: per-column fate pills ---------------------------------- */
+.fatepill { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.fatepill.attr { border-color: var(--blue); color: #9ba0ff; }
+.fatepill.key, .fatepill.entity { border-color: var(--orange); color: var(--orange); }
+.fatepill.payload { border-color: var(--ok); color: var(--ok); }
+.fatepill.folded, .fatepill.derived { border-color: var(--warn); color: var(--warn); }
+tr.fate-internal td { color: var(--muted); opacity: .65; }
